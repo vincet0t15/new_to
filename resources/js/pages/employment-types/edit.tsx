@@ -75,9 +75,10 @@ export function EditEmploymentTypeDialog({
 
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
-                            <Input
+                            <textarea
                                 id="description"
-                                name="description"
+                                rows={4}
+                                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="e.g., Regular plantilla personnel"
                                 value={data.description ?? ''}
                                 onChange={(event) =>
