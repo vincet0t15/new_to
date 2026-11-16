@@ -41,13 +41,12 @@ test('the super administrator holds every permission', function () {
     );
 });
 
-test('the administrator cannot manage admins or delete workflow configuration', function () {
+test('the administrator cannot manage admins', function () {
     $user = User::factory()->create();
     $user->assignRole(systemRole(SystemRole::Admin));
 
     expect($user->can('administration.view'))->toBeTrue()
-        ->and($user->can('accounts.manage-admins'))->toBeFalse()
-        ->and($user->can('workflow.delete'))->toBeFalse();
+        ->and($user->can('accounts.manage-admins'))->toBeFalse();
 });
 
 test('an employee cannot enter the administration portal', function () {

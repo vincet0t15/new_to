@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Employee;
 use App\Models\Office;
 use App\Models\Permission;
 use App\Models\User;
@@ -200,6 +201,17 @@ test('an office can be deleted', function () {
         ->assertRedirect();
 
     $this->assertModelMissing($office);
+});
+
+test('an office that still has employees cannot be deleted', function () {
+    $office = Office::factory()->create();
+    Employee::factory()->create(['office_id' => $office->id]);
+
+    $this->actingAs(officeUser(['offices.delete']))
+        ->delete(route('offices.destroy', $office))
+        ->assertRedirect();
+
+    $this->assertModelExists($office);
 });
 
 test('deleting an office requires the delete permission', function () {

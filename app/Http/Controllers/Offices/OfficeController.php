@@ -63,8 +63,14 @@ class OfficeController extends Controller
      */
     public function destroy(Office $office): RedirectResponse
     {
-        // Employees and workflow designations will restrict deletion once those
-        // modules exist. Until then an office has no dependants to check.
+        // Employees belong to their office, so removing it would leave their
+        // records pointing at nothing. They must be reassigned first.
+        if ($office->employees()->exists()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot delete an office that still has employees.')]);
+
+            return back();
+        }
+
         $this->offices->delete($office);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Office deleted.')]);

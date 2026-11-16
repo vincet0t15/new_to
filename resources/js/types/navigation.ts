@@ -15,3 +15,8 @@ export type NavItem = {
     permissions?: string[];
     role?: string;
 };
+
+export type NavGroup = {
+    label: string;
+    items: NavItem[];
+};
