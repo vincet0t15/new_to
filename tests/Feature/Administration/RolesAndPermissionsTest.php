@@ -5,6 +5,8 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Database\Seeders\SuperAdminSeeder;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -79,4 +81,32 @@ test('shared auth props expose role slugs and permissions', function () {
             ->where('auth.roles.0', SystemRole::Admin->value)
             ->where('auth.permissions', fn ($permissions): bool => collect($permissions)->contains('administration.view'))
         );
+});
+
+test('the super administrator seeder creates the configured account', function () {
+    $this->seed(SuperAdminSeeder::class);
+
+    $user = User::query()
+        ->where('username', config('superadmin.username'))
+        ->sole();
+
+    expect($user->name)->toBe(config('superadmin.name'))
+        ->and($user->email)->toBe(config('superadmin.email'))
+        ->and($user->hasRoleSlug(SystemRole::SuperAdmin->value))->toBeTrue()
+        ->and($user->roles)->toHaveCount(1)
+        ->and(Hash::check('password', $user->password))->toBeTrue();
+});
+
+test('re-seeding the super administrator keeps the existing password', function () {
+    $this->seed(SuperAdminSeeder::class);
+
+    $user = User::query()
+        ->where('username', config('superadmin.username'))
+        ->sole();
+
+    $user->update(['password' => 'a-changed-password']);
+
+    $this->seed(SuperAdminSeeder::class);
+
+    expect(Hash::check('a-changed-password', $user->refresh()->password))->toBeTrue();
 });
