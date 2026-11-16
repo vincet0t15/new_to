@@ -1,5 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
-import { Briefcase, Building2, LayoutGrid, UserCog, Users } from 'lucide-react';
+import {
+    Briefcase,
+    Building2,
+    GitBranch,
+    LayoutGrid,
+    ShieldCheck,
+    UserCog,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
 import {
@@ -11,10 +19,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import designations from '@/routes/designations';
 import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
 import offices from '@/routes/offices';
 import positions from '@/routes/positions';
+import workflowStepTypes from '@/routes/workflow-step-types';
+import workflows from '@/routes/workflows';
 import type { NavGroup } from '@/types';
 
 /**
@@ -66,6 +77,35 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: employmentTypes.index().url,
                     icon: Briefcase,
                     permission: 'employment-types.view',
+                },
+            ],
+        },
+        {
+            label: 'Workflow',
+            items: [
+                {
+                    title: 'Workflows',
+                    href: workflows.index().url,
+                    icon: GitBranch,
+                    permission: 'workflow.manage',
+                },
+                {
+                    title: 'Step Types',
+                    href: workflowStepTypes.index().url,
+                    icon: ShieldCheck,
+                    permission: 'workflow.manage',
+                },
+                {
+                    title: 'Designations',
+                    href: designations.index().url,
+                    icon: Users,
+                    permission: 'designations.manage',
+                },
+                {
+                    title: 'Route Preview',
+                    href: workflows.preview().url,
+                    icon: GitBranch,
+                    permission: 'workflow.manage',
                 },
             ],
         },

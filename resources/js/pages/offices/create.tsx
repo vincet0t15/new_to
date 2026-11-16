@@ -12,24 +12,35 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import offices from '@/routes/offices';
 import type { OfficeCreateRequest } from '@/types/office';
+import type { WorkflowOption } from '@/types/workflow';
 import type { FormEvent } from 'react';
 
 type CreateOfficeDialogProps = {
     isOpen: boolean;
     onClose: () => void;
+    workflows: WorkflowOption[];
 };
 
 export function CreateOfficeDialog({
     isOpen,
     onClose,
+    workflows,
 }: CreateOfficeDialogProps) {
     const { data, setData, post, reset, errors, processing } =
         useForm<OfficeCreateRequest>({
             office_name: '',
             office_code: '',
+            workflow_id: '',
         });
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -87,6 +98,51 @@ export function CreateOfficeDialog({
                                 records.
                             </p>
                             <InputError message={errors.office_code} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="workflow_id">
+                                Approval Workflow
+                            </Label>
+                            <Select
+                                value={
+                                    data.workflow_id === ''
+                                        ? 'default'
+                                        : String(data.workflow_id)
+                                }
+                                onValueChange={(value) =>
+                                    setData(
+                                        'workflow_id',
+                                        value === 'default'
+                                            ? ''
+                                            : Number(value),
+                                    )
+                                }
+                            >
+                                <SelectTrigger id="workflow_id">
+                                    <SelectValue placeholder="Default workflow" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="default">
+                                        Default workflow (fallback)
+                                    </SelectItem>
+                                    {workflows.map((workflow) => (
+                                        <SelectItem
+                                            key={workflow.id}
+                                            value={String(workflow.id)}
+                                        >
+                                            {workflow.name}
+                                            {!workflow.is_active
+                                                ? ' (inactive)'
+                                                : ''}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                Leave blank to follow the default chain.
+                            </p>
+                            <InputError message={errors.workflow_id} />
                         </div>
                     </div>
 

@@ -18,6 +18,7 @@ import {
 import officesRoutes from '@/routes/offices';
 import type { Office } from '@/types/office';
 import type { PaginatedDataResponse } from '@/types/pagination';
+import type { WorkflowOption } from '@/types/workflow';
 import type { KeyboardEvent } from 'react';
 import { CreateOfficeDialog } from './create';
 import { DeleteOfficeDialog } from './delete';
@@ -28,9 +29,14 @@ type OfficesIndexProps = {
     filters: {
         search?: string;
     };
+    workflows: WorkflowOption[];
 };
 
-export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
+export default function OfficesIndex({
+    offices,
+    filters,
+    workflows,
+}: OfficesIndexProps) {
     const { data, setData } = useForm({
         search: filters.search ?? '',
     });
@@ -109,6 +115,7 @@ export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
                             <TableRow>
                                 <TableHead>Office Name</TableHead>
                                 <TableHead>Office Code</TableHead>
+                                <TableHead>Approval Workflow</TableHead>
                                 <TableHead className="text-right">
                                     Actions
                                 </TableHead>
@@ -125,6 +132,23 @@ export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
                                             {office.office_code || (
                                                 <span className="text-muted-foreground">
                                                     —
+                                                </span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {office.workflow ? (
+                                                <span className="inline-flex items-center gap-1">
+                                                    {office.workflow.name}
+                                                    {!office.workflow
+                                                        .is_active && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            (inactive)
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            ) : (
+                                                <span className="text-muted-foreground">
+                                                    Default
                                                 </span>
                                             )}
                                         </TableCell>
@@ -161,7 +185,7 @@ export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
                             ) : (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={3}
+                                        colSpan={4}
                                         className="h-24 text-center text-muted-foreground"
                                     >
                                         No offices found.
@@ -178,6 +202,7 @@ export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
                     <CreateOfficeDialog
                         isOpen={createOpen}
                         onClose={() => setCreateOpen(false)}
+                        workflows={workflows}
                     />
                 )}
 
@@ -186,6 +211,7 @@ export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
                         isOpen={editOpen}
                         onClose={() => setEditOpen(false)}
                         office={selectedOffice}
+                        workflows={workflows}
                     />
                 )}
 

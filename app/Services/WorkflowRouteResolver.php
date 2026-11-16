@@ -91,7 +91,7 @@ final class WorkflowRouteResolver
         $workflow = $this->workflowFor($office);
 
         if ($workflow === null) {
-            return new Collection();
+            return new Collection;
         }
 
         return $this->stepsFor($workflow);
@@ -127,7 +127,7 @@ final class WorkflowRouteResolver
     public function preview(Office $office): array
     {
         $workflow = $this->workflowFor($office);
-        $steps = $workflow === null ? new Collection() : $this->stepsFor($workflow);
+        $steps = $workflow === null ? new Collection : $this->stepsFor($workflow);
 
         $previewSteps = $steps
             ->map(fn (WorkflowStep $step): array => $this->previewStep($step, $office))
