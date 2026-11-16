@@ -22,7 +22,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect(route('employee.dashboard', absolute: false));
 
     $user = User::query()->where('username', 'testuser')->sole();
 

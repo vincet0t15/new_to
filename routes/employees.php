@@ -3,7 +3,7 @@
 use App\Http\Controllers\Employees\EmployeeController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'permission:administration.view'])
+Route::middleware(['auth', 'verified', 'portal:admin', 'permission:administration.view'])
     ->prefix('admin/employees')
     ->name('employees.')
     ->group(function () {

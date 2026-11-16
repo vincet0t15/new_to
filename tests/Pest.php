@@ -1,5 +1,8 @@
 <?php
 
+use App\Enums\SystemRole;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,7 +26,7 @@ pest()->extend(TestCase::class)
 | Expectations
 |--------------------------------------------------------------------------
 |
-| When you're writing tests, you often need to check that values meet certain conditions. The
+| When you're writing tests, you often want to check that values meet certain conditions. The
 | "expect()" function gives you access to a set of "expectations" methods that you can use
 | to assert different things. Of course, you may extend the Expectation API at any time.
 |
@@ -44,7 +47,25 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Grant an account entry to the admin portal without granting anything else.
+ *
+ * Portal access is role-based, while the account's actual capabilities still
+ * come from the explicit permissions a test attaches. Creating the role
+ * without permissions keeps permission-gating tests honest.
+ */
+function grantAdminPortal(User $user): User
 {
-    // ..
+    $role = Role::firstOrCreate(
+        ['guard_name' => 'web', 'slug' => SystemRole::Admin->value],
+        [
+            'name' => 'Admin',
+            'description' => 'Admin',
+            'is_system' => true,
+        ],
+    );
+
+    $user->assignRole($role);
+
+    return $user;
 }

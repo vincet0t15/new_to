@@ -18,6 +18,7 @@ class StoreOfficeRequest extends FormRequest
         return [
             'office_name' => ['required', 'string', 'max:255', Rule::unique('offices', 'office_name')],
             'office_code' => ['nullable', 'string', 'max:255'],
+            'workflow_id' => ['nullable', 'integer', Rule::exists('workflows', 'id')],
         ];
     }
 

@@ -4,5 +4,7 @@ export type * from './employment-type';
 export type * from './navigation';
 export type * from './office';
 export type * from './pagination';
+export type * from './portal';
 export type * from './position';
 export type * from './ui';
+export type * from './workflow';

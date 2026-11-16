@@ -22,6 +22,7 @@ function employmentTypeUser(array $permissions = ['employment-types.view']): Use
     }
 
     $user = User::factory()->create();
+    grantAdminPortal($user);
     $user->givePermissionTo($permissions);
 
     return $user;

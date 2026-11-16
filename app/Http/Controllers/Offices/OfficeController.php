@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Offices\StoreOfficeRequest;
 use App\Http\Requests\Offices\UpdateOfficeRequest;
 use App\Models\Office;
+use App\Models\Workflow;
 use App\Repositories\Contracts\OfficeRepository;
+use App\Repositories\Contracts\WorkflowRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -14,8 +16,10 @@ use Inertia\Response;
 
 class OfficeController extends Controller
 {
-    public function __construct(private readonly OfficeRepository $offices)
-    {
+    public function __construct(
+        private readonly OfficeRepository $offices,
+        private readonly WorkflowRepository $workflows,
+    ) {
         //
     }
 
@@ -31,6 +35,15 @@ class OfficeController extends Controller
             'filters' => [
                 'search' => $search,
             ],
+            'workflows' => $this->workflows->allForSelection()
+                ->map(fn (Workflow $workflow): array => [
+                    'id' => $workflow->id,
+                    'name' => $workflow->name,
+                    'is_default' => $workflow->is_default,
+                    'is_active' => $workflow->is_active,
+                ])
+                ->values()
+                ->all(),
         ]);
     }
 
@@ -67,6 +80,20 @@ class OfficeController extends Controller
         // records pointing at nothing. They must be reassigned first.
         if ($office->employees()->exists()) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot delete an office that still has employees.')]);
+
+            return back();
+        }
+
+        // A workflow step or designation names the office as its target. Losing
+        // it would silently change a chain, so it must be reconfigured first.
+        if ($office->workflowSteps()->exists()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot delete an office that is used as a workflow step target.')]);
+
+            return back();
+        }
+
+        if ($office->designations()->exists()) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Cannot delete an office that still has designations.')]);
 
             return back();
         }

@@ -38,6 +38,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'employees.create',
             'employees.update',
             'employees.delete',
+            'workflow.manage',
+            'designations.manage',
             'accounts.view',
             'accounts.edit',
             'accounts.manage-admins',

@@ -2,11 +2,18 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
+use App\Services\PortalResolver;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
+    public function __construct(private readonly PortalResolver $portals)
+    {
+        //
+    }
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -35,6 +42,16 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+        $current = null;
+
+        if ($user instanceof User) {
+            // Settings and other screens outside a portal still belong to the
+            // account's primary workspace, so they show that portal's shell.
+            $current = $this->portals->currentFor($request)
+                ?? $this->portals->defaultFor($user);
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -43,6 +60,10 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $request->user()?->roles->pluck('slug')->values()->all() ?? [],
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values()->all() ?? [],
             ],
+            'portals' => $user instanceof User
+                ? $this->portals->optionsFor($user, $current)
+                : [],
+            'currentPortal' => $current?->value,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

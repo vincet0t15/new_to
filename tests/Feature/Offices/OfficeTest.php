@@ -21,6 +21,7 @@ function officeUser(array $permissions = ['offices.view']): User
     }
 
     $user = User::factory()->create();
+    grantAdminPortal($user);
     $user->givePermissionTo($permissions);
 
     return $user;

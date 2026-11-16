@@ -22,6 +22,7 @@ function positionUser(array $permissions = ['positions.view']): User
     }
 
     $user = User::factory()->create();
+    grantAdminPortal($user);
     $user->givePermissionTo($permissions);
 
     return $user;

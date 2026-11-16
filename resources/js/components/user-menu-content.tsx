@@ -1,5 +1,6 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
+import { PortalSwitcher } from '@/components/portal-switcher';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -18,6 +19,7 @@ type Props = {
 
 export function UserMenuContent({ user }: Props) {
     const cleanup = useMobileNavigation();
+    const { portals } = usePage().props;
 
     const handleLogout = () => {
         cleanup();
@@ -45,6 +47,7 @@ export function UserMenuContent({ user }: Props) {
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
+            <PortalSwitcher portals={portals} />
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
                 <Link

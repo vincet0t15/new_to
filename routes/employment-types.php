@@ -3,7 +3,7 @@
 use App\Http\Controllers\EmploymentTypes\EmploymentTypeController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'permission:administration.view'])
+Route::middleware(['auth', 'verified', 'portal:admin', 'permission:administration.view'])
     ->prefix('admin/employment-types')
     ->name('employment-types.')
     ->group(function () {

@@ -25,6 +25,7 @@ function employeeUser(array $permissions = ['employees.view']): User
     }
 
     $user = User::factory()->create();
+    grantAdminPortal($user);
     $user->givePermissionTo($permissions);
 
     return $user;

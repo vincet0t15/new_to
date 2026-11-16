@@ -74,7 +74,7 @@ test('shared auth props expose role slugs and permissions', function () {
     $user->assignRole(systemRole(SystemRole::Admin));
 
     $this->actingAs($user)
-        ->get(route('dashboard'))
+        ->get(route('admin.dashboard'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->where('auth.roles.0', SystemRole::Admin->value)

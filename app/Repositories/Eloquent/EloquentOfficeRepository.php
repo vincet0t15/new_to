@@ -11,6 +11,7 @@ class EloquentOfficeRepository implements OfficeRepository
     public function paginate(?string $search, int $perPage = 50): LengthAwarePaginator
     {
         return Office::query()
+            ->with('workflow:id,name,is_default,is_active')
             ->when($search !== null && $search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('office_name', 'like', '%'.$search.'%')
