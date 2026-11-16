@@ -6,5 +6,6 @@ export type * from './office';
 export type * from './pagination';
 export type * from './portal';
 export type * from './position';
+export type * from './travel-order';
 export type * from './ui';
 export type * from './workflow';

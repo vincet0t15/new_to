@@ -18,3 +18,4 @@ require __DIR__.'/employees.php';
 require __DIR__.'/workflows.php';
 require __DIR__.'/workflow-step-types.php';
 require __DIR__.'/designations.php';
+require __DIR__.'/travel-orders.php';

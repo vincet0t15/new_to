@@ -2,8 +2,10 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Briefcase,
     Building2,
+    FileText,
     GitBranch,
     LayoutGrid,
+    Plus,
     ShieldCheck,
     UserCog,
     Users,
@@ -24,6 +26,7 @@ import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
 import offices from '@/routes/offices';
 import positions from '@/routes/positions';
+import travelOrders from '@/routes/travel-orders';
 import workflowStepTypes from '@/routes/workflow-step-types';
 import workflows from '@/routes/workflows';
 import type { NavGroup } from '@/types';
@@ -121,12 +124,33 @@ export function AppSidebar() {
     const groups: NavGroup[] =
         portal?.key === 'admin'
             ? adminGroups(workspaceUrl)
-            : [
-                  overviewGroup(
-                      workspaceUrl,
-                      portal?.key === 'approvals' ? 'Inbox' : 'Dashboard',
-                  ),
-              ];
+            : portal?.key === 'employee'
+              ? [
+                    overviewGroup(workspaceUrl, 'Dashboard'),
+                    {
+                        label: 'Travel Orders',
+                        items: [
+                            {
+                                title: 'My Travel Orders',
+                                href: travelOrders.index().url,
+                                icon: FileText,
+                                permission: 'travel-orders.view-own',
+                            },
+                            {
+                                title: 'New Travel Order',
+                                href: travelOrders.create().url,
+                                icon: Plus,
+                                permission: 'travel-orders.create',
+                            },
+                        ],
+                    },
+                ]
+              : [
+                    overviewGroup(
+                        workspaceUrl,
+                        portal?.key === 'approvals' ? 'Inbox' : 'Dashboard',
+                    ),
+                ];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
