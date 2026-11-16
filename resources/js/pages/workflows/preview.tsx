@@ -3,13 +3,7 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 import { Badge } from '@/components/ui/badge';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import workflowsRoutes from '@/routes/workflows';
 import type { Office } from '@/types/office';
 import type { WorkflowPreview } from '@/types/workflow';
@@ -48,21 +42,18 @@ export default function WorkflowPreviewPage({
                 />
 
                 <div className="flex items-center gap-2">
-                    <Select value={officeId} onValueChange={handleSelect}>
-                        <SelectTrigger className="w-[280px]">
-                            <SelectValue placeholder="Select an office" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {offices.map((office) => (
-                                <SelectItem
-                                    key={office.id}
-                                    value={String(office.id)}
-                                >
-                                    {office.office_name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <Combobox
+                        value={officeId}
+                        onValueChange={handleSelect}
+                        options={offices.map((office) => ({
+                            value: String(office.id),
+                            label: office.office_name,
+                        }))}
+                        placeholder="Select an office"
+                        searchPlaceholder="Search office..."
+                        emptyMessage="No offices found."
+                        className="w-[280px]"
+                    />
                 </div>
 
                 {preview && (

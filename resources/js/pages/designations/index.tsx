@@ -6,13 +6,7 @@ import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import {
     Table,
     TableBody,
@@ -94,46 +88,36 @@ export default function DesignationsIndex({
                         </Button>
                     </Can>
                     <div className="flex flex-wrap items-center gap-2">
-                        <Select
+                        <Combobox
                             value={officeFilter}
                             onValueChange={setOfficeFilter}
-                        >
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="All offices" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All offices</SelectItem>
-                                {offices.map((office) => (
-                                    <SelectItem
-                                        key={office.id}
-                                        value={String(office.id)}
-                                    >
-                                        {office.office_name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select
+                            options={[
+                                { value: 'all', label: 'All offices' },
+                                ...offices.map((office) => ({
+                                    value: String(office.id),
+                                    label: office.office_name,
+                                })),
+                            ]}
+                            placeholder="All offices"
+                            searchPlaceholder="Search office..."
+                            emptyMessage="No offices found."
+                            className="w-[200px]"
+                        />
+                        <Combobox
                             value={stepFilter}
                             onValueChange={setStepFilter}
-                        >
-                            <SelectTrigger className="w-[200px]">
-                                <SelectValue placeholder="All step types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">
-                                    All step types
-                                </SelectItem>
-                                {stepTypes.map((type) => (
-                                    <SelectItem
-                                        key={type.id}
-                                        value={String(type.id)}
-                                    >
-                                        {type.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            options={[
+                                { value: 'all', label: 'All step types' },
+                                ...stepTypes.map((type) => ({
+                                    value: String(type.id),
+                                    label: type.name,
+                                })),
+                            ]}
+                            placeholder="All step types"
+                            searchPlaceholder="Search step type..."
+                            emptyMessage="No step types found."
+                            className="w-[200px]"
+                        />
                         <Button variant="outline" onClick={applyFilters}>
                             <Search className="size-4" />
                             Filter

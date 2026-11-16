@@ -12,13 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Spinner } from '@/components/ui/spinner';
 import workflows from '@/routes/workflows';
 import type { Office } from '@/types/office';
@@ -98,7 +92,8 @@ export function StepDialog({
                             <Label htmlFor="workflow_step_type_id">
                                 Step Type *
                             </Label>
-                            <Select
+                            <Combobox
+                                id="workflow_step_type_id"
                                 value={
                                     data.workflow_step_type_id === ''
                                         ? ''
@@ -110,21 +105,14 @@ export function StepDialog({
                                         value === '' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="workflow_step_type_id">
-                                    <SelectValue placeholder="Select a step type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stepTypes.map((type) => (
-                                        <SelectItem
-                                            key={type.id}
-                                            value={String(type.id)}
-                                        >
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={stepTypes.map((type) => ({
+                                    value: String(type.id),
+                                    label: type.name,
+                                }))}
+                                placeholder="Select a step type"
+                                searchPlaceholder="Search step type..."
+                                emptyMessage="No step types found."
+                            />
                             <InputError
                                 message={errors.workflow_step_type_id}
                             />
@@ -143,7 +131,8 @@ export function StepDialog({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="office_id">Target Office</Label>
-                            <Select
+                            <Combobox
+                                id="office_id"
                                 value={
                                     data.office_id === ''
                                         ? 'filing'
@@ -155,24 +144,20 @@ export function StepDialog({
                                         value === 'filing' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="office_id">
-                                    <SelectValue placeholder="Filing office" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="filing">
-                                        Filing office (follows the filer)
-                                    </SelectItem>
-                                    {offices.map((office) => (
-                                        <SelectItem
-                                            key={office.id}
-                                            value={String(office.id)}
-                                        >
-                                            {office.office_name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={[
+                                    {
+                                        value: 'filing',
+                                        label: 'Filing office (follows the filer)',
+                                    },
+                                    ...offices.map((office) => ({
+                                        value: String(office.id),
+                                        label: office.office_name,
+                                    })),
+                                ]}
+                                placeholder="Filing office"
+                                searchPlaceholder="Search office..."
+                                emptyMessage="No offices found."
+                            />
                             <p className="text-xs text-muted-foreground">
                                 Only offices that answer this step can be chosen
                                 here; the full office list is available on the

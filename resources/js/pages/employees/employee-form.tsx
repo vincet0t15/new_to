@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Spinner } from '@/components/ui/spinner';
 import employees from '@/routes/employees';
 import type { Employee, EmployeeCreateRequest } from '@/types/employee';
@@ -69,23 +63,21 @@ function LookupSelect({
 }) {
     return (
         <Field id={id} label={`${label} *`} error={error}>
-            <Select
-                value={value === '' ? undefined : String(value)}
+            <Combobox
+                id={id}
+                value={value === '' ? '' : String(value)}
                 onValueChange={(next) =>
                     onChange(next === '' ? '' : Number(next))
                 }
-            >
-                <SelectTrigger id={id} className="w-full">
-                    <SelectValue placeholder={placeholder} />
-                </SelectTrigger>
-                <SelectContent>
-                    {options.map((option) => (
-                        <SelectItem key={option.id} value={String(option.id)}>
-                            {option.name}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+                options={options.map((option) => ({
+                    value: String(option.id),
+                    label: option.name,
+                }))}
+                placeholder={placeholder}
+                searchPlaceholder="Search options..."
+                emptyMessage="No matching options found."
+                className="w-full"
+            />
         </Field>
     );
 }

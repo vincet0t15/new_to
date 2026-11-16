@@ -12,13 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Spinner } from '@/components/ui/spinner';
 import positions from '@/routes/positions';
 import type { EmploymentType } from '@/types/employment-type';
@@ -90,7 +84,8 @@ export function EditPositionDialog({
                             <Label htmlFor="employment_type_id">
                                 Employment Type
                             </Label>
-                            <Select
+                            <Combobox
+                                id="employment_type_id"
                                 value={employmentTypeValue}
                                 onValueChange={(value) =>
                                     setData(
@@ -98,27 +93,23 @@ export function EditPositionDialog({
                                         value === 'none' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger
-                                    id="employment_type_id"
-                                    className="w-full"
-                                >
-                                    <SelectValue placeholder="Select an employment type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="none">
-                                        No employment type
-                                    </SelectItem>
-                                    {employmentTypes.map((employmentType) => (
-                                        <SelectItem
-                                            key={employmentType.id}
-                                            value={String(employmentType.id)}
-                                        >
-                                            {employmentType.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={[
+                                    {
+                                        value: 'none',
+                                        label: 'No employment type',
+                                    },
+                                    ...employmentTypes.map(
+                                        (employmentType) => ({
+                                            value: String(employmentType.id),
+                                            label: employmentType.name,
+                                        }),
+                                    ),
+                                ]}
+                                placeholder="Select an employment type"
+                                searchPlaceholder="Search employment type..."
+                                emptyMessage="No employment types found."
+                                className="w-full"
+                            />
                             <p className="text-xs text-muted-foreground">
                                 Optional. Leave blank if the position is not
                                 tied to one.

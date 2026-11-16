@@ -12,13 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Spinner } from '@/components/ui/spinner';
 import designations from '@/routes/designations';
 import type {
@@ -84,7 +78,8 @@ export function CreateDesignationDialog({
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="office_id">Office *</Label>
-                            <Select
+                            <Combobox
+                                id="office_id"
                                 value={
                                     data.office_id === ''
                                         ? ''
@@ -96,28 +91,22 @@ export function CreateDesignationDialog({
                                         value === '' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="office_id">
-                                    <SelectValue placeholder="Select an office" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {offices.map((office) => (
-                                        <SelectItem
-                                            key={office.id}
-                                            value={String(office.id)}
-                                        >
-                                            {office.office_name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={offices.map((office) => ({
+                                    value: String(office.id),
+                                    label: office.office_name,
+                                }))}
+                                placeholder="Select an office"
+                                searchPlaceholder="Search office..."
+                                emptyMessage="No offices found."
+                            />
                             <InputError message={errors.office_id} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="workflow_step_type_id">
                                 Step Type *
                             </Label>
-                            <Select
+                            <Combobox
+                                id="workflow_step_type_id"
                                 value={
                                     data.workflow_step_type_id === ''
                                         ? ''
@@ -129,28 +118,22 @@ export function CreateDesignationDialog({
                                         value === '' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="workflow_step_type_id">
-                                    <SelectValue placeholder="Select a step type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {stepTypes.map((type) => (
-                                        <SelectItem
-                                            key={type.id}
-                                            value={String(type.id)}
-                                        >
-                                            {type.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={stepTypes.map((type) => ({
+                                    value: String(type.id),
+                                    label: type.name,
+                                }))}
+                                placeholder="Select a step type"
+                                searchPlaceholder="Search step type..."
+                                emptyMessage="No step types found."
+                            />
                             <InputError
                                 message={errors.workflow_step_type_id}
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="employee_id">Employee *</Label>
-                            <Select
+                            <Combobox
+                                id="employee_id"
                                 value={
                                     data.employee_id === ''
                                         ? ''
@@ -162,24 +145,16 @@ export function CreateDesignationDialog({
                                         value === '' ? '' : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="employee_id">
-                                    <SelectValue placeholder="Select an employee" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {filteredEmployees.map((employee) => (
-                                        <SelectItem
-                                            key={employee.id}
-                                            value={String(employee.id)}
-                                        >
-                                            {employee.full_name}
-                                            {!employee.has_account
-                                                ? ' (no account)'
-                                                : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={filteredEmployees.map((employee) => ({
+                                    value: String(employee.id),
+                                    label: employee.has_account
+                                        ? employee.full_name
+                                        : `${employee.full_name} (no account)`,
+                                }))}
+                                placeholder="Select an employee"
+                                searchPlaceholder="Search employee..."
+                                emptyMessage="No employees found."
+                            />
                             <InputError message={errors.employee_id} />
                         </div>
                         <div className="flex items-center gap-2">

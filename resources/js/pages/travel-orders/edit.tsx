@@ -6,13 +6,7 @@ import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import travelOrdersRoutes from '@/routes/travel-orders';
 import type { TravelOrder, TravelOrderFormOptions } from '@/types';
 
@@ -72,7 +66,8 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                                     <Label htmlFor="travel_classification">
                                         Travel classification
                                     </Label>
-                                    <Select
+                                    <Combobox
+                                        id="travel_classification"
                                         value={data.travel_classification}
                                         onValueChange={(value) =>
                                             setData(
@@ -80,23 +75,16 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                                                 value,
                                             )
                                         }
-                                    >
-                                        <SelectTrigger id="travel_classification">
-                                            <SelectValue placeholder="Select classification" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {options.classifications.map(
-                                                (item) => (
-                                                    <SelectItem
-                                                        key={item}
-                                                        value={item}
-                                                    >
-                                                        {item}
-                                                    </SelectItem>
-                                                ),
-                                            )}
-                                        </SelectContent>
-                                    </Select>
+                                        options={options.classifications.map(
+                                            (item) => ({
+                                                value: item,
+                                                label: item,
+                                            }),
+                                        )}
+                                        placeholder="Select classification"
+                                        searchPlaceholder="Search classification..."
+                                        emptyMessage="No classifications found."
+                                    />
                                     <InputError
                                         message={errors.travel_classification}
                                     />
@@ -105,26 +93,22 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                                     <Label htmlFor="fund_source">
                                         Fund source
                                     </Label>
-                                    <Select
+                                    <Combobox
+                                        id="fund_source"
                                         value={data.fund_source}
                                         onValueChange={(value) =>
                                             setData('fund_source', value)
                                         }
-                                    >
-                                        <SelectTrigger id="fund_source">
-                                            <SelectValue placeholder="Select fund source" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {options.fundSources.map((item) => (
-                                                <SelectItem
-                                                    key={item}
-                                                    value={item}
-                                                >
-                                                    {item}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                        options={options.fundSources.map(
+                                            (item) => ({
+                                                value: item,
+                                                label: item,
+                                            }),
+                                        )}
+                                        placeholder="Select fund source"
+                                        searchPlaceholder="Search fund source..."
+                                        emptyMessage="No fund sources found."
+                                    />
                                     <InputError message={errors.fund_source} />
                                 </div>
                             </div>

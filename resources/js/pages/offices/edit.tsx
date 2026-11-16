@@ -12,13 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Combobox } from '@/components/ui/combobox';
 import { Spinner } from '@/components/ui/spinner';
 import offices from '@/routes/offices';
 import type { Office, OfficeUpdateRequest } from '@/types/office';
@@ -103,7 +97,8 @@ export function EditOfficeDialog({
                             <Label htmlFor="workflow_id">
                                 Approval Workflow
                             </Label>
-                            <Select
+                            <Combobox
+                                id="workflow_id"
                                 value={
                                     data.workflow_id === '' ||
                                     data.workflow_id === null
@@ -118,27 +113,22 @@ export function EditOfficeDialog({
                                             : Number(value),
                                     )
                                 }
-                            >
-                                <SelectTrigger id="workflow_id">
-                                    <SelectValue placeholder="Default workflow" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="default">
-                                        Default workflow (fallback)
-                                    </SelectItem>
-                                    {workflows.map((workflow) => (
-                                        <SelectItem
-                                            key={workflow.id}
-                                            value={String(workflow.id)}
-                                        >
-                                            {workflow.name}
-                                            {!workflow.is_active
-                                                ? ' (inactive)'
-                                                : ''}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={[
+                                    {
+                                        value: 'default',
+                                        label: 'Default workflow (fallback)',
+                                    },
+                                    ...workflows.map((workflow) => ({
+                                        value: String(workflow.id),
+                                        label: workflow.is_active
+                                            ? workflow.name
+                                            : `${workflow.name} (inactive)`,
+                                    })),
+                                ]}
+                                placeholder="Default workflow"
+                                searchPlaceholder="Search workflow..."
+                                emptyMessage="No workflows found."
+                            />
                             <p className="text-xs text-muted-foreground">
                                 Leave blank to follow the default chain.
                             </p>
