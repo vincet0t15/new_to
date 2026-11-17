@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\User;
 use App\Services\PortalResolver;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -65,6 +66,54 @@ class HandleInertiaRequests extends Middleware
                 : [],
             'currentPortal' => $current?->value,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'notifications' => $this->notifications($request),
+            'unreadNotificationsCount' => $this->unreadNotificationsCount($request),
         ];
+    }
+
+    /**
+     * The latest in-app notifications shown under the header bell.
+     *
+     * Only the compact shape the bell needs is shared: the full notification
+     * row stays on the server and is fetched by opening it.
+     *
+     * @return array<int, array{id: string, title: string, message: string, url: string|null, read_at: string|null, created_at: string|null}>
+     */
+    private function notifications(Request $request): array
+    {
+        $user = $request->user();
+
+        if (! $user instanceof User) {
+            return [];
+        }
+
+        return $user->notifications()
+            ->limit(8)
+            ->get()
+            ->map(function (DatabaseNotification $notification): array {
+                $data = $notification->data;
+
+                return [
+                    'id' => $notification->id,
+                    'title' => is_string($data['title'] ?? null) ? $data['title'] : '',
+                    'message' => is_string($data['message'] ?? null) ? $data['message'] : '',
+                    'url' => is_string($data['url'] ?? null) ? $data['url'] : null,
+                    'read_at' => $notification->read_at?->toIso8601String(),
+                    'created_at' => $notification->created_at?->toIso8601String(),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * How many notifications the signed-in account has not opened yet.
+     */
+    private function unreadNotificationsCount(Request $request): int
+    {
+        $user = $request->user();
+
+        return $user instanceof User
+            ? $user->unreadNotifications()->count()
+            : 0;
     }
 }

@@ -3,6 +3,7 @@ export type * from './auth';
 export type * from './employee';
 export type * from './employment-type';
 export type * from './navigation';
+export type * from './notification';
 export type * from './office';
 export type * from './pagination';
 export type * from './portal';
