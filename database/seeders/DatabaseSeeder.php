@@ -19,9 +19,9 @@ class DatabaseSeeder extends Seeder
             SuperAdminSeeder::class,
             OfficeSeeder::class,
             SampleEmploymentAndPositionSeeder::class,
-            EmployeeSeeder::class,
             WorkflowSeeder::class,
             TravelOptionsSeeder::class,
+            LocationSeeder::class,
         ]);
     }
 }
