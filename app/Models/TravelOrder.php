@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -30,9 +31,15 @@ use Illuminate\Support\Carbon;
  * @property int|null $workflow_id
  * @property string|null $purpose
  * @property string|null $submission_notes
+ * @property string|null $other_expenses
  * @property string|null $destination
  * @property Carbon|null $date_from
  * @property Carbon|null $date_to
+ * @property int|null $travel_classification_id
+ * @property int|null $fund_source_id
+ * @property int|null $origin_id
+ * @property int|null $destination_id
+ * @property int|null $official_station_id
  * @property string|null $fund_source
  * @property string|null $travel_classification
  * @property TravelOrderStatus $status
@@ -51,6 +58,13 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $updated_at
  * @property-read Employee|null $employee
  * @property-read Office|null $office
+ * @property-read TravelClassification|null $travelClassification
+ * @property-read FundSource|null $fundSource
+ * @property-read Location|null $origin
+ * @property-read Location|null $destinationLocation
+ * @property-read Location|null $officialStation
+ * @property-read Collection<int, ExpenseType> $expenseTypes
+ * @property-read Collection<int, TransportationMode> $transportationModes
  * @property-read User $creator
  * @property-read User|null $returnedBy
  * @property-read Workflow|null $workflow
@@ -67,9 +81,15 @@ use Illuminate\Support\Carbon;
     'workflow_id',
     'purpose',
     'submission_notes',
+    'other_expenses',
     'destination',
     'date_from',
     'date_to',
+    'travel_classification_id',
+    'fund_source_id',
+    'origin_id',
+    'destination_id',
+    'official_station_id',
     'fund_source',
     'travel_classification',
     'status',
@@ -104,6 +124,69 @@ class TravelOrder extends Model
     public function office(): BelongsTo
     {
         return $this->belongsTo(Office::class);
+    }
+
+    /**
+     * @return BelongsTo<TravelClassification, $this>
+     */
+    public function travelClassification(): BelongsTo
+    {
+        return $this->belongsTo(TravelClassification::class);
+    }
+
+    /**
+     * @return BelongsTo<FundSource, $this>
+     */
+    public function fundSource(): BelongsTo
+    {
+        return $this->belongsTo(FundSource::class);
+    }
+
+    /**
+     * @return BelongsTo<Location, $this>
+     */
+    public function origin(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'origin_id');
+    }
+
+    /**
+     * The destination lookup. Named destinationLocation so it does not clash
+     * with the legacy destination text column.
+     *
+     * @return BelongsTo<Location, $this>
+     */
+    public function destinationLocation(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'destination_id');
+    }
+
+    /**
+     * @return BelongsTo<Location, $this>
+     */
+    public function officialStation(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'official_station_id');
+    }
+
+    /**
+     * @return BelongsToMany<ExpenseType, $this>
+     */
+    public function expenseTypes(): BelongsToMany
+    {
+        return $this->belongsToMany(ExpenseType::class, 'travel_order_expense_type')
+            ->withTimestamps()
+            ->orderBy('name');
+    }
+
+    /**
+     * @return BelongsToMany<TransportationMode, $this>
+     */
+    public function transportationModes(): BelongsToMany
+    {
+        return $this->belongsToMany(TransportationMode::class, 'travel_order_transportation_mode')
+            ->withTimestamps()
+            ->orderBy('name');
     }
 
     /**
@@ -256,6 +339,11 @@ class TravelOrder extends Model
             'revision_number' => 'integer',
             'returned_by_user_id' => 'integer',
             'returned_from_step_index' => 'integer',
+            'travel_classification_id' => 'integer',
+            'fund_source_id' => 'integer',
+            'origin_id' => 'integer',
+            'destination_id' => 'integer',
+            'official_station_id' => 'integer',
             'date_from' => 'date',
             'date_to' => 'date',
             'status' => TravelOrderStatus::class,

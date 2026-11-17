@@ -47,6 +47,8 @@ expect()->extend('toBeOne', function () {
 |
 */
 
+require_once __DIR__.'/Feature/TravelOrders/routing_helpers.php';
+
 /**
  * Grant an account entry to the admin portal without granting anything else.
  *

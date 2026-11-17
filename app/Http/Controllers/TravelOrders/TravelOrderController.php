@@ -9,7 +9,12 @@ use App\Http\Requests\TravelOrders\ResubmitTravelOrderRequest;
 use App\Http\Requests\TravelOrders\StoreTravelOrderRequest;
 use App\Http\Requests\TravelOrders\UpdateTravelOrderRequest;
 use App\Models\Employee;
+use App\Models\ExpenseType;
+use App\Models\FundSource;
+use App\Models\Location;
 use App\Models\Office;
+use App\Models\TransportationMode;
+use App\Models\TravelClassification;
 use App\Models\TravelOrder;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
@@ -80,17 +85,22 @@ class TravelOrderController extends Controller
         $office = $employee?->office;
 
         return Inertia::render('travel-orders/create', [
-            'options' => $this->formOptions($office),
+            'options' => $this->formOptions(),
             'initial' => [
                 'employee_id' => $employee?->id,
                 'office_id' => $office?->id,
-                'travel_classification' => '',
-                'fund_source' => '',
+                'travel_classification_id' => '',
+                'fund_source_id' => '',
+                'origin_id' => '',
+                'destination_id' => '',
+                'official_station_id' => '',
                 'purpose' => '',
-                'destination' => '',
                 'date_from' => '',
                 'date_to' => '',
                 'submission_notes' => '',
+                'other_expenses' => '',
+                'expense_type_ids' => [],
+                'transportation_mode_ids' => [],
             ],
             'routePreview' => $office === null ? null : $this->routes->preview($office),
         ]);
@@ -112,18 +122,14 @@ class TravelOrderController extends Controller
         try {
             $travelOrder = DB::transaction(function () use ($data, $user, $submit): TravelOrder {
                 $travelOrder = $this->travelOrders->create([
+                    ...$this->contentPayload($data),
                     'employee_id' => $data['employee_id'] ?? $user->employee?->id,
                     'office_id' => $data['office_id'] ?? $user->employee?->office_id,
                     'created_by' => $user->id,
-                    'travel_classification' => $data['travel_classification'] ?? null,
-                    'fund_source' => $data['fund_source'] ?? null,
-                    'purpose' => $data['purpose'],
-                    'submission_notes' => $data['submission_notes'] ?? null,
-                    'destination' => $data['destination'],
-                    'date_from' => $data['date_from'],
-                    'date_to' => $data['date_to'],
                     'status' => TravelOrderStatus::Draft,
                 ]);
+
+                $this->syncSelections($travelOrder, $data);
 
                 if ($submit) {
                     $this->submissions->submit($travelOrder, $user);
@@ -163,11 +169,22 @@ class TravelOrderController extends Controller
             return to_route('travel-orders.show', $travelOrder);
         }
 
-        $travelOrder->load(['office', 'employee', 'returnedBy']);
+        $travelOrder->load([
+            'office',
+            'employee',
+            'returnedBy',
+            'travelClassification',
+            'fundSource',
+            'origin',
+            'destinationLocation',
+            'officialStation',
+            'expenseTypes',
+            'transportationModes',
+        ]);
 
         return Inertia::render('travel-orders/edit', [
             'travelOrder' => $travelOrder,
-            'options' => $this->formOptions($travelOrder->office),
+            'options' => $this->formOptions(),
             'canSubmit' => $travelOrder->status === TravelOrderStatus::Draft
                 && $travelOrder->created_by === $request->user()?->id,
             'canResubmit' => $travelOrder->status === TravelOrderStatus::Returned
@@ -196,17 +213,14 @@ class TravelOrderController extends Controller
 
         $data = $request->validated();
 
-        $this->travelOrders->update($travelOrder, [
-            'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
-            'office_id' => $data['office_id'] ?? $travelOrder->office_id,
-            'travel_classification' => $data['travel_classification'] ?? null,
-            'fund_source' => $data['fund_source'] ?? null,
-            'purpose' => $data['purpose'],
-            'submission_notes' => $data['submission_notes'] ?? null,
-            'destination' => $data['destination'],
-            'date_from' => $data['date_from'],
-            'date_to' => $data['date_to'],
-        ]);
+        DB::transaction(function () use ($data, $travelOrder): void {
+            $this->travelOrders->update($travelOrder, [
+                ...$this->contentPayload($data),
+                'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
+                'office_id' => $data['office_id'] ?? $travelOrder->office_id,
+            ]);
+            $this->syncSelections($travelOrder, $data);
+        });
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Travel order updated.')]);
 
@@ -256,16 +270,11 @@ class TravelOrderController extends Controller
         try {
             DB::transaction(function () use ($data, $travelOrder, $request, $remarks): void {
                 $this->travelOrders->update($travelOrder, [
+                    ...$this->contentPayload($data),
                     'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
                     'office_id' => $data['office_id'] ?? $travelOrder->office_id,
-                    'travel_classification' => $data['travel_classification'] ?? null,
-                    'fund_source' => $data['fund_source'] ?? null,
-                    'purpose' => $data['purpose'],
-                    'submission_notes' => $data['submission_notes'] ?? null,
-                    'destination' => $data['destination'],
-                    'date_from' => $data['date_from'],
-                    'date_to' => $data['date_to'],
                 ]);
+                $this->syncSelections($travelOrder, $data);
 
                 $this->resubmissions->resubmit(
                     $travelOrder,
@@ -302,6 +311,13 @@ class TravelOrderController extends Controller
             'workflow',
             'deliveries.user',
             'actions.actor',
+            'travelClassification',
+            'fundSource',
+            'origin',
+            'destinationLocation',
+            'officialStation',
+            'expenseTypes',
+            'transportationModes',
         ]);
 
         return Inertia::render('travel-orders/show', [
@@ -349,9 +365,13 @@ class TravelOrderController extends Controller
     /**
      * The shared option lists for the form.
      *
+     * Inactive lookups are still sent so an order that already references one
+     * can render its saved value while editing. The form hides them unless
+     * they are the selected value.
+     *
      * @return array<string, mixed>
      */
-    private function formOptions(?Office $office): array
+    private function formOptions(): array
     {
         return [
             'offices' => Office::query()->orderBy('office_name')->get(['id', 'office_name']),
@@ -367,19 +387,146 @@ class TravelOrderController extends Controller
                 ])
                 ->values()
                 ->all(),
-            'classifications' => [
-                'Local Travel',
-                'Foreign Travel',
-                'Seminar/Training',
-                'Official Business',
-            ],
-            'fundSources' => [
-                'MOOE',
-                'Capital Outlay',
-                'Personal Funds',
-                'Other',
-            ],
+            'classifications' => TravelClassification::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active'])
+                ->map(fn (TravelClassification $classification): array => [
+                    'id' => $classification->id,
+                    'name' => $classification->name,
+                    'is_active' => $classification->is_active,
+                ])
+                ->values()
+                ->all(),
+            'fundSources' => FundSource::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active'])
+                ->map(fn (FundSource $fundSource): array => [
+                    'id' => $fundSource->id,
+                    'name' => $fundSource->name,
+                    'is_active' => $fundSource->is_active,
+                ])
+                ->values()
+                ->all(),
+            'locations' => Location::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active'])
+                ->map(fn (Location $location): array => [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'is_active' => $location->is_active,
+                ])
+                ->values()
+                ->all(),
+            'expenseTypes' => ExpenseType::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active'])
+                ->map(fn (ExpenseType $expenseType): array => [
+                    'id' => $expenseType->id,
+                    'name' => $expenseType->name,
+                    'is_active' => $expenseType->is_active,
+                ])
+                ->values()
+                ->all(),
+            'transportationModes' => TransportationMode::query()
+                ->orderBy('name')
+                ->get(['id', 'name', 'is_active'])
+                ->map(fn (TransportationMode $mode): array => [
+                    'id' => $mode->id,
+                    'name' => $mode->name,
+                    'is_active' => $mode->is_active,
+                ])
+                ->values()
+                ->all(),
         ];
+    }
+
+    /**
+     * The header columns, with the legacy text mirrors kept in step.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function contentPayload(array $data): array
+    {
+        $classificationId = $this->intOrNull($data['travel_classification_id'] ?? null);
+        $fundSourceId = $this->intOrNull($data['fund_source_id'] ?? null);
+        $destinationId = $this->intOrNull($data['destination_id'] ?? null);
+
+        $classification = $classificationId === null
+            ? null
+            : TravelClassification::query()->find($classificationId);
+        $fundSource = $fundSourceId === null
+            ? null
+            : FundSource::query()->find($fundSourceId);
+        $destination = $destinationId === null
+            ? null
+            : Location::query()->find($destinationId);
+
+        return [
+            'travel_classification_id' => $classification?->id,
+            'travel_classification' => $classification?->name,
+            'fund_source_id' => $fundSource?->id,
+            'fund_source' => $fundSource?->name,
+            'origin_id' => $this->intOrNull($data['origin_id'] ?? null),
+            'destination_id' => $destination?->id,
+            'destination' => $destination->name ?? null,
+            'official_station_id' => $this->intOrNull($data['official_station_id'] ?? null),
+            'other_expenses' => filled($data['other_expenses'] ?? null)
+                ? trim((string) $data['other_expenses'])
+                : null,
+            'purpose' => $data['purpose'],
+            'submission_notes' => $data['submission_notes'] ?? null,
+            'date_from' => $data['date_from'],
+            'date_to' => $data['date_to'],
+        ];
+    }
+
+    /**
+     * Replace the header selections that live in pivot tables.
+     *
+     * A request that omits an array leaves the existing selection alone, so
+     * older clients and partial updates cannot silently clear the form.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function syncSelections(TravelOrder $travelOrder, array $data): void
+    {
+        if (array_key_exists('expense_type_ids', $data)) {
+            $travelOrder->expenseTypes()->sync($this->intList($data['expense_type_ids']));
+        }
+
+        if (array_key_exists('transportation_mode_ids', $data)) {
+            $travelOrder->transportationModes()->sync($this->intList($data['transportation_mode_ids']));
+        }
+    }
+
+    private function intOrNull(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || ! is_numeric($value)) {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function intList(mixed $value): array
+    {
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $ids = [];
+
+        foreach ($value as $entry) {
+            if (is_numeric($entry)) {
+                $ids[] = (int) $entry;
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     /**

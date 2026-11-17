@@ -4,6 +4,8 @@ use App\Enums\SystemRole;
 use App\Enums\TravelOrderStatus;
 use App\Enums\WorkflowEvent;
 use App\Exceptions\TravelOrderRoutingException;
+use App\Models\Location;
+use App\Models\TravelClassification;
 use App\Models\TravelOrder;
 use App\Notifications\TravelOrderNotification;
 use App\Services\TravelOrderApprovalService;
@@ -109,10 +111,14 @@ test('saving a returned travel order keeps it returned', function () {
     app(TravelOrderApprovalService::class)
         ->returnTo($order, $chain['headUser'], 'Please attach invitation.');
 
+    $classification = TravelClassification::factory()->create();
+    $destination = Location::factory()->create();
+
     $this->actingAs($chain['filer'])
         ->put(route('travel-orders.update', $order), [
+            'travel_classification_id' => $classification->id,
+            'destination_id' => $destination->id,
             'purpose' => 'Revised purpose',
-            'destination' => $order->destination ?? 'Manila',
             'date_from' => '2026-12-01',
             'date_to' => '2026-12-02',
         ])
@@ -131,10 +137,14 @@ test('resubmission requires remarks', function () {
     app(TravelOrderApprovalService::class)
         ->returnTo($order, $chain['headUser'], 'Please attach invitation.');
 
+    $classification = TravelClassification::factory()->create();
+    $destination = Location::factory()->create();
+
     $this->actingAs($chain['filer'])
         ->post(route('travel-orders.resubmit', $order), [
+            'travel_classification_id' => $classification->id,
+            'destination_id' => $destination->id,
             'purpose' => 'Revised purpose',
-            'destination' => $order->destination ?? 'Manila',
             'date_from' => '2026-12-01',
             'date_to' => '2026-12-02',
             'revision_remarks' => '   ',

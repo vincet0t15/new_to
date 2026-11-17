@@ -22,16 +22,40 @@ final class TravelOrderChangeDetector
      */
     public function snapshot(TravelOrder $order): array
     {
+        $order->loadMissing(['expenseTypes', 'transportationModes']);
+
         $snapshot = [];
 
         foreach ($this->trackedFields() as $field) {
+            if ($field === 'expense_type_ids') {
+                $snapshot[$field] = $order->expenseTypes
+                    ->pluck('id')
+                    ->map(fn (int|string $id): int => (int) $id)
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                continue;
+            }
+
+            if ($field === 'transportation_mode_ids') {
+                $snapshot[$field] = $order->transportationModes
+                    ->pluck('id')
+                    ->map(fn (int|string $id): int => (int) $id)
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                continue;
+            }
+
             $value = $order->getAttribute($field);
 
             if ($value instanceof \DateTimeInterface) {
                 $value = $value->format('Y-m-d');
             }
 
-            if ($field === 'employee_id' && $value !== null) {
+            if (str_ends_with($field, '_id') && $value !== null) {
                 $value = (int) $value;
             }
 

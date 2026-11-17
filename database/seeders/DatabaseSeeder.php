@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             SampleEmploymentAndPositionSeeder::class,
             EmployeeSeeder::class,
             WorkflowSeeder::class,
+            TravelOptionsSeeder::class,
         ]);
     }
 }

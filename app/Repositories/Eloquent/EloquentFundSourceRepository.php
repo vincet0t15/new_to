@@ -19,7 +19,7 @@ class EloquentFundSourceRepository implements FundSourceRepository
             ->selectSub(
                 TravelOrder::query()
                     ->selectRaw('count(*)')
-                    ->whereColumn('fund_source', 'fund_sources.name'),
+                    ->whereColumn('fund_source_id', 'fund_sources.id'),
                 'usage_count',
             )
             ->when($search !== null && $search !== '', function ($query) use ($search) {
@@ -60,7 +60,12 @@ class EloquentFundSourceRepository implements FundSourceRepository
 
     public function usageCount(FundSource $fundSource): int
     {
-        return TravelOrder::query()->where('fund_source', $fundSource->name)->count();
+        return TravelOrder::query()
+            ->where(function ($query) use ($fundSource): void {
+                $query->where('fund_source_id', $fundSource->id)
+                    ->orWhere('fund_source', $fundSource->name);
+            })
+            ->count();
     }
 
     public function delete(FundSource $fundSource): void

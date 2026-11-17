@@ -46,7 +46,18 @@ export function TravelOrderDetails({
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Destination</dt>
-                    <Value>{travelOrder.destination}</Value>
+                    <Value>
+                        {travelOrder.destinationLocation?.name ??
+                            travelOrder.destination}
+                    </Value>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">Origin</dt>
+                    <Value>{travelOrder.origin?.name}</Value>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">Official station</dt>
+                    <Value>{travelOrder.officialStation?.name}</Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Dates</dt>
@@ -56,11 +67,44 @@ export function TravelOrderDetails({
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Classification</dt>
-                    <Value>{travelOrder.travel_classification}</Value>
+                    <Value>
+                        {travelOrder.travelClassification?.name ??
+                            travelOrder.travel_classification}
+                    </Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Fund source</dt>
-                    <Value>{travelOrder.fund_source}</Value>
+                    <Value>
+                        {travelOrder.fundSource?.name ??
+                            travelOrder.fund_source}
+                    </Value>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">
+                        Transportation modes
+                    </dt>
+                    <Value>
+                        {travelOrder.transportationModes?.length
+                            ? travelOrder.transportationModes
+                                  .map((mode) => mode.name)
+                                  .join(', ')
+                            : null}
+                    </Value>
+                </div>
+                <div className="sm:col-span-2">
+                    <dt className="text-muted-foreground">
+                        Expenses authorized
+                    </dt>
+                    <Value>
+                        {travelOrder.expenseTypes?.length
+                            ? travelOrder.expenseTypes
+                                  .map((expenseType) => expenseType.name)
+                                  .join(', ')
+                            : null}
+                        {travelOrder.other_expenses
+                            ? ` — ${travelOrder.other_expenses}`
+                            : ''}
+                    </Value>
                 </div>
             </dl>
             {travelOrder.submission_notes && (

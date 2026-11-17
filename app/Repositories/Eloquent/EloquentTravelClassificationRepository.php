@@ -19,7 +19,7 @@ class EloquentTravelClassificationRepository implements TravelClassificationRepo
             ->selectSub(
                 TravelOrder::query()
                     ->selectRaw('count(*)')
-                    ->whereColumn('travel_classification', 'travel_classifications.name'),
+                    ->whereColumn('travel_classification_id', 'travel_classifications.id'),
                 'usage_count',
             )
             ->when($search !== null && $search !== '', function ($query) use ($search) {
@@ -58,7 +58,12 @@ class EloquentTravelClassificationRepository implements TravelClassificationRepo
 
     public function usageCount(TravelClassification $travelClassification): int
     {
-        return TravelOrder::query()->where('travel_classification', $travelClassification->name)->count();
+        return TravelOrder::query()
+            ->where(function ($query) use ($travelClassification): void {
+                $query->where('travel_classification_id', $travelClassification->id)
+                    ->orWhere('travel_classification', $travelClassification->name);
+            })
+            ->count();
     }
 
     public function delete(TravelClassification $travelClassification): void

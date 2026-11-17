@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -61,5 +62,14 @@ class TransportationMode extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * @return BelongsToMany<TravelOrder, $this>
+     */
+    public function travelOrders(): BelongsToMany
+    {
+        return $this->belongsToMany(TravelOrder::class, 'travel_order_transportation_mode')
+            ->withTimestamps();
     }
 }

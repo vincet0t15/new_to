@@ -45,4 +45,28 @@ class Location extends Model
     {
         return $this->belongsToMany(PerDiemConfiguration::class, 'per_diem_configuration_location');
     }
+
+    /**
+     * @return HasMany<TravelOrder, $this>
+     */
+    public function originTravelOrders(): HasMany
+    {
+        return $this->hasMany(TravelOrder::class, 'origin_id');
+    }
+
+    /**
+     * @return HasMany<TravelOrder, $this>
+     */
+    public function destinationTravelOrders(): HasMany
+    {
+        return $this->hasMany(TravelOrder::class, 'destination_id');
+    }
+
+    /**
+     * @return HasMany<TravelOrder, $this>
+     */
+    public function officialStationTravelOrders(): HasMany
+    {
+        return $this->hasMany(TravelOrder::class, 'official_station_id');
+    }
 }

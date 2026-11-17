@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'description', 'is_active'])]
 class FundSource extends Model
@@ -26,5 +27,13 @@ class FundSource extends Model
     public function scopeActive(Builder $q): Builder
     {
         return $q->where('is_active', true);
+    }
+
+    /**
+     * @return HasMany<TravelOrder, $this>
+     */
+    public function travelOrders(): HasMany
+    {
+        return $this->hasMany(TravelOrder::class);
     }
 }

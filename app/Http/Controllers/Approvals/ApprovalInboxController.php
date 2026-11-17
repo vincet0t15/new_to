@@ -99,6 +99,13 @@ class ApprovalInboxController extends Controller
             'workflow',
             'deliveries.user',
             'actions.actor',
+            'travelClassification',
+            'fundSource',
+            'origin',
+            'destinationLocation',
+            'officialStation',
+            'expenseTypes',
+            'transportationModes',
         ]);
 
         $prefix = $this->portalPrefix($request);
