@@ -33,12 +33,17 @@ export type TravelOrderAction = {
     step_index: number | null;
     step_label: string | null;
     event: string;
-    revision_number: number | null;
+    revision_id: number | null;
     actor_user_id: number | null;
     remarks: string | null;
     meta: Record<string, unknown> | null;
     created_at: string | null;
     actor?: { id: number; name: string } | null;
+    travelOrder?: {
+        id: number;
+        control_no: string | null;
+        to_number: string | null;
+    } | null;
 };
 
 export type TravelOrderRevision = {

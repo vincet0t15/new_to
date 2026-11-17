@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\TravelOrderRegisterController;
 use App\Http\Controllers\Approvals\ApprovalInboxController;
 use App\Http\Controllers\Approvals\TravelOrderActionController;
 use Illuminate\Support\Facades\Route;
@@ -89,4 +92,18 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
     ->group(function () {
         Route::inertia('dashboard', 'portals/admin/dashboard')
             ->name('dashboard');
+
+        Route::middleware('permission:travel-orders.view-all')->group(function () {
+            Route::get('travel-orders', [TravelOrderRegisterController::class, 'index'])
+                ->name('travel-orders.index');
+            Route::get('reports', [ReportsController::class, 'index'])
+                ->name('reports.index');
+            Route::get('reports/export', [ReportsController::class, 'export'])
+                ->name('reports.export');
+        });
+
+        Route::middleware('permission:audit.view')->group(function () {
+            Route::get('audit', [AuditLogController::class, 'index'])
+                ->name('audit.index');
+        });
     });

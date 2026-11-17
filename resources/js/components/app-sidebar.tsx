@@ -2,6 +2,7 @@ import { Link, usePage } from '@inertiajs/react';
 import {
     Briefcase,
     Building2,
+    Car,
     FileText,
     GitBranch,
     Inbox,
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import accounts from '@/routes/accounts';
+import admin from '@/routes/admin';
 import departmentHead from '@/routes/department-head';
 import designations from '@/routes/designations';
 import employees from '@/routes/employees';
@@ -32,6 +34,7 @@ import offices from '@/routes/offices';
 import positions from '@/routes/positions';
 import roles from '@/routes/roles';
 import travelOrders from '@/routes/travel-orders';
+import transportationModes from '@/routes/transportation-modes';
 import workflowStepTypes from '@/routes/workflow-step-types';
 import workflows from '@/routes/workflows';
 import type { NavGroup } from '@/types';
@@ -59,6 +62,17 @@ function overviewGroup(href: string, title: string): NavGroup {
 function adminGroups(dashboardUrl: string): NavGroup[] {
     return [
         overviewGroup(dashboardUrl, 'Dashboard'),
+        {
+            label: 'Transportation',
+            items: [
+                {
+                    title: 'Transportation Modes',
+                    href: transportationModes.index().url,
+                    icon: Car,
+                    permission: 'transportation-modes.view',
+                },
+            ],
+        },
         {
             label: 'Organization',
             items: [
@@ -102,6 +116,35 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: roles.index().url,
                     icon: ShieldCheck,
                     permission: 'roles.view',
+                },
+            ],
+        },
+        {
+            label: 'Travel Orders',
+            items: [
+                {
+                    title: 'New Travel Order',
+                    href: travelOrders.create().url,
+                    icon: Plus,
+                    permission: 'travel-orders.create',
+                },
+                {
+                    title: 'Register',
+                    href: admin.travelOrders.index().url,
+                    icon: FileText,
+                    permission: 'travel-orders.view-all',
+                },
+                {
+                    title: 'Reports',
+                    href: admin.reports.index().url,
+                    icon: FileText,
+                    permission: 'travel-orders.view-all',
+                },
+                {
+                    title: 'Audit Log',
+                    href: admin.audit.index().url,
+                    icon: ShieldCheck,
+                    permission: 'audit.view',
                 },
             ],
         },
