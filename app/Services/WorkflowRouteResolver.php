@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Models\Office;
 use App\Models\OfficeDesignation;
+use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 
 /**
  * Resolves the approval chain an office's travel orders follow.
@@ -66,6 +68,66 @@ final class WorkflowRouteResolver
         }
 
         return null;
+    }
+
+    /**
+     * The office that answers a step for a given filing office.
+     *
+     * A step that names no office follows the filing office, which is how the
+     * single Department Head step becomes every department's head.
+     */
+    public function targetOfficeFor(WorkflowStep $step, Office $filingOffice): Office
+    {
+        return $step->office ?? $filingOffice;
+    }
+
+    /**
+     * The active designations that answer a step for a filing office.
+     *
+     * The employee and login are eager-loaded because the routing engine needs
+     * to know not only who holds the seat but whether that person can receive
+     * a copy.
+     *
+     * @return Collection<int, OfficeDesignation>
+     */
+    public function designationsFor(WorkflowStep $step, Office $filingOffice): Collection
+    {
+        $targetOffice = $this->targetOfficeFor($step, $filingOffice);
+
+        return OfficeDesignation::query()
+            ->current()
+            ->where('office_id', $targetOffice->id)
+            ->where('workflow_step_type_id', $step->workflow_step_type_id)
+            ->with(['employee.user:id,employee_id'])
+            ->orderBy('is_deputy')
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
+     * The login accounts that should receive a step.
+     *
+     * Every current holder and deputy gets a copy. A step that opts to skip
+     * its creator drops that account when it is among the holders, because a
+     * travel order must not approve itself.
+     *
+     * @return BaseCollection<int, User>
+     */
+    public function recipientsFor(WorkflowStep $step, Office $filingOffice, ?int $excludeUserId = null): BaseCollection
+    {
+        $recipients = $this->designationsFor($step, $filingOffice)
+            ->map(fn (OfficeDesignation $designation): ?User => $designation->employee->user)
+            ->filter(fn (?User $user): bool => $user instanceof User)
+            ->unique('id')
+            ->values();
+
+        if ($excludeUserId !== null && $step->auto_skip_creator) {
+            $recipients = $recipients
+                ->reject(fn (User $user): bool => $user->id === $excludeUserId)
+                ->values();
+        }
+
+        return $recipients;
     }
 
     /**
@@ -184,16 +246,9 @@ final class WorkflowRouteResolver
      */
     private function previewStep(WorkflowStep $step, Office $filingOffice): array
     {
-        $targetOffice = $step->office ?? $filingOffice;
+        $targetOffice = $this->targetOfficeFor($step, $filingOffice);
 
-        $designations = OfficeDesignation::query()
-            ->current()
-            ->where('office_id', $targetOffice->id)
-            ->where('workflow_step_type_id', $step->workflow_step_type_id)
-            ->with(['employee.user:id,employee_id'])
-            ->orderBy('is_deputy')
-            ->orderBy('id')
-            ->get();
+        $designations = $this->designationsFor($step, $filingOffice);
 
         $designees = $designations
             ->map(fn (OfficeDesignation $designation): array => [

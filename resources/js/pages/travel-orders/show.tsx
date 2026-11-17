@@ -1,117 +1,117 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Pencil, Send, Trash2 } from 'lucide-react';
+import { Can } from '@/components/can';
 import Heading from '@/components/heading';
-import { Badge } from '@/components/ui/badge';
+import { ActionTimeline } from '@/components/travel-orders/action-timeline';
+import { RouteProgress } from '@/components/travel-orders/route-progress';
+import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
 import { Button } from '@/components/ui/button';
 import travelOrdersRoutes from '@/routes/travel-orders';
-import type { TravelOrder } from '@/types';
+import type {
+    TravelOrder,
+    TravelOrderAbilities,
+    TravelOrderRouteStep,
+    TravelOrderTimelineEntry,
+} from '@/types';
 
 type Props = {
     travelOrder: TravelOrder;
+    route: TravelOrderRouteStep[];
+    timeline: TravelOrderTimelineEntry[];
+    can: TravelOrderAbilities;
+    urls: {
+        index: string;
+        edit: string;
+        submit: string;
+        destroy: string;
+    };
 };
 
-export default function ShowTravelOrder({ travelOrder }: Props) {
+export default function ShowTravelOrder({
+    travelOrder,
+    route,
+    timeline,
+    can,
+    urls,
+}: Props) {
+    const submit = () => {
+        router.post(urls.submit, {}, { preserveScroll: true });
+    };
+
+    const destroy = () => {
+        if (!confirm('Delete this travel order?')) {
+            return;
+        }
+
+        router.delete(urls.destroy);
+    };
+
     return (
         <>
             <Head title={`Travel Order #${travelOrder.id}`} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                            router.visit(travelOrdersRoutes.index().url)
-                        }
+                        onClick={() => router.visit(urls.index)}
                     >
                         <ArrowLeft className="size-4" />
                         Back
                     </Button>
                     <Heading
                         title={`Travel Order #${travelOrder.id}`}
-                        description="Details and routing."
+                        description="Details, route progress, and audit trail."
                     />
+                    <div className="ml-auto flex flex-wrap gap-2">
+                        {can.edit && (
+                            <Can permission="travel-orders.update">
+                                <Button
+                                    variant="outline"
+                                    onClick={() => router.visit(urls.edit)}
+                                >
+                                    <Pencil className="size-4" />
+                                    Edit
+                                </Button>
+                            </Can>
+                        )}
+                        {can.submit && (
+                            <Can permission="travel-orders.send">
+                                <Button onClick={submit}>
+                                    <Send className="size-4" />
+                                    Submit for approval
+                                </Button>
+                            </Can>
+                        )}
+                        {can.delete && (
+                            <Can permission="travel-orders.delete">
+                                <Button variant="destructive" onClick={destroy}>
+                                    <Trash2 className="size-4" />
+                                    Delete
+                                </Button>
+                            </Can>
+                        )}
+                    </div>
                 </div>
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
+                        <TravelOrderDetails travelOrder={travelOrder} />
+
                         <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">Details</h3>
-                            <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Control No.
-                                    </dt>
-                                    <dd className="font-medium">
-                                        {travelOrder.control_no ??
-                                            travelOrder.to_number ??
-                                            `#${travelOrder.id}`}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Status
-                                    </dt>
-                                    <dd>
-                                        <Badge variant="outline">
-                                            {travelOrder.status}
-                                        </Badge>
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Purpose
-                                    </dt>
-                                    <dd>{travelOrder.purpose ?? '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Destination
-                                    </dt>
-                                    <dd>{travelOrder.destination ?? '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Dates
-                                    </dt>
-                                    <dd>
-                                        {travelOrder.date_from} →{' '}
-                                        {travelOrder.date_to}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Classification
-                                    </dt>
-                                    <dd>
-                                        {travelOrder.travel_classification ??
-                                            '—'}
-                                    </dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Fund source
-                                    </dt>
-                                    <dd>{travelOrder.fund_source ?? '—'}</dd>
-                                </div>
-                                <div>
-                                    <dt className="text-muted-foreground">
-                                        Office
-                                    </dt>
-                                    <dd>
-                                        {travelOrder.office?.office_name ?? '—'}
-                                    </dd>
-                                </div>
-                            </dl>
-                            {travelOrder.submission_notes && (
-                                <div className="mt-2">
-                                    <p className="text-sm text-muted-foreground">
-                                        Submission notes
-                                    </p>
-                                    <p className="text-sm">
-                                        {travelOrder.submission_notes}
-                                    </p>
-                                </div>
-                            )}
+                            <h3 className="text-base font-semibold">
+                                Audit trail
+                            </h3>
+                            <ActionTimeline actions={timeline} />
+                        </section>
+                    </div>
+
+                    <div className="space-y-4">
+                        <section className="space-y-3 rounded-xl border p-4">
+                            <h3 className="text-base font-semibold">
+                                Approval route
+                            </h3>
+                            <RouteProgress steps={route} />
                         </section>
                     </div>
                 </div>
@@ -121,5 +121,7 @@ export default function ShowTravelOrder({ travelOrder }: Props) {
 }
 
 ShowTravelOrder.layout = {
-    breadcrumbs: [{ title: 'Travel Order', href: '#' }],
+    breadcrumbs: [
+        { title: 'Travel Order', href: travelOrdersRoutes.index().url },
+    ],
 };

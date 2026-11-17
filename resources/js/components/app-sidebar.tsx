@@ -4,6 +4,7 @@ import {
     Building2,
     FileText,
     GitBranch,
+    Inbox,
     LayoutGrid,
     Plus,
     ShieldCheck,
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
 import accounts from '@/routes/accounts';
+import departmentHead from '@/routes/department-head';
 import designations from '@/routes/designations';
 import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
@@ -164,12 +166,27 @@ export function AppSidebar() {
                         ],
                     },
                 ]
-              : [
-                    overviewGroup(
-                        workspaceUrl,
-                        portal?.key === 'approvals' ? 'Inbox' : 'Dashboard',
-                    ),
-                ];
+              : portal?.key === 'department-head'
+                ? [
+                      overviewGroup(workspaceUrl, 'Dashboard'),
+                      {
+                          label: 'Travel Orders',
+                          items: [
+                              {
+                                  title: 'Approval Inbox',
+                                  href: departmentHead.inbox().url,
+                                  icon: Inbox,
+                                  permission: 'travel-orders.view',
+                              },
+                          ],
+                      },
+                  ]
+                : [
+                      overviewGroup(
+                          workspaceUrl,
+                          portal?.key === 'approvals' ? 'Inbox' : 'Dashboard',
+                      ),
+                  ];
 
     return (
         <Sidebar collapsible="icon" variant="inset">

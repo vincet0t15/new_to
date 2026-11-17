@@ -9,6 +9,37 @@ export type TravelOrderStatus =
     | 'completed'
     | 'rejected';
 
+export type TravelOrderDeliveryStatus =
+    | 'pending'
+    | 'received'
+    | 'acted'
+    | 'closed';
+
+export type TravelOrderDelivery = {
+    id: number;
+    travel_order_id: number;
+    step_index: number;
+    step_type_id: number | null;
+    user_id: number;
+    status: TravelOrderDeliveryStatus;
+    received_at: string | null;
+    acted_at: string | null;
+    acted_via: string | null;
+    user?: { id: number; name: string } | null;
+};
+
+export type TravelOrderAction = {
+    id: number;
+    step_index: number | null;
+    step_label: string | null;
+    event: string;
+    actor_user_id: number | null;
+    remarks: string | null;
+    meta: Record<string, unknown> | null;
+    created_at: string | null;
+    actor?: { id: number; name: string } | null;
+};
+
 export type TravelOrder = {
     id: number;
     control_no: string | null;
@@ -18,12 +49,12 @@ export type TravelOrder = {
     created_by: number;
     workflow_id: number | null;
     purpose: string | null;
+    submission_notes: string | null;
     destination: string | null;
     date_from: string | null;
     date_to: string | null;
     fund_source: string | null;
     travel_classification: string | null;
-    submission_notes: string | null;
     status: TravelOrderStatus;
     routed_steps: number[] | null;
     current_step_index: number | null;
@@ -33,6 +64,73 @@ export type TravelOrder = {
     updated_at: string | null;
     employee?: { id: number; full_name?: string } | null;
     office?: { id: number; office_name: string } | null;
+    creator?: { id: number; name: string } | null;
+    deliveries?: TravelOrderDelivery[];
+    actions?: TravelOrderAction[];
+};
+
+export type TravelOrderRouteStepStatus =
+    | 'planned'
+    | 'upcoming'
+    | 'current'
+    | 'cleared'
+    | 'skipped'
+    | 'returned'
+    | 'cancelled';
+
+export type TravelOrderRouteStep = {
+    index: number;
+    label: string;
+    office: string | null;
+    is_signatory: boolean;
+    status: TravelOrderRouteStepStatus;
+    holders: {
+        id: number;
+        name: string;
+        status: TravelOrderDeliveryStatus;
+    }[];
+};
+
+export type TravelOrderTimelineEntry = {
+    id: number;
+    event: string;
+    event_label: string;
+    step_label: string | null;
+    step_index: number | null;
+    actor: string | null;
+    remarks: string | null;
+    created_at: string | null;
+};
+
+export type TravelOrderAbilities = {
+    submit: boolean;
+    edit: boolean;
+    delete: boolean;
+};
+
+export type ApprovalAbilities = {
+    receive: boolean;
+    approve: boolean;
+    acknowledge: boolean;
+    return: boolean;
+    forward: boolean;
+};
+
+export type ApprovalInboxItem = {
+    id: number;
+    control_no: string | null;
+    to_number: string | null;
+    purpose: string | null;
+    destination: string | null;
+    date_from: string | null;
+    date_to: string | null;
+    submitted_at: string | null;
+    employee: string | null;
+    office: string | null;
+    step_label: string | null;
+    is_signatory: boolean;
+    delivery_status: TravelOrderDeliveryStatus;
+    url: string;
 };
 
 export type TravelOrderFormOptions = {
@@ -55,4 +153,4 @@ export type TravelOrderCreateRequest = {
     status: string;
 };
 
-export type { WorkflowPreview };
+export { type WorkflowPreview };

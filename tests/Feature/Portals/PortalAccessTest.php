@@ -70,7 +70,7 @@ test('approver roles can enter the shared approvals portal', function (SystemRol
         ->get(route('approvals.inbox'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->component('portals/approvals/inbox')
+            ->component('approvals/inbox')
             ->where('currentPortal', Portal::Approvals->value)
         );
 })->with([

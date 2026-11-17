@@ -55,6 +55,12 @@ export default function CreateTravelOrder({
                     />
                 </div>
 
+                {(errors as Record<string, string | undefined>).routing && (
+                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                        {(errors as Record<string, string | undefined>).routing}
+                    </div>
+                )}
+
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
                         <section className="space-y-4 rounded-xl border p-4">
@@ -276,6 +282,8 @@ export default function CreateTravelOrder({
                                     <Save className="size-4" />
                                     Save as draft
                                 </Button>
+                            </Can>
+                            <Can permission="travel-orders.send">
                                 <Button
                                     onClick={() => submit('submitted')}
                                     disabled={processing}

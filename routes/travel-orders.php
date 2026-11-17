@@ -13,5 +13,6 @@ Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-ord
         Route::get('/{travelOrder}', [TravelOrderController::class, 'show'])->name('show');
         Route::get('/{travelOrder}/edit', [TravelOrderController::class, 'edit'])->name('edit')->middleware('permission:travel-orders.update');
         Route::put('/{travelOrder}', [TravelOrderController::class, 'update'])->name('update')->middleware('permission:travel-orders.update');
+        Route::post('/{travelOrder}/submit', [TravelOrderController::class, 'submit'])->name('submit')->middleware('permission:travel-orders.send');
         Route::delete('/{travelOrder}', [TravelOrderController::class, 'destroy'])->name('destroy')->middleware('permission:travel-orders.delete');
     });

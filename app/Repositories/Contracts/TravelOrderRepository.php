@@ -16,6 +16,13 @@ interface TravelOrderRepository
     public function findForCreator(User $user, int $id): ?TravelOrder;
 
     /**
+     * Travel orders waiting for this account's action.
+     *
+     * @return LengthAwarePaginator<int, TravelOrder>
+     */
+    public function paginateInbox(User $user, int $perPage = 15): LengthAwarePaginator;
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): TravelOrder;

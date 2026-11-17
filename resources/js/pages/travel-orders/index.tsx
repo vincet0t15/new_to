@@ -4,7 +4,7 @@ import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
-import { Badge } from '@/components/ui/badge';
+import { TravelOrderStatusBadge } from '@/components/travel-orders/status-badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -111,9 +111,9 @@ export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
                                             {order.date_from} → {order.date_to}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline">
-                                                {order.status}
-                                            </Badge>
+                                            <TravelOrderStatusBadge
+                                                status={order.status}
+                                            />
                                         </TableCell>
                                         <TableCell className="flex items-center justify-end gap-2">
                                             <Button
@@ -132,44 +132,48 @@ export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
                                                 <Eye />
                                             </Button>
                                             <Can permission="travel-orders.update">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-green-600"
-                                                    onClick={() =>
-                                                        router.visit(
-                                                            travelOrdersRoutes.edit(
-                                                                order,
-                                                            ).url,
-                                                        )
-                                                    }
-                                                    title="Edit"
-                                                >
-                                                    <Pencil />
-                                                </Button>
-                                            </Can>
-                                            <Can permission="travel-orders.delete">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-red-600"
-                                                    onClick={() => {
-                                                        if (
-                                                            confirm(
-                                                                'Delete this travel order?',
-                                                            )
-                                                        ) {
-                                                            router.delete(
-                                                                travelOrdersRoutes.destroy(
+                                                {order.status === 'draft' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-green-600"
+                                                        onClick={() =>
+                                                            router.visit(
+                                                                travelOrdersRoutes.edit(
                                                                     order,
                                                                 ).url,
-                                                            );
+                                                            )
                                                         }
-                                                    }}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
+                                                        title="Edit"
+                                                    >
+                                                        <Pencil />
+                                                    </Button>
+                                                )}
+                                            </Can>
+                                            <Can permission="travel-orders.delete">
+                                                {order.status === 'draft' && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-red-600"
+                                                        onClick={() => {
+                                                            if (
+                                                                confirm(
+                                                                    'Delete this travel order?',
+                                                                )
+                                                            ) {
+                                                                router.delete(
+                                                                    travelOrdersRoutes.destroy(
+                                                                        order,
+                                                                    ).url,
+                                                                );
+                                                            }
+                                                        }}
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                )}
                                             </Can>
                                         </TableCell>
                                     </TableRow>

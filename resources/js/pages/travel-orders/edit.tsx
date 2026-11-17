@@ -1,5 +1,6 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Send } from 'lucide-react';
+import { useState } from 'react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
@@ -13,9 +14,17 @@ import type { TravelOrder, TravelOrderFormOptions } from '@/types';
 type Props = {
     travelOrder: TravelOrder;
     options: TravelOrderFormOptions;
+    canSubmit: boolean;
+    submitUrl: string;
 };
 
-export default function EditTravelOrder({ travelOrder, options }: Props) {
+export default function EditTravelOrder({
+    travelOrder,
+    options,
+    canSubmit,
+    submitUrl,
+}: Props) {
+    const [submitting, setSubmitting] = useState(false);
     const { data, setData, put, processing, errors } = useForm({
         employee_id: travelOrder.employee_id ?? '',
         office_id: travelOrder.office_id ?? '',
@@ -30,6 +39,18 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
 
     const submit = () => {
         put(travelOrdersRoutes.update(travelOrder).url);
+    };
+
+    const submitForApproval = () => {
+        setSubmitting(true);
+        router.post(
+            submitUrl,
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setSubmitting(false),
+            },
+        );
     };
 
     return (
@@ -54,6 +75,12 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                         description="Update the travel order details."
                     />
                 </div>
+
+                {(errors as Record<string, string | undefined>).routing && (
+                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                        {(errors as Record<string, string | undefined>).routing}
+                    </div>
+                )}
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
@@ -210,7 +237,7 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                     </div>
                 </div>
 
-                <div className="flex justify-end">
+                <div className="flex justify-end gap-2">
                     <Can permission="travel-orders.update">
                         <Button onClick={submit} disabled={processing}>
                             {processing && (
@@ -220,6 +247,20 @@ export default function EditTravelOrder({ travelOrder, options }: Props) {
                             Save changes
                         </Button>
                     </Can>
+                    {canSubmit && (
+                        <Can permission="travel-orders.send">
+                            <Button
+                                onClick={submitForApproval}
+                                disabled={submitting}
+                            >
+                                {submitting && (
+                                    <Loader2 className="size-4 animate-spin" />
+                                )}
+                                <Send className="size-4" />
+                                Submit for approval
+                            </Button>
+                        </Can>
+                    )}
                 </div>
             </div>
         </>

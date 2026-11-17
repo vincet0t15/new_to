@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
 use Database\Factories\TravelOrderFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property int $created_by
  * @property int|null $workflow_id
  * @property string|null $purpose
+ * @property string|null $submission_notes
  * @property string|null $destination
  * @property Carbon|null $date_from
  * @property Carbon|null $date_to
@@ -55,6 +57,7 @@ use Illuminate\Support\Carbon;
     'created_by',
     'workflow_id',
     'purpose',
+    'submission_notes',
     'destination',
     'date_from',
     'date_to',
@@ -134,7 +137,46 @@ class TravelOrder extends Model
      */
     public function openDeliveries(): HasMany
     {
-        return $this->deliveries()->where('status', 'pending');
+        return $this->deliveries()->whereIn('status', [
+            TravelOrderDeliveryStatus::Pending->value,
+            TravelOrderDeliveryStatus::Received->value,
+        ]);
+    }
+
+    /**
+     * The copy this account can still act on at the current step.
+     *
+     * A delivery that was closed when somebody else claimed the step is not
+     * actionable, which is what makes the first-to-act rule visible to the
+     * service layer rather than only to the inbox query.
+     */
+    public function activeDeliveryFor(User $user): ?TravelOrderDelivery
+    {
+        if ($this->current_step_index === null) {
+            return null;
+        }
+
+        return $this->deliveries()
+            ->where('step_index', $this->current_step_index)
+            ->where('user_id', $user->id)
+            ->open()
+            ->first();
+    }
+
+    /**
+     * Whether this account still holds the current step.
+     */
+    public function holdsActiveDeliveryFor(User $user): bool
+    {
+        return $this->activeDeliveryFor($user) !== null;
+    }
+
+    /**
+     * Whether this account created the travel order.
+     */
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->created_by === $user->id;
     }
 
     /**

@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property int $travel_order_id
  * @property int|null $step_index
  * @property string|null $step_label
- * @property string $event
+ * @property WorkflowEvent $event
  * @property int|null $actor_user_id
  * @property string|null $remarks
  * @property array<string, mixed>|null $meta

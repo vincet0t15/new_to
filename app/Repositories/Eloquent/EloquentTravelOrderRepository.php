@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Enums\TravelOrderStatus;
 use App\Models\TravelOrder;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
@@ -33,6 +34,31 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
             ->forCreator($user)
             ->with(['office', 'employee', 'workflow', 'deliveries.user', 'actions.actor'])
             ->find($id);
+    }
+
+    public function paginateInbox(User $user, int $perPage = 15): LengthAwarePaginator
+    {
+        return TravelOrder::query()
+            ->where('status', TravelOrderStatus::Submitted)
+            ->whereNotNull('current_step_index')
+            ->whereHas('deliveries', function ($query) use ($user): void {
+                $query->where('user_id', $user->id)
+                    ->open()
+                    ->whereColumn(
+                        'travel_order_deliveries.step_index',
+                        'travel_orders.current_step_index',
+                    );
+            })
+            ->with([
+                'office:id,office_name',
+                'employee:id,first_name,middle_name,last_name,suffix',
+                'deliveries' => fn ($query) => $query
+                    ->where('user_id', $user->id)
+                    ->open(),
+            ])
+            ->orderByDesc('submitted_at')
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function create(array $data): TravelOrder
