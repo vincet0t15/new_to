@@ -1,38 +1,161 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import expenseTypesRoutes from '@/routes/expense-types';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import expenseTypes from '@/routes/expense-types';
+import type { ExpenseTypeCreateRequest } from '@/types/expense-type';
+import type { FormEvent } from 'react';
 
-export default function CreateExpenseType() {
-    const { data, setData, post, processing, errors } = useForm({ name: '', description: '', is_default: false, is_transportation: false, is_active: true });
-    const submit = () => post(expenseTypesRoutes.store().url);
+type CreateExpenseTypeDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+};
+
+export function CreateExpenseTypeDialog({
+    isOpen,
+    onClose,
+}: CreateExpenseTypeDialogProps) {
+    const { data, setData, post, reset, errors, processing } =
+        useForm<ExpenseTypeCreateRequest>({
+            name: '',
+            description: '',
+            is_default: true,
+            is_transportation: false,
+            is_active: true,
+        });
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        post(expenseTypes.store().url, {
+            onSuccess: () => {
+                onClose();
+                reset();
+            },
+        });
+    };
+
     return (
-        <>
-            <Head title="Create Expense Type" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(expenseTypesRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Create Expense Type" description="Add a new expense type." />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2"><Label htmlFor="name">Name *</Label><Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} /><InputError message={errors.name} /></div>
-                    <div className="space-y-2"><Label htmlFor="description">Description</Label><Input id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} /><InputError message={errors.description} /></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_default" type="checkbox" checked={data.is_default} onChange={(e) => setData('is_default', e.target.checked)} /><Label htmlFor="is_default">Default</Label></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_transportation" type="checkbox" checked={data.is_transportation} onChange={(e) => setData('is_transportation', e.target.checked)} /><Label htmlFor="is_transportation">Transportation</Label></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} /><Label htmlFor="is_active">Active</Label></div>
-                </div>
-                <div className="flex justify-end">
-                    <Can permission="expense-types.create">
-                        <Button onClick={submit} disabled={processing}>{processing && <Loader2 className="size-4 animate-spin" />}<Save className="size-4" /> Save</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Create Expense Type</DialogTitle>
+                        <DialogDescription>
+                            Add an expense category that can be claimed on a
+                            travel order.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name *</Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="e.g., Hotel Accommodation"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                required
+                                autoFocus
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                placeholder="e.g., Lodging for official travel"
+                                rows={3}
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData('description', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="space-y-3 rounded-md border p-3">
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_default"
+                                    checked={data.is_default}
+                                    onCheckedChange={(checked) =>
+                                        setData('is_default', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="is_default">
+                                    Default (pre-selected on new orders)
+                                </Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_transportation"
+                                    checked={data.is_transportation}
+                                    onCheckedChange={(checked) =>
+                                        setData(
+                                            'is_transportation',
+                                            checked === true,
+                                        )
+                                    }
+                                />
+                                <Label htmlFor="is_transportation">
+                                    Transportation
+                                </Label>
+                            </div>
+
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="is_active"
+                                    checked={data.is_active}
+                                    onCheckedChange={(checked) =>
+                                        setData('is_active', checked === true)
+                                    }
+                                />
+                                <Label htmlFor="is_active">
+                                    Active (available for selection)
+                                </Label>
+                            </div>
+                        </div>
+
+                        <p className="text-xs text-muted-foreground">
+                            Default types are pre-selected on new orders.
+                            Transportation types are used for fares. Inactive
+                            types stay hidden from new entries.
+                        </p>
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}
+                            Create Expense Type
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-CreateExpenseType.layout = { breadcrumbs: [{ title: 'Create Expense Type', href: '#' }] };

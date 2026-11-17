@@ -1,39 +1,128 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import locationsRoutes from '@/routes/locations';
-import type { Location } from '@/types/travel-setup';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
+import locations from '@/routes/locations';
+import type { Location, LocationCreateRequest } from '@/types/location';
+import type { FormEvent } from 'react';
 
-type Props = { location: Location };
+type EditLocationDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    location: Location;
+};
 
-export default function EditLocation({ location }: Props) {
-    const { data, setData, put, processing, errors } = useForm({ name: location.name ?? '', description: location.description ?? '', is_active: location.is_active ?? true });
-    const submit = () => put(locationsRoutes.update(location).url);
+export function EditLocationDialog({
+    isOpen,
+    onClose,
+    location,
+}: EditLocationDialogProps) {
+    const { data, setData, put, errors, processing } =
+        useForm<LocationCreateRequest>({
+            name: location.name,
+            description: location.description ?? '',
+            is_active: location.is_active,
+        });
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        put(locations.update(location).url, {
+            onSuccess: () => onClose(),
+        });
+    };
+
     return (
-        <>
-            <Head title="Edit Location" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(locationsRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Edit Location" description="Update the location details." />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2"><Label htmlFor="name">Name *</Label><Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} /><InputError message={errors.name} /></div>
-                    <div className="space-y-2"><Label htmlFor="description">Description</Label><Input id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} /><InputError message={errors.description} /></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} /><Label htmlFor="is_active">Active</Label></div>
-                </div>
-                <div className="flex justify-end">
-                    <Can permission="locations.update">
-                        <Button onClick={submit} disabled={processing}>{processing && <Loader2 className="size-4 animate-spin" />}<Save className="size-4" /> Save changes</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Edit Location</DialogTitle>
+                        <DialogDescription>
+                            Update the location details.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name *</Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="e.g., El Nido"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                required
+                                autoFocus
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                placeholder="e.g., Northernmost town of Palawan"
+                                rows={3}
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData('description', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_active"
+                                checked={data.is_active}
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
+                                }
+                            />
+                            <Label htmlFor="is_active">
+                                Active (available for selection)
+                            </Label>
+                        </div>
+
+                        {location.usage_count > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                This location is used by {location.usage_count}{' '}
+                                record(s), so it cannot be deleted. Set it to
+                                inactive to hide it from new entries.
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-EditLocation.layout = { breadcrumbs: [{ title: 'Edit Location', href: '#' }] };

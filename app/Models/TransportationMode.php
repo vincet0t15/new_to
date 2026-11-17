@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -24,6 +25,22 @@ class TransportationMode extends Model
 {
     /** @use HasFactory<TransportationModeFactory> */
     use HasFactory;
+
+    public function fares(): HasMany
+    {
+        return $this->hasMany(TransportationFare::class);
+    }
+
+    public function fareTo(?int $toLocationId): ?string
+    {
+        if ($toLocationId === null) {
+            return null;
+        }
+
+        $fare = $this->fares->firstWhere('location_id', $toLocationId);
+
+        return $fare === null ? null : (string) $fare->amount;
+    }
 
     protected function casts(): array
     {

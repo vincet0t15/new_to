@@ -6,10 +6,15 @@ import {
     FileText,
     GitBranch,
     Inbox,
+    Landmark,
+    Layers,
     LayoutGrid,
+    MapPin,
     Plus,
+    Receipt,
     RotateCcw,
     ShieldCheck,
+    Tag,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -30,11 +35,16 @@ import departmentHead from '@/routes/department-head';
 import designations from '@/routes/designations';
 import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
+import expenseTypes from '@/routes/expense-types';
+import fundSources from '@/routes/fund-sources';
+import locations from '@/routes/locations';
 import offices from '@/routes/offices';
+import perDiemConfigurations from '@/routes/per-diem-configurations';
 import positions from '@/routes/positions';
 import roles from '@/routes/roles';
 import travelOrders from '@/routes/travel-orders';
 import transportationModes from '@/routes/transportation-modes';
+import travelClassifications from '@/routes/travel-classifications';
 import workflowStepTypes from '@/routes/workflow-step-types';
 import workflows from '@/routes/workflows';
 import type { NavGroup } from '@/types';
@@ -63,13 +73,43 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
     return [
         overviewGroup(dashboardUrl, 'Dashboard'),
         {
-            label: 'Transportation',
+            label: 'Travel Setup',
             items: [
                 {
                     title: 'Transportation Modes',
                     href: transportationModes.index().url,
                     icon: Car,
                     permission: 'transportation-modes.view',
+                },
+                {
+                    title: 'Expenses Authorized',
+                    href: expenseTypes.index().url,
+                    icon: Receipt,
+                    permission: 'expense-types.view',
+                },
+                {
+                    title: 'Fund Sources',
+                    href: fundSources.index().url,
+                    icon: Landmark,
+                    permission: 'fund-sources.view',
+                },
+                {
+                    title: 'Travel Classifications',
+                    href: travelClassifications.index().url,
+                    icon: Tag,
+                    permission: 'travel-classifications.view',
+                },
+                {
+                    title: 'Per Diem Configurations',
+                    href: perDiemConfigurations.index().url,
+                    icon: Layers,
+                    permission: 'per-diem-configurations.view',
+                },
+                {
+                    title: 'Locations',
+                    href: locations.index().url,
+                    icon: MapPin,
+                    permission: 'locations.view',
                 },
             ],
         },

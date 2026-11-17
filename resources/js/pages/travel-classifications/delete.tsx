@@ -1,31 +1,84 @@
-import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import travelClassificationsRoutes from '@/routes/travel-classifications';
-import type { TravelClassification } from '@/types/travel-setup';
+import type { TravelClassification } from '@/types/travel-classification';
+import type { FormEvent } from 'react';
 
-type Props = { travelClassification: TravelClassification };
+type DeleteTravelClassificationDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    travelClassification: TravelClassification;
+};
 
-export default function DeleteTravelClassification({ travelClassification }: Props) {
-    const destroy = () => router.delete(travelClassificationsRoutes.destroy(travelClassification).url);
+export function DeleteTravelClassificationDialog({
+    isOpen,
+    onClose,
+    travelClassification,
+}: DeleteTravelClassificationDialogProps) {
+    const { delete: destroy, processing } = useForm();
+    const isInUse = travelClassification.usage_count > 0;
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        destroy(travelClassificationsRoutes.destroy(travelClassification).url, {
+            onSuccess: () => onClose(),
+        });
+    };
+
     return (
-        <>
-            <Head title="Delete Travel Classification" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(travelClassificationsRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Delete Travel Classification" description="Confirm deletion." />
-                </div>
-                <div className="rounded-xl border p-4"><p className="text-sm">Are you sure you want to delete <span className="font-medium">{travelClassification.name}</span>?</p></div>
-                <div className="flex justify-end gap-2">
-                    <Can permission="travel-classifications.delete">
-                        <Button variant="destructive" onClick={destroy}><Trash2 className="size-4" /> Delete</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Delete Travel Classification</DialogTitle>
+                        <DialogDescription>
+                            {isInUse ? (
+                                <>
+                                    "{travelClassification.name}" is used by{' '}
+                                    {travelClassification.usage_count} record(s)
+                                    and cannot be deleted. Set it to inactive
+                                    instead.
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to delete "
+                                    {travelClassification.name}"? This action
+                                    cannot be undone.
+                                </>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Close
+                            </Button>
+                        </DialogClose>
+                        {!isInUse && (
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Delete Travel Classification
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-DeleteTravelClassification.layout = { breadcrumbs: [{ title: 'Delete Travel Classification', href: '#' }] };

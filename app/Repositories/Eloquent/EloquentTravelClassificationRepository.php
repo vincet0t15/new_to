@@ -1,12 +1,59 @@
 <?php
+
 namespace App\Repositories\Eloquent;
+
 use App\Models\TravelClassification;
+use App\Models\TravelOrder;
 use App\Repositories\Contracts\TravelClassificationRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
-class EloquentTravelClassificationRepository implements TravelClassificationRepository {
-    public function paginate(?string $s=null,int $p=15):LengthAwarePaginator { return TravelClassification::query()->when($s,function($q)use($s){$q->where('name','like',"%$s%")->orWhere('description','like',"%$s%");})->orderBy('name')->paginate($p)->withQueryString(); }
-    public function find(int $id):?TravelClassification { return TravelClassification::find($id); }
-    public function create(array $d):TravelClassification { return TravelClassification::create($d); }
-    public function update(TravelClassification $m,array $d):TravelClassification { $m->update($d); return $m; }
-    public function delete(TravelClassification $m):void { $m->delete(); }
+
+class EloquentTravelClassificationRepository implements TravelClassificationRepository
+{
+    public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
+    {
+        return TravelClassification::query()
+            ->select('travel_classifications.*')
+            ->selectSub(
+                TravelOrder::query()
+                    ->selectRaw('count(*)')
+                    ->whereColumn('travel_classification', 'travel_classifications.name'),
+                'usage_count',
+            )
+            ->when($search !== null && $search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
+    public function find(int $id): ?TravelClassification
+    {
+        return TravelClassification::query()->find($id);
+    }
+
+    public function create(array $data): TravelClassification
+    {
+        return TravelClassification::query()->create($data);
+    }
+
+    public function update(TravelClassification $travelClassification, array $data): TravelClassification
+    {
+        $travelClassification->update($data);
+
+        return $travelClassification;
+    }
+
+    public function usageCount(TravelClassification $travelClassification): int
+    {
+        return TravelOrder::query()->where('travel_classification', $travelClassification->name)->count();
+    }
+
+    public function delete(TravelClassification $travelClassification): void
+    {
+        $travelClassification->delete();
+    }
 }

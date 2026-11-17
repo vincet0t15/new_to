@@ -1,39 +1,132 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import travelClassificationsRoutes from '@/routes/travel-classifications';
-import type { TravelClassification } from '@/types/travel-setup';
+import type {
+    TravelClassification,
+    TravelClassificationCreateRequest,
+} from '@/types/travel-classification';
+import type { FormEvent } from 'react';
 
-type Props = { travelClassification: TravelClassification };
+type EditTravelClassificationDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    travelClassification: TravelClassification;
+};
 
-export default function EditTravelClassification({ travelClassification }: Props) {
-    const { data, setData, put, processing, errors } = useForm({ name: travelClassification.name ?? '', description: travelClassification.description ?? '', is_active: travelClassification.is_active ?? true });
-    const submit = () => put(travelClassificationsRoutes.update(travelClassification).url);
+export function EditTravelClassificationDialog({
+    isOpen,
+    onClose,
+    travelClassification,
+}: EditTravelClassificationDialogProps) {
+    const { data, setData, put, errors, processing } =
+        useForm<TravelClassificationCreateRequest>({
+            name: travelClassification.name,
+            description: travelClassification.description ?? '',
+            is_active: travelClassification.is_active,
+        });
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        put(travelClassificationsRoutes.update(travelClassification).url, {
+            onSuccess: () => onClose(),
+        });
+    };
+
     return (
-        <>
-            <Head title="Edit Travel Classification" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(travelClassificationsRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Edit Travel Classification" description="Update the travel classification details." />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2"><Label htmlFor="name">Name *</Label><Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} /><InputError message={errors.name} /></div>
-                    <div className="space-y-2"><Label htmlFor="description">Description</Label><Input id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} /><InputError message={errors.description} /></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} /><Label htmlFor="is_active">Active</Label></div>
-                </div>
-                <div className="flex justify-end">
-                    <Can permission="travel-classifications.update">
-                        <Button onClick={submit} disabled={processing}>{processing && <Loader2 className="size-4 animate-spin" />}<Save className="size-4" /> Save changes</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Edit Travel Classification</DialogTitle>
+                        <DialogDescription>
+                            Update the travelClassification details.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name *</Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="e.g., Local"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                required
+                                autoFocus
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                placeholder="e.g., Travel within the local government"
+                                rows={3}
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData('description', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_active"
+                                checked={data.is_active}
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
+                                }
+                            />
+                            <Label htmlFor="is_active">
+                                Active (available for selection)
+                            </Label>
+                        </div>
+
+                        {travelClassification.usage_count > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                                This travelClassification is used by{' '}
+                                {travelClassification.usage_count} record(s), so
+                                it cannot be deleted. Set it to inactive to hide
+                                it from new entries.
+                            </p>
+                        )}
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}
+                            Save Changes
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-EditTravelClassification.layout = { breadcrumbs: [{ title: 'Edit Travel Classification', href: '#' }] };

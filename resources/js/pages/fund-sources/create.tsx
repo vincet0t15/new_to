@@ -1,36 +1,121 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Spinner } from '@/components/ui/spinner';
+import { Textarea } from '@/components/ui/textarea';
 import fundSourcesRoutes from '@/routes/fund-sources';
+import type { FundSourceCreateRequest } from '@/types/fund-source';
+import type { FormEvent } from 'react';
 
-export default function CreateFundSource() {
-    const { data, setData, post, processing, errors } = useForm({ name: '', description: '', is_active: true });
-    const submit = () => post(fundSourcesRoutes.store().url);
+type CreateFundSourceDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+};
+
+export function CreateFundSourceDialog({
+    isOpen,
+    onClose,
+}: CreateFundSourceDialogProps) {
+    const { data, setData, post, reset, errors, processing } =
+        useForm<FundSourceCreateRequest>({
+            name: '',
+            description: '',
+            is_active: true,
+        });
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        post(fundSourcesRoutes.store().url, {
+            onSuccess: () => {
+                onClose();
+                reset();
+            },
+        });
+    };
+
     return (
-        <>
-            <Head title="Create Fund Source" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(fundSourcesRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Create Fund Source" description="Add a new fund source." />
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2"><Label htmlFor="name">Name *</Label><Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} /><InputError message={errors.name} /></div>
-                    <div className="space-y-2"><Label htmlFor="description">Description</Label><Input id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} /><InputError message={errors.description} /></div>
-                    <div className="flex items-center gap-2 pt-6"><input id="is_active" type="checkbox" checked={data.is_active} onChange={(e) => setData('is_active', e.target.checked)} /><Label htmlFor="is_active">Active</Label></div>
-                </div>
-                <div className="flex justify-end">
-                    <Can permission="fund-sources.create">
-                        <Button onClick={submit} disabled={processing}>{processing && <Loader2 className="size-4 animate-spin" />}<Save className="size-4" /> Save</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Create Fund Source</DialogTitle>
+                        <DialogDescription>
+                            Add a source of funds for travel orders.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Name *</Label>
+                            <Input
+                                id="name"
+                                name="name"
+                                placeholder="e.g., General Fund"
+                                value={data.name}
+                                onChange={(event) =>
+                                    setData('name', event.target.value)
+                                }
+                                required
+                                autoFocus
+                            />
+                            <InputError message={errors.name} />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea
+                                id="description"
+                                name="description"
+                                placeholder="e.g., Charged against the general appropriation"
+                                rows={3}
+                                value={data.description}
+                                onChange={(event) =>
+                                    setData('description', event.target.value)
+                                }
+                            />
+                            <InputError message={errors.description} />
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="is_active"
+                                checked={data.is_active}
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
+                                }
+                            />
+                            <Label htmlFor="is_active">
+                                Active (available for selection)
+                            </Label>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="mt-4">
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}
+                            Create FundSource
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-CreateFundSource.layout = { breadcrumbs: [{ title: 'Create Fund Source', href: '#' }] };

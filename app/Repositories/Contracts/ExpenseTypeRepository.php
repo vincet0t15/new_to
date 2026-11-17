@@ -1,5 +1,19 @@
 <?php
+
 namespace App\Repositories\Contracts;
+
 use App\Models\ExpenseType;
 use Illuminate\Pagination\LengthAwarePaginator;
-interface ExpenseTypeRepository { public function paginate(?string $s=null,int $p=15):LengthAwarePaginator; public function find(int $id):?ExpenseType; public function create(array $d):ExpenseType; public function update(ExpenseType $m,array $d):ExpenseType; public function delete(ExpenseType $m):void; }
+
+interface ExpenseTypeRepository
+{
+    public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator;
+
+    public function find(int $id): ?ExpenseType;
+
+    public function create(array $data): ExpenseType;
+
+    public function update(ExpenseType $expenseType, array $data): ExpenseType;
+
+    public function delete(ExpenseType $expenseType): void;
+}

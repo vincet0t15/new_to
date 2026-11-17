@@ -1,31 +1,84 @@
-import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
 import fundSourcesRoutes from '@/routes/fund-sources';
-import type { FundSource } from '@/types/travel-setup';
+import type { FundSource } from '@/types/fund-source';
+import type { FormEvent } from 'react';
 
-type Props = { fundSource: FundSource };
+type DeleteFundSourceDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    fundSource: FundSource;
+};
 
-export default function DeleteFundSource({ fundSource }: Props) {
-    const destroy = () => router.delete(fundSourcesRoutes.destroy(fundSource).url);
+export function DeleteFundSourceDialog({
+    isOpen,
+    onClose,
+    fundSource,
+}: DeleteFundSourceDialogProps) {
+    const { delete: destroy, processing } = useForm();
+    const isInUse = fundSource.usage_count > 0;
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        destroy(fundSourcesRoutes.destroy(fundSource).url, {
+            onSuccess: () => onClose(),
+        });
+    };
+
     return (
-        <>
-            <Head title="Delete Fund Source" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(fundSourcesRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Delete Fund Source" description="Confirm deletion." />
-                </div>
-                <div className="rounded-xl border p-4"><p className="text-sm">Are you sure you want to delete <span className="font-medium">{fundSource.name}</span>?</p></div>
-                <div className="flex justify-end gap-2">
-                    <Can permission="fund-sources.delete">
-                        <Button variant="destructive" onClick={destroy}><Trash2 className="size-4" /> Delete</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Delete Fund Source</DialogTitle>
+                        <DialogDescription>
+                            {isInUse ? (
+                                <>
+                                    "{fundSource.name}" is used by{' '}
+                                    {fundSource.usage_count} record(s) and
+                                    cannot be deleted. Set it to inactive
+                                    instead.
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to delete "
+                                    {fundSource.name}"? This action cannot be
+                                    undone.
+                                </>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Close
+                            </Button>
+                        </DialogClose>
+                        {!isInUse && (
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Delete Fund Source
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-DeleteFundSource.layout = { breadcrumbs: [{ title: 'Delete Fund Source', href: '#' }] };

@@ -1,31 +1,83 @@
-import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { Can } from '@/components/can';
-import Heading from '@/components/heading';
+import { useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
-import locationsRoutes from '@/routes/locations';
-import type { Location } from '@/types/travel-setup';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Spinner } from '@/components/ui/spinner';
+import locations from '@/routes/locations';
+import type { Location } from '@/types/location';
+import type { FormEvent } from 'react';
 
-type Props = { location: Location };
+type DeleteLocationDialogProps = {
+    isOpen: boolean;
+    onClose: () => void;
+    location: Location;
+};
 
-export default function DeleteLocation({ location }: Props) {
-    const destroy = () => router.delete(locationsRoutes.destroy(location).url);
+export function DeleteLocationDialog({
+    isOpen,
+    onClose,
+    location,
+}: DeleteLocationDialogProps) {
+    const { delete: destroy, processing } = useForm();
+    const isInUse = location.usage_count > 0;
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        destroy(locations.destroy(location).url, {
+            onSuccess: () => onClose(),
+        });
+    };
+
     return (
-        <>
-            <Head title="Delete Location" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => router.visit(locationsRoutes.index().url)}><ArrowLeft className="size-4" /> Back</Button>
-                    <Heading title="Delete Location" description="Confirm deletion." />
-                </div>
-                <div className="rounded-xl border p-4"><p className="text-sm">Are you sure you want to delete <span className="font-medium">{location.name}</span>?</p></div>
-                <div className="flex justify-end gap-2">
-                    <Can permission="locations.delete">
-                        <Button variant="destructive" onClick={destroy}><Trash2 className="size-4" /> Delete</Button>
-                    </Can>
-                </div>
-            </div>
-        </>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-sm">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader>
+                        <DialogTitle>Delete Location</DialogTitle>
+                        <DialogDescription>
+                            {isInUse ? (
+                                <>
+                                    "{location.name}" is used by{' '}
+                                    {location.usage_count} record(s) and cannot
+                                    be deleted. Set it to inactive instead.
+                                </>
+                            ) : (
+                                <>
+                                    Are you sure you want to delete "
+                                    {location.name}"? This action cannot be
+                                    undone.
+                                </>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button type="button" variant="outline">
+                                Close
+                            </Button>
+                        </DialogClose>
+                        {!isInUse && (
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={processing}
+                            >
+                                {processing && <Spinner />}
+                                Delete Location
+                            </Button>
+                        )}
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
-DeleteLocation.layout = { breadcrumbs: [{ title: 'Delete Location', href: '#' }] };

@@ -1,12 +1,63 @@
 <?php
+
 namespace App\Repositories\Eloquent;
+
 use App\Models\Location;
 use App\Repositories\Contracts\LocationRepository;
 use Illuminate\Pagination\LengthAwarePaginator;
-class EloquentLocationRepository implements LocationRepository {
-    public function paginate(?string $s=null,int $p=15):LengthAwarePaginator { return Location::query()->when($s,function($q)use($s){$q->where('name','like',"%$s%")->orWhere('description','like',"%$s%");})->orderBy('name')->paginate($p)->withQueryString(); }
-    public function find(int $id):?Location { return Location::find($id); }
-    public function create(array $d):Location { return Location::create($d); }
-    public function update(Location $m,array $d):Location { $m->update($d); return $m; }
-    public function delete(Location $m):void { $m->delete(); }
+
+class EloquentLocationRepository implements LocationRepository
+{
+    public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
+    {
+        $paginator = Location::query()
+            ->withCount(['transportationFares', 'perDiemConfigurations'])
+            ->when($search !== null && $search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('name', 'like', '%'.$search.'%')
+                        ->orWhere('description', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderBy('name')
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $paginator->getCollection()->each(function (Location $location): void {
+            $location->setAttribute(
+                'usage_count',
+                $location->transportation_fares_count + $location->per_diem_configurations_count,
+            );
+            unset($location->transportation_fares_count, $location->per_diem_configurations_count);
+        });
+
+        return $paginator;
+    }
+
+    public function find(int $id): ?Location
+    {
+        return Location::query()->find($id);
+    }
+
+    public function create(array $data): Location
+    {
+        return Location::query()->create($data);
+    }
+
+    public function update(Location $location, array $data): Location
+    {
+        $location->update($data);
+
+        return $location;
+    }
+
+    public function usageCount(Location $location): int
+    {
+        return $location->transportationFares()->count()
+            + $location->perDiemConfigurations()->count();
+    }
+
+    public function delete(Location $location): void
+    {
+        $location->delete();
+    }
 }
