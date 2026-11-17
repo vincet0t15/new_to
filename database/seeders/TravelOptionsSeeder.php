@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\ExpenseType;
 use App\Models\FundSource;
+use App\Models\MealType;
 use App\Models\TransportationMode;
 use App\Models\TravelClassification;
 use Illuminate\Database\Seeder;
@@ -57,8 +58,36 @@ class TravelOptionsSeeder extends Seeder
         'Others' => [],
     ];
 
+    /**
+     * The meal breakdowns a per diem configuration may use.
+     *
+     * Breakfast, lunch and dinner carry a cutoff time used by the claim
+     * computation; incidental and other meals are paid in full.
+     *
+     * @var array<int, array{code: string, name: string, has_cutoff: bool, sort_order: int}>
+     */
+    private const MEAL_TYPES = [
+        ['code' => 'breakfast', 'name' => 'Breakfast', 'has_cutoff' => true, 'sort_order' => 1],
+        ['code' => 'lunch', 'name' => 'Lunch', 'has_cutoff' => true, 'sort_order' => 2],
+        ['code' => 'dinner', 'name' => 'Dinner', 'has_cutoff' => true, 'sort_order' => 3],
+        ['code' => 'incidental', 'name' => 'Incidental', 'has_cutoff' => false, 'sort_order' => 4],
+        ['code' => 'other', 'name' => 'Other', 'has_cutoff' => false, 'sort_order' => 5],
+    ];
+
     public function run(): void
     {
+        foreach (self::MEAL_TYPES as $mealType) {
+            MealType::firstOrCreate(
+                ['code' => $mealType['code']],
+                [
+                    'name' => $mealType['name'],
+                    'has_cutoff' => $mealType['has_cutoff'],
+                    'is_active' => true,
+                    'sort_order' => $mealType['sort_order'],
+                ],
+            );
+        }
+
         foreach (self::TRAVEL_CLASSIFICATIONS as $name) {
             TravelClassification::firstOrCreate(
                 ['name' => $name],

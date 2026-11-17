@@ -77,34 +77,62 @@ class WorkflowSeeder extends Seeder
      * The offices the seeded chains point at.
      *
      * These are the only offices the seeder creates. Everything else in the
-     * organization remains the Administrator's data to enter.
+     * organization remains the Administrator's data to enter. The official
+     * names come from OfficeSeeder; the short names older installs may already
+     * have are matched so a re-seed never creates a second office beside them.
      *
      * @return array<string, Office>
      */
     private function supportOffices(): array
     {
         return [
-            'budget' => Office::firstOrCreate(
-                ['office_name' => 'Budget Office'],
-                ['office_code' => 'BUDGET'],
+            'budget' => $this->supportOffice(
+                'Office of the Municipal Budget',
+                'MBO',
+                ['Budget Office'],
             ),
-            'mayor' => Office::firstOrCreate(
-                ['office_name' => "Mayor's Office"],
-                ['office_code' => 'MAYOR'],
+            'mayor' => $this->supportOffice(
+                'Office of the Municipal Mayor',
+                'MO',
+                ["Mayor's Office"],
             ),
-            'vice_mayor' => Office::firstOrCreate(
-                ['office_name' => 'Office of the Vice Mayor'],
-                ['office_code' => 'VMAYOR'],
+            'vice_mayor' => $this->supportOffice(
+                'Office of the Vice Mayor',
+                'VMAYOR',
             ),
-            'hrmo' => Office::firstOrCreate(
-                ['office_name' => 'Human Resource Management Office'],
-                ['office_code' => 'HRMO'],
+            'hrmo' => $this->supportOffice(
+                'Office of the Human Resource Management',
+                'HRMO',
+                ['Human Resource Management Office'],
             ),
-            'legislative' => Office::firstOrCreate(
-                ['office_name' => 'Legislative Office'],
-                ['office_code' => 'LEG'],
+            'legislative' => $this->supportOffice(
+                'Office of the Sangguniang Bayan',
+                'SBO',
+                ['Legislative Office'],
             ),
         ];
+    }
+
+    /**
+     * Find the office under its official name or a name an earlier install
+     * used, and only create it when neither exists.
+     *
+     * @param  array<int, string>  $aliases
+     */
+    private function supportOffice(string $name, string $code, array $aliases = []): Office
+    {
+        foreach ([$name, ...$aliases] as $candidate) {
+            $office = Office::query()->where('office_name', $candidate)->first();
+
+            if ($office !== null) {
+                return $office;
+            }
+        }
+
+        return Office::firstOrCreate(
+            ['office_name' => $name],
+            ['office_code' => $code],
+        );
     }
 
     /**
