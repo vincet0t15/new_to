@@ -239,6 +239,10 @@ export default function DesignationsIndex({
                         offices={offices}
                         stepTypes={stepTypes}
                         employees={employees}
+                        initialOfficeId={filters.office_id ?? null}
+                        initialStepTypeId={
+                            filters.workflow_step_type_id ?? null
+                        }
                     />
                 )}
                 {editOpen && selected && (

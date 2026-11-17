@@ -29,6 +29,8 @@ type Props = {
     offices: Pick<Office, 'id' | 'office_name'>[];
     stepTypes: WorkflowStepType[];
     employees: DesignationEmployeeOption[];
+    initialOfficeId: number | null;
+    initialStepTypeId: number | null;
 };
 
 export function CreateDesignationDialog({
@@ -37,11 +39,13 @@ export function CreateDesignationDialog({
     offices,
     stepTypes,
     employees,
+    initialOfficeId,
+    initialStepTypeId,
 }: Props) {
     const { data, setData, post, reset, errors, processing } =
         useForm<OfficeDesignationRequest>({
-            office_id: '',
-            workflow_step_type_id: '',
+            office_id: initialOfficeId ?? '',
+            workflow_step_type_id: initialStepTypeId ?? '',
             employee_id: '',
             is_deputy: false,
             is_active: true,

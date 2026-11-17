@@ -6,6 +6,7 @@ import {
     Pencil,
     Plus,
     Trash2,
+    Users,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Can } from '@/components/can';
@@ -16,6 +17,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import designationsRoutes from '@/routes/designations';
 import workflowsRoutes from '@/routes/workflows';
 import type { WorkflowOfficeOption } from '@/types/office';
 import type {
@@ -378,6 +380,34 @@ export default function WorkflowEdit({
                                         </td>
                                         <td className="px-3 py-2">
                                             <div className="flex items-center justify-end gap-1">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            designationsRoutes.index(
+                                                                {
+                                                                    query: {
+                                                                        workflow_step_type_id:
+                                                                            step.workflow_step_type_id,
+                                                                        ...(step.office_id ===
+                                                                        null
+                                                                            ? {}
+                                                                            : {
+                                                                                  office_id:
+                                                                                      step.office_id,
+                                                                              }),
+                                                                    },
+                                                                },
+                                                            ).url,
+                                                        )
+                                                    }
+                                                    title="Assign employees for this step"
+                                                    aria-label="Assign employees for this step"
+                                                >
+                                                    <Users />
+                                                </Button>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
