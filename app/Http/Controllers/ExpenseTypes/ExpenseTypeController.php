@@ -14,9 +14,7 @@ use Inertia\Response;
 
 class ExpenseTypeController extends Controller
 {
-    public function __construct(private readonly ExpenseTypeRepository $expenseTypes)
-    {
-    }
+    public function __construct(private readonly ExpenseTypeRepository $expenseTypes) {}
 
     public function index(Request $request): Response
     {

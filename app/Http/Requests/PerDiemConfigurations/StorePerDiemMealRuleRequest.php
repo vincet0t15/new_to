@@ -8,6 +8,9 @@ use Illuminate\Validation\Rule;
 
 class StorePerDiemMealRuleRequest extends FormRequest
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         $submittedCode = $this->input('meal_type');
@@ -31,6 +34,9 @@ class StorePerDiemMealRuleRequest extends FormRequest
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return ['cutoff_time.prohibited' => 'This meal type does not accept a cutoff time.'];

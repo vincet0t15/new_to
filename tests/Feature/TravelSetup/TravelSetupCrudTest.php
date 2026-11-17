@@ -7,6 +7,7 @@ use App\Models\PerDiemMealRule;
 use App\Models\Role;
 use App\Models\TransportationMode;
 use App\Models\User;
+use App\Repositories\Eloquent\EloquentPerDiemConfigurationRepository;
 use Database\Seeders\RolesAndPermissionsSeeder;
 
 beforeEach(function () {
@@ -80,7 +81,7 @@ test('per diem rules contribute to their rate and reject incompatible cutoffs', 
         'daily_rate' => '125.00',
     ]);
 
-    $legacyRate = (new App\Repositories\Eloquent\EloquentPerDiemConfigurationRepository)
+    $legacyRate = (new EloquentPerDiemConfigurationRepository)
         ->paginate('Legacy daily rate')
         ->getCollection()
         ->sole()
@@ -113,7 +114,7 @@ test('per diem rules contribute to their rate and reject incompatible cutoffs', 
         ])
         ->assertRedirect();
 
-    expect((new App\Repositories\Eloquent\EloquentPerDiemConfigurationRepository)->dailyRate($configuration))
+    expect((new EloquentPerDiemConfigurationRepository)->dailyRate($configuration))
         ->toBe('350.00');
 
     $this->actingAs($this->admin)

@@ -14,9 +14,7 @@ use Inertia\Response;
 
 class FundSourceController extends Controller
 {
-    public function __construct(private readonly FundSourceRepository $fundSources)
-    {
-    }
+    public function __construct(private readonly FundSourceRepository $fundSources) {}
 
     public function index(Request $request): Response
     {

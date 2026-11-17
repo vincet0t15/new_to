@@ -14,9 +14,7 @@ use Inertia\Response;
 
 class TravelClassificationController extends Controller
 {
-    public function __construct(private readonly TravelClassificationRepository $classifications)
-    {
-    }
+    public function __construct(private readonly TravelClassificationRepository $classifications) {}
 
     public function index(Request $request): Response
     {

@@ -14,9 +14,7 @@ use Inertia\Response;
 
 class LocationController extends Controller
 {
-    public function __construct(private readonly LocationRepository $locations)
-    {
-    }
+    public function __construct(private readonly LocationRepository $locations) {}
 
     public function index(Request $request): Response
     {

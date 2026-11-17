@@ -21,9 +21,7 @@ use Inertia\Response;
 
 class PerDiemConfigurationController extends Controller
 {
-    public function __construct(private readonly PerDiemConfigurationRepository $configurations)
-    {
-    }
+    public function __construct(private readonly PerDiemConfigurationRepository $configurations) {}
 
     public function index(Request $request): Response
     {

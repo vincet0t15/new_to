@@ -19,16 +19,27 @@ class MealType extends Model
         ];
     }
 
+    /**
+     * @param  Builder<MealType>  $query
+     * @return Builder<MealType>
+     */
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
+    /**
+     * @param  Builder<MealType>  $query
+     * @return Builder<MealType>
+     */
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('name');
     }
 
+    /**
+     * @return HasMany<PerDiemMealRule, $this>
+     */
     public function perDiemMealRules(): HasMany
     {
         return $this->hasMany(PerDiemMealRule::class, 'meal_type', 'code');

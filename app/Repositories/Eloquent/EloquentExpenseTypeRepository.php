@@ -8,6 +8,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentExpenseTypeRepository implements ExpenseTypeRepository
 {
+    /**
+     * @return LengthAwarePaginator<int, ExpenseType>
+     */
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $paginator = ExpenseType::query()
@@ -29,11 +32,17 @@ class EloquentExpenseTypeRepository implements ExpenseTypeRepository
         return ExpenseType::query()->find($id);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): ExpenseType
     {
         return ExpenseType::query()->create($data);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function update(ExpenseType $expenseType, array $data): ExpenseType
     {
         $expenseType->update($data);

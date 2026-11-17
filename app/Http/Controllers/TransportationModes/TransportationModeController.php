@@ -8,6 +8,7 @@ use App\Http\Requests\TransportationModes\UpdateTransportationModeRequest;
 use App\Models\Location;
 use App\Models\TransportationMode;
 use App\Repositories\Contracts\TransportationModeRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -114,9 +115,9 @@ class TransportationModeController extends Controller
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Collection<int, Location>
+     * @return Collection<int, Location>
      */
-    private function selectableLocations(): \Illuminate\Database\Eloquent\Collection
+    private function selectableLocations(): Collection
     {
         return Location::query()->active()->orderBy('name')->get(['id', 'name']);
     }

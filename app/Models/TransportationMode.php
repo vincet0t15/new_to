@@ -26,6 +26,9 @@ class TransportationMode extends Model
     /** @use HasFactory<TransportationModeFactory> */
     use HasFactory;
 
+    /**
+     * @return HasMany<TransportationFare, $this>
+     */
     public function fares(): HasMany
     {
         return $this->hasMany(TransportationFare::class);

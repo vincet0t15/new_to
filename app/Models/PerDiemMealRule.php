@@ -18,11 +18,17 @@ class PerDiemMealRule extends Model
         ];
     }
 
+    /**
+     * @return BelongsTo<PerDiemConfiguration, $this>
+     */
     public function perDiemConfiguration(): BelongsTo
     {
         return $this->belongsTo(PerDiemConfiguration::class);
     }
 
+    /**
+     * @return BelongsTo<MealType, $this>
+     */
     public function mealTypeOption(): BelongsTo
     {
         return $this->belongsTo(MealType::class, 'meal_type', 'code');

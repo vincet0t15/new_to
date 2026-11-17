@@ -9,6 +9,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentTravelClassificationRepository implements TravelClassificationRepository
 {
+    /**
+     * @return LengthAwarePaginator<int, TravelClassification>
+     */
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         return TravelClassification::query()
@@ -35,11 +38,17 @@ class EloquentTravelClassificationRepository implements TravelClassificationRepo
         return TravelClassification::query()->find($id);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): TravelClassification
     {
         return TravelClassification::query()->create($data);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function update(TravelClassification $travelClassification, array $data): TravelClassification
     {
         $travelClassification->update($data);

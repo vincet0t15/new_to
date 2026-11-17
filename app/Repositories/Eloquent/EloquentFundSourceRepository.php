@@ -9,6 +9,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentFundSourceRepository implements FundSourceRepository
 {
+    /**
+     * @return LengthAwarePaginator<int, FundSource>
+     */
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $paginator = FundSource::query()
@@ -37,11 +40,17 @@ class EloquentFundSourceRepository implements FundSourceRepository
         return FundSource::query()->find($id);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): FundSource
     {
         return FundSource::query()->create($data);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function update(FundSource $fundSource, array $data): FundSource
     {
         $fundSource->update($data);

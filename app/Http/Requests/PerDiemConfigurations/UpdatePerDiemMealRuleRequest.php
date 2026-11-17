@@ -8,6 +8,9 @@ use Illuminate\Validation\Rule;
 
 class UpdatePerDiemMealRuleRequest extends StorePerDiemMealRuleRequest
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         $current = $this->route('perDiemMealRule');

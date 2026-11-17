@@ -8,6 +8,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentLocationRepository implements LocationRepository
 {
+    /**
+     * @return LengthAwarePaginator<int, Location>
+     */
     public function paginate(?string $search = null, int $perPage = 15): LengthAwarePaginator
     {
         $paginator = Location::query()
@@ -38,11 +41,17 @@ class EloquentLocationRepository implements LocationRepository
         return Location::query()->find($id);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function create(array $data): Location
     {
         return Location::query()->create($data);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function update(Location $location, array $data): Location
     {
         $location->update($data);
