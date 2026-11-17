@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { ArrowRight } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -72,7 +73,8 @@ export default function Login({ status }: Props) {
                                 data-test="login-button"
                             >
                                 {processing && <Spinner />}
-                                Log in
+                                <span>Log in</span>
+                                <ArrowRight className="size-4" />
                             </Button>
                         </div>
 

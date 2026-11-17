@@ -1,4 +1,5 @@
 import { Form, Head } from '@inertiajs/react';
+import { ArrowRight } from 'lucide-react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
 import TextLink from '@/components/text-link';
@@ -97,7 +98,8 @@ export default function Register({ passwordRules }: Props) {
                                 data-test="register-user-button"
                             >
                                 {processing && <Spinner />}
-                                Create account
+                                <span>Create account</span>
+                                <ArrowRight className="size-4" />
                             </Button>
                         </div>
 
