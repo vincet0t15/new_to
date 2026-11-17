@@ -1,18 +1,25 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
+    BadgeCheck,
     Briefcase,
     Building2,
     Car,
+    ChartColumn,
+    ClipboardList,
     FileText,
     GitBranch,
+    History,
     Inbox,
+    KeyRound,
     Landmark,
     Layers,
     LayoutGrid,
+    ListChecks,
     MapPin,
     Plus,
     Receipt,
     RotateCcw,
+    Route,
     ShieldCheck,
     Tag,
     UserCog,
@@ -31,6 +38,7 @@ import {
 import { dashboard } from '@/routes';
 import accounts from '@/routes/accounts';
 import admin from '@/routes/admin';
+import approvals from '@/routes/approvals';
 import departmentHead from '@/routes/department-head';
 import designations from '@/routes/designations';
 import employees from '@/routes/employees';
@@ -66,12 +74,139 @@ function overviewGroup(href: string, title: string): NavGroup {
 }
 
 /**
- * The admin portal keeps the organization reference data beside its
- * dashboard; the other portals fill in as their Travel Order screens land.
+ * The employee workspace: file an order, follow it, and pick up anything that
+ * came back for revision.
+ */
+function employeeGroups(dashboardUrl: string): NavGroup[] {
+    return [
+        overviewGroup(dashboardUrl, 'Dashboard'),
+        {
+            label: 'Travel Orders',
+            items: [
+                {
+                    title: 'New Travel Order',
+                    href: travelOrders.create().url,
+                    icon: Plus,
+                    permission: 'travel-orders.create',
+                },
+                {
+                    title: 'My Travel Orders',
+                    href: travelOrders.index().url,
+                    icon: FileText,
+                    permission: 'travel-orders.view',
+                },
+                {
+                    title: 'Returned for Revision',
+                    href: travelOrders.returned().url,
+                    icon: RotateCcw,
+                    permission: 'travel-orders.view',
+                },
+            ],
+        },
+    ];
+}
+
+/**
+ * The department head workspace: the same approval inbox as the approvals
+ * portal, reached from the department's own landing page.
+ */
+function departmentHeadGroups(dashboardUrl: string): NavGroup[] {
+    return [
+        overviewGroup(dashboardUrl, 'Dashboard'),
+        {
+            label: 'Approvals',
+            items: [
+                {
+                    title: 'Approval Inbox',
+                    href: departmentHead.inbox().url,
+                    icon: Inbox,
+                    permission: 'travel-orders.view',
+                },
+            ],
+        },
+    ];
+}
+
+/**
+ * The approvals workspace: budget, mayor, vice mayor, and HRMO land straight
+ * in the shared inbox, so the inbox itself is the portal's only section.
+ */
+function approvalsGroups(inboxUrl: string): NavGroup[] {
+    return [
+        {
+            label: 'Approvals',
+            items: [
+                {
+                    title: 'Approval Inbox',
+                    href: inboxUrl,
+                    icon: Inbox,
+                    permission: 'travel-orders.view',
+                },
+            ],
+        },
+    ];
+}
+
+/**
+ * The admin workspace, grouped by the job the Administrator is doing:
+ * filing and reviewing orders, configuring the route, maintaining the travel
+ * reference data, keeping the organization directory, and running accounts.
  */
 function adminGroups(dashboardUrl: string): NavGroup[] {
     return [
         overviewGroup(dashboardUrl, 'Dashboard'),
+        {
+            label: 'Travel Orders',
+            items: [
+                {
+                    title: 'New Travel Order',
+                    href: travelOrders.create().url,
+                    icon: Plus,
+                    permission: 'travel-orders.create',
+                },
+                {
+                    title: 'Travel Order Register',
+                    href: admin.travelOrders.index().url,
+                    icon: ClipboardList,
+                    permission: 'travel-orders.view-all',
+                },
+                {
+                    title: 'Reports',
+                    href: admin.reports.index().url,
+                    icon: ChartColumn,
+                    permission: 'travel-orders.view-all',
+                },
+            ],
+        },
+        {
+            label: 'Workflow',
+            items: [
+                {
+                    title: 'Workflows',
+                    href: workflows.index().url,
+                    icon: GitBranch,
+                    permission: 'workflow.manage',
+                },
+                {
+                    title: 'Step Types',
+                    href: workflowStepTypes.index().url,
+                    icon: ListChecks,
+                    permission: 'workflow.manage',
+                },
+                {
+                    title: 'Designations',
+                    href: designations.index().url,
+                    icon: BadgeCheck,
+                    permission: 'designations.manage',
+                },
+                {
+                    title: 'Route Preview',
+                    href: workflows.preview().url,
+                    icon: Route,
+                    permission: 'workflow.manage',
+                },
+            ],
+        },
         {
             label: 'Travel Setup',
             items: [
@@ -123,12 +258,6 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     permission: 'offices.view',
                 },
                 {
-                    title: 'Employees',
-                    href: employees.index().url,
-                    icon: Users,
-                    permission: 'administration.view',
-                },
-                {
                     title: 'Positions',
                     href: positions.index().url,
                     icon: UserCog,
@@ -140,15 +269,21 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     icon: Briefcase,
                     permission: 'employment-types.view',
                 },
+                {
+                    title: 'Employees',
+                    href: employees.index().url,
+                    icon: Users,
+                    permission: 'employees.view',
+                },
             ],
         },
         {
-            label: 'Access Control',
+            label: 'Administration',
             items: [
                 {
                     title: 'User Accounts',
                     href: accounts.index().url,
-                    icon: UserCog,
+                    icon: KeyRound,
                     permission: 'accounts.view',
                 },
                 {
@@ -157,63 +292,11 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     icon: ShieldCheck,
                     permission: 'roles.view',
                 },
-            ],
-        },
-        {
-            label: 'Travel Orders',
-            items: [
-                {
-                    title: 'New Travel Order',
-                    href: travelOrders.create().url,
-                    icon: Plus,
-                    permission: 'travel-orders.create',
-                },
-                {
-                    title: 'Register',
-                    href: admin.travelOrders.index().url,
-                    icon: FileText,
-                    permission: 'travel-orders.view-all',
-                },
-                {
-                    title: 'Reports',
-                    href: admin.reports.index().url,
-                    icon: FileText,
-                    permission: 'travel-orders.view-all',
-                },
                 {
                     title: 'Audit Log',
                     href: admin.audit.index().url,
-                    icon: ShieldCheck,
+                    icon: History,
                     permission: 'audit.view',
-                },
-            ],
-        },
-        {
-            label: 'Workflow',
-            items: [
-                {
-                    title: 'Workflows',
-                    href: workflows.index().url,
-                    icon: GitBranch,
-                    permission: 'workflow.manage',
-                },
-                {
-                    title: 'Step Types',
-                    href: workflowStepTypes.index().url,
-                    icon: ShieldCheck,
-                    permission: 'workflow.manage',
-                },
-                {
-                    title: 'Designations',
-                    href: designations.index().url,
-                    icon: Users,
-                    permission: 'designations.manage',
-                },
-                {
-                    title: 'Route Preview',
-                    href: workflows.preview().url,
-                    icon: GitBranch,
-                    permission: 'workflow.manage',
                 },
             ],
         },
@@ -226,57 +309,17 @@ export function AppSidebar() {
         portals.find((option) => option.key === currentPortal) ?? portals[0];
 
     const workspaceUrl = portal?.url ?? dashboard();
+
     const groups: NavGroup[] =
         portal?.key === 'admin'
             ? adminGroups(workspaceUrl)
             : portal?.key === 'employee'
-              ? [
-                    overviewGroup(workspaceUrl, 'Dashboard'),
-                    {
-                        label: 'Travel Orders',
-                        items: [
-                            {
-                                title: 'My Travel Orders',
-                                href: travelOrders.index().url,
-                                icon: FileText,
-                                permission: 'travel-orders.view',
-                            },
-                            {
-                                title: 'Returned for Revision',
-                                href: travelOrders.returned().url,
-                                icon: RotateCcw,
-                                permission: 'travel-orders.view',
-                            },
-                            {
-                                title: 'New Travel Order',
-                                href: travelOrders.create().url,
-                                icon: Plus,
-                                permission: 'travel-orders.create',
-                            },
-                        ],
-                    },
-                ]
+              ? employeeGroups(workspaceUrl)
               : portal?.key === 'department-head'
-                ? [
-                      overviewGroup(workspaceUrl, 'Dashboard'),
-                      {
-                          label: 'Travel Orders',
-                          items: [
-                              {
-                                  title: 'Approval Inbox',
-                                  href: departmentHead.inbox().url,
-                                  icon: Inbox,
-                                  permission: 'travel-orders.view',
-                              },
-                          ],
-                      },
-                  ]
-                : [
-                      overviewGroup(
-                          workspaceUrl,
-                          portal?.key === 'approvals' ? 'Inbox' : 'Dashboard',
-                      ),
-                  ];
+                ? departmentHeadGroups(workspaceUrl)
+                : portal?.key === 'approvals'
+                  ? approvalsGroups(approvals.inbox().url)
+                  : [overviewGroup(workspaceUrl, 'Dashboard')];
 
     return (
         <Sidebar collapsible="icon" variant="inset">
