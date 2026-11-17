@@ -6,9 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Offices\StoreOfficeRequest;
 use App\Http\Requests\Offices\UpdateOfficeRequest;
 use App\Models\Office;
-use App\Models\Workflow;
 use App\Repositories\Contracts\OfficeRepository;
-use App\Repositories\Contracts\WorkflowRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,7 +16,6 @@ class OfficeController extends Controller
 {
     public function __construct(
         private readonly OfficeRepository $offices,
-        private readonly WorkflowRepository $workflows,
     ) {
         //
     }
@@ -35,15 +32,6 @@ class OfficeController extends Controller
             'filters' => [
                 'search' => $search,
             ],
-            'workflows' => $this->workflows->allForSelection()
-                ->map(fn (Workflow $workflow): array => [
-                    'id' => $workflow->id,
-                    'name' => $workflow->name,
-                    'is_default' => $workflow->is_default,
-                    'is_active' => $workflow->is_active,
-                ])
-                ->values()
-                ->all(),
         ]);
     }
 

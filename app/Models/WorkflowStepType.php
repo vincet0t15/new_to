@@ -21,7 +21,6 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property string $name
- * @property string $slug
  * @property string|null $signature_label
  * @property string|null $signature_title
  * @property bool $is_signatory
@@ -36,7 +35,6 @@ use Illuminate\Support\Carbon;
  */
 #[Fillable([
     'name',
-    'slug',
     'signature_label',
     'signature_title',
     'is_signatory',
@@ -47,14 +45,6 @@ class WorkflowStepType extends Model
 {
     /** @use HasFactory<WorkflowStepTypeFactory> */
     use HasFactory;
-
-    /**
-     * The stable slug for the department-head step.
-     *
-     * The step follows the filing office rather than naming one, so the
-     * routing engine identifies it by this slug instead of by a fixed office.
-     */
-    public const DEPARTMENT_HEAD_SLUG = 'department_head_approval';
 
     /**
      * The steps in every workflow that use this type.

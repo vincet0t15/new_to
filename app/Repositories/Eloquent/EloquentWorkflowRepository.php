@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Eloquent;
 
+use App\Models\Office;
 use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Repositories\Contracts\WorkflowRepository;
@@ -61,7 +62,10 @@ class EloquentWorkflowRepository implements WorkflowRepository
 
     public function update(Workflow $workflow, array $data): Workflow
     {
-        return DB::transaction(function () use ($workflow, $data): Workflow {
+        $assignedOfficeIds = $data['assigned_office_ids'] ?? null;
+        unset($data['assigned_office_ids']);
+
+        return DB::transaction(function () use ($workflow, $data, $assignedOfficeIds): Workflow {
             $isDefault = (bool) ($data['is_default'] ?? $workflow->is_default);
 
             if ($isDefault) {
@@ -70,6 +74,23 @@ class EloquentWorkflowRepository implements WorkflowRepository
             }
 
             $workflow->update($data);
+
+            if ($workflow->is_default) {
+                $workflow->offices()->update(['workflow_id' => null]);
+            } elseif ($assignedOfficeIds !== null) {
+                $workflow->offices()
+                    ->when(
+                        $assignedOfficeIds !== [],
+                        fn ($query) => $query->whereNotIn('id', $assignedOfficeIds),
+                    )
+                    ->update(['workflow_id' => null]);
+
+                if ($assignedOfficeIds !== []) {
+                    Office::query()
+                        ->whereKey($assignedOfficeIds)
+                        ->update(['workflow_id' => $workflow->id]);
+                }
+            }
 
             return $workflow;
         });
@@ -98,6 +119,7 @@ class EloquentWorkflowRepository implements WorkflowRepository
                     'office_id' => $step->office_id,
                     'sort_order' => $step->sort_order,
                     'auto_skip_creator' => $step->auto_skip_creator,
+                    'reviewed_fields' => $step->reviewed_fields ?? [],
                     'is_active' => $step->is_active,
                 ]);
             }
@@ -172,6 +194,13 @@ class EloquentWorkflowRepository implements WorkflowRepository
             $query->whereKeyNot($except->getKey());
         }
 
+        $defaultIds = $query->pluck('id');
         $query->update(['is_default' => false]);
+
+        if ($defaultIds->isNotEmpty()) {
+            Office::query()
+                ->whereIn('workflow_id', $defaultIds)
+                ->update(['workflow_id' => null]);
+        }
     }
 }

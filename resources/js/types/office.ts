@@ -11,10 +11,19 @@ export type Office = {
     } | null;
 };
 
+export type WorkflowOfficeOption = {
+    id: number;
+    office_name: string;
+    workflow_id: number | null;
+    workflow: {
+        id: number;
+        name: string;
+    } | null;
+};
+
 export type OfficeCreateRequest = {
     office_name: string;
     office_code: string;
-    workflow_id: number | '';
 };
 
 export type OfficeUpdateRequest = Partial<OfficeCreateRequest>;

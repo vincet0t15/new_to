@@ -4,7 +4,6 @@ namespace Database\Factories;
 
 use App\Models\WorkflowStepType;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
  * @extends Factory<WorkflowStepType>
@@ -22,7 +21,6 @@ class WorkflowStepTypeFactory extends Factory
 
         return [
             'name' => $name,
-            'slug' => Str::slug($name, '_'),
             'signature_label' => fake()->optional()->words(2, true),
             'signature_title' => fake()->optional()->jobTitle(),
             'is_signatory' => true,

@@ -23,7 +23,6 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
     const { data, setData, post, reset, errors, processing } =
         useForm<WorkflowStepTypeRequest>({
             name: '',
-            slug: '',
             signature_label: '',
             signature_title: '',
             is_signatory: true,
@@ -57,34 +56,13 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                             <Input
                                 id="name"
                                 value={data.name}
-                                onChange={(e) => {
-                                    setData('name', e.target.value);
-                                    if (!data.slug) {
-                                        setData(
-                                            'slug',
-                                            e.target.value
-                                                .toLowerCase()
-                                                .replace(/[^a-z0-9]+/g, '_')
-                                                .replace(/^_|_$/g, ''),
-                                        );
-                                    }
-                                }}
+                                onChange={(e) =>
+                                    setData('name', e.target.value)
+                                }
                                 required
                                 autoFocus
                             />
                             <InputError message={errors.name} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="slug">Slug *</Label>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(e) =>
-                                    setData('slug', e.target.value)
-                                }
-                                required
-                            />
-                            <InputError message={errors.slug} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="signature_label">

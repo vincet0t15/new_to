@@ -18,9 +18,9 @@ use Illuminate\Database\Seeder;
  * holders and deputies; until then the route preview reports the missing
  * designee instead of letting a submission stall silently.
  *
- * Everything is first-or-create. Re-running the seeder after an Administrator
- * has edited a chain must not overwrite the edit, so existing workflows keep
- * their steps and existing step types keep their wording.
+ * Everything is first-or-create by its natural key. Re-running the seeder after
+ * an Administrator has edited a chain must not overwrite the edit, so existing
+ * workflows keep their steps and step types with seeded names keep their wording.
  */
 class WorkflowSeeder extends Seeder
 {
@@ -44,10 +44,10 @@ class WorkflowSeeder extends Seeder
 
         if ($default->wasRecentlyCreated) {
             $this->addSteps($default, [
-                [$types['department_head'], null],
-                [$types['budget_review'], $offices['budget']->id],
-                [$types['mayor_approval'], $offices['mayor']->id],
-                [$types['hrmo_review'], $offices['hrmo']->id],
+                [$types['department_head'], null, $this->departmentHeadReviewFields()],
+                [$types['budget_review'], $offices['budget']->id, $this->budgetReviewFields()],
+                [$types['mayor_approval'], $offices['mayor']->id, []],
+                [$types['hrmo_review'], $offices['hrmo']->id, []],
             ]);
         }
 
@@ -63,10 +63,10 @@ class WorkflowSeeder extends Seeder
 
         if ($legislative->wasRecentlyCreated) {
             $this->addSteps($legislative, [
-                [$types['department_head'], null],
-                [$types['budget_review'], $offices['budget']->id],
-                [$types['vice_mayor_approval'], $offices['vice_mayor']->id],
-                [$types['hrmo_review'], $offices['hrmo']->id],
+                [$types['department_head'], null, $this->departmentHeadReviewFields()],
+                [$types['budget_review'], $offices['budget']->id, $this->budgetReviewFields()],
+                [$types['vice_mayor_approval'], $offices['vice_mayor']->id, []],
+                [$types['hrmo_review'], $offices['hrmo']->id, []],
             ]);
 
             $offices['legislative']->update(['workflow_id' => $legislative->id]);
@@ -144,9 +144,8 @@ class WorkflowSeeder extends Seeder
     {
         return [
             'department_head' => WorkflowStepType::firstOrCreate(
-                ['slug' => WorkflowStepType::DEPARTMENT_HEAD_SLUG],
+                ['name' => 'Department Head Approval'],
                 [
-                    'name' => 'Department Head Approval',
                     'signature_label' => 'Recommending Approval',
                     'signature_title' => 'Department Head',
                     'is_signatory' => true,
@@ -155,9 +154,8 @@ class WorkflowSeeder extends Seeder
                 ],
             ),
             'budget_review' => WorkflowStepType::firstOrCreate(
-                ['slug' => 'budget_review'],
+                ['name' => 'Budget Review'],
                 [
-                    'name' => 'Budget Review',
                     'signature_label' => 'Budget Review',
                     'signature_title' => 'Budget Officer',
                     'is_signatory' => true,
@@ -166,9 +164,8 @@ class WorkflowSeeder extends Seeder
                 ],
             ),
             'mayor_approval' => WorkflowStepType::firstOrCreate(
-                ['slug' => 'mayor_approval'],
+                ['name' => 'Mayor Approval'],
                 [
-                    'name' => 'Mayor Approval',
                     'signature_label' => 'Approved',
                     'signature_title' => 'City Mayor',
                     'is_signatory' => true,
@@ -177,9 +174,8 @@ class WorkflowSeeder extends Seeder
                 ],
             ),
             'vice_mayor_approval' => WorkflowStepType::firstOrCreate(
-                ['slug' => 'vice_mayor_approval'],
+                ['name' => 'Vice Mayor Approval'],
                 [
-                    'name' => 'Vice Mayor Approval',
                     'signature_label' => 'Approved',
                     'signature_title' => 'City Vice Mayor',
                     'is_signatory' => true,
@@ -188,9 +184,8 @@ class WorkflowSeeder extends Seeder
                 ],
             ),
             'hrmo_review' => WorkflowStepType::firstOrCreate(
-                ['slug' => 'hrmo_review'],
+                ['name' => 'HRMO Review'],
                 [
-                    'name' => 'HRMO Review',
                     'signature_label' => 'Reviewed',
                     'signature_title' => 'HRMO',
                     'is_signatory' => true,
@@ -202,17 +197,48 @@ class WorkflowSeeder extends Seeder
     }
 
     /**
-     * @param  array<int, array{0: WorkflowStepType, 1: int|null}>  $steps
+     * @return array<int, string>
+     */
+    private function departmentHeadReviewFields(): array
+    {
+        return [
+            'purpose',
+            'date_from',
+            'date_to',
+            'travel_classification_id',
+            'origin_id',
+            'destination_id',
+            'official_station_id',
+            'employee_id',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function budgetReviewFields(): array
+    {
+        return [
+            'fund_source_id',
+            'other_expenses',
+            'expense_type_ids',
+            'transportation_mode_ids',
+        ];
+    }
+
+    /**
+     * @param  array<int, array{0: WorkflowStepType, 1: int|null, 2: array<int, string>}>  $steps
      */
     private function addSteps(Workflow $workflow, array $steps): void
     {
-        foreach ($steps as $index => [$type, $officeId]) {
+        foreach ($steps as $index => [$type, $officeId, $reviewedFields]) {
             $workflow->steps()->create([
                 'workflow_step_type_id' => $type->id,
                 'label' => null,
                 'office_id' => $officeId,
                 'sort_order' => $index + 1,
                 'auto_skip_creator' => true,
+                'reviewed_fields' => $reviewedFields,
                 'is_active' => true,
             ]);
         }

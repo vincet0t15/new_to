@@ -154,7 +154,9 @@ test('resubmission requires remarks', function () {
     expect($order->refresh()->status)->toBe(TravelOrderStatus::Returned);
 });
 
-test('resubmission resumes at the returning step by default', function () {
+test('resume policy returns a correction to the step that sent it back', function () {
+    config(['travel-orders.resubmission.policy' => 'resume']);
+
     $chain = revChain();
     $order = revSubmit($chain);
 
@@ -174,6 +176,53 @@ test('resubmission resumes at the returning step by default', function () {
     expect($order->status)->toBe(TravelOrderStatus::Submitted)
         ->and($order->current_step_index)->toBe(1)
         ->and($order->revision_number)->toBe(2);
+});
+
+test('material changes restart at the earliest step reviewing the changed fields', function () {
+    config(['travel-orders.resubmission.policy' => 'restart_from_first_affected']);
+
+    $chain = revChain();
+    $chain['headStep']->update(['reviewed_fields' => ['purpose']]);
+    $chain['budgetStep']->update(['reviewed_fields' => ['fund_source_id']]);
+    $order = revSubmit($chain);
+
+    app(TravelOrderApprovalService::class)->approve($order, $chain['headUser']);
+    $order->refresh();
+    app(TravelOrderApprovalService::class)
+        ->returnTo($order, $chain['budgetUser'], 'Recheck the revised purpose.');
+
+    $chain['headStep']->update(['reviewed_fields' => []]);
+    $chain['budgetStep']->update(['reviewed_fields' => ['purpose', 'fund_source_id']]);
+    $order->update(['purpose' => 'Revised purpose']);
+
+    $order = app(TravelOrderResubmissionService::class)
+        ->resubmit($order->fresh(), $chain['filer'], 'Updated the purpose.');
+
+    expect($order->current_step_index)->toBe(0)
+        ->and($order->routed_step_review_fields)->toBe([
+            ['purpose'],
+            ['fund_source_id'],
+            [],
+        ]);
+});
+
+test('material changes with no configured reviewing step restart at the first step', function () {
+    config(['travel-orders.resubmission.policy' => 'restart_from_first_affected']);
+
+    $chain = revChain();
+    $order = revSubmit($chain);
+
+    app(TravelOrderApprovalService::class)->approve($order, $chain['headUser']);
+    $order->refresh();
+    app(TravelOrderApprovalService::class)
+        ->returnTo($order, $chain['budgetUser'], 'Recheck the purpose.');
+
+    $order->update(['purpose' => 'Revised purpose']);
+
+    $order = app(TravelOrderResubmissionService::class)
+        ->resubmit($order->fresh(), $chain['filer'], 'Updated the purpose.');
+
+    expect($order->current_step_index)->toBe(0);
 });
 
 test('resubmission increments the revision number and keeps the to number', function () {

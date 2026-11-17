@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Enums\TravelOrderChangeType;
 use App\Models\TravelOrder;
-use App\Models\WorkflowStep;
 
 /**
  * Compares a returned travel order with the content that was sent back.
@@ -138,52 +137,53 @@ final class TravelOrderChangeDetector
     }
 
     /**
-     * The earliest step in the frozen route that a changed field affects.
+     * The earliest step in the frozen route that reviews a changed field.
      *
-     * A field with no mapping is treated as affecting the whole chain, so the
-     * safe answer is the first step. The mapping lives in configuration
-     * because it depends on how an office writes its chain.
+     * A field with no matching review step restarts the whole chain, which is
+     * the safe fallback. Review fields are snapshotted with the route.
      *
      * @param  array<int, string>  $changedFields
      */
     public function firstAffectedIndex(TravelOrder $order, array $changedFields): ?int
     {
-        /** @var array<string, array<int, string>> $map */
-        $map = config('travel-orders.resubmission.affected_step_types', []);
+        $ids = $order->routed_steps;
+        $reviewedFieldsByStep = $order->routed_step_review_fields;
 
-        $stepTypeSlugs = [];
+        if (
+            ! is_array($ids)
+            || ! is_array($reviewedFieldsByStep)
+            || count($ids) !== count($reviewedFieldsByStep)
+        ) {
+            return 0;
+        }
+
+        $firstAffectedIndex = null;
 
         foreach ($changedFields as $field) {
-            if (! isset($map[$field]) || $map[$field] === []) {
+            $fieldIndex = null;
+
+            foreach (array_values($reviewedFieldsByStep) as $index => $fields) {
+                if (! is_array($fields)) {
+                    return 0;
+                }
+
+                if (in_array($field, $fields, true)) {
+                    $fieldIndex = $index;
+
+                    break;
+                }
+            }
+
+            if ($fieldIndex === null) {
                 return 0;
             }
 
-            foreach ($map[$field] as $slug) {
-                $stepTypeSlugs[$slug] = true;
-            }
+            $firstAffectedIndex = $firstAffectedIndex === null
+                ? $fieldIndex
+                : min($firstAffectedIndex, $fieldIndex);
         }
 
-        if ($stepTypeSlugs === []) {
-            return null;
-        }
-
-        $ids = $order->routed_steps;
-
-        if (! is_array($ids)) {
-            return null;
-        }
-
-        foreach (array_values($ids) as $index => $id) {
-            $step = WorkflowStep::query()
-                ->with('stepType')
-                ->find((int) $id);
-
-            if ($step !== null && isset($stepTypeSlugs[$step->stepType->slug])) {
-                return $index;
-            }
-        }
-
-        return null;
+        return $firstAffectedIndex ?? 0;
     }
 
     /**

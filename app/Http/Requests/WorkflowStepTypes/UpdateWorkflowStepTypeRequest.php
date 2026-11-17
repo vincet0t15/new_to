@@ -24,13 +24,6 @@ class UpdateWorkflowStepTypeRequest extends StoreWorkflowStepTypeRequest
                 'max:255',
                 Rule::unique('workflow_step_types', 'name')->ignore($stepType),
             ],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'alpha_dash',
-                Rule::unique('workflow_step_types', 'slug')->ignore($stepType),
-            ],
         ];
     }
 }

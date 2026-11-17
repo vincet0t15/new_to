@@ -14,10 +14,8 @@ use Illuminate\Support\Carbon;
  * One leg of a named approval chain.
  *
  * The step type supplies the meaning and signature wording; this row supplies
- * the position in the chain and the office that answers it. A null office is
- * deliberate: it makes the step follow the office that filed the travel order,
- * which is how every office gets its own department head without a step per
- * department.
+ * the position, reviewing fields, and office that answers it. A null office
+ * makes the step follow the office that filed the travel order.
  *
  * @property int $id
  * @property int $workflow_id
@@ -26,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $office_id
  * @property int $sort_order
  * @property bool $auto_skip_creator
+ * @property array<int, string>|null $reviewed_fields
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -40,6 +39,7 @@ use Illuminate\Support\Carbon;
     'office_id',
     'sort_order',
     'auto_skip_creator',
+    'reviewed_fields',
     'is_active',
 ])]
 class WorkflowStep extends Model
@@ -118,6 +118,7 @@ class WorkflowStep extends Model
             'office_id' => 'integer',
             'sort_order' => 'integer',
             'auto_skip_creator' => 'boolean',
+            'reviewed_fields' => 'array',
             'is_active' => 'boolean',
         ];
     }

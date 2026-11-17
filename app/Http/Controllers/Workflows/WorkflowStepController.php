@@ -26,7 +26,10 @@ class WorkflowStepController extends Controller
      */
     public function store(StoreWorkflowStepRequest $request, Workflow $workflow): RedirectResponse
     {
-        $this->workflows->saveStep($workflow, null, $request->validated());
+        $data = $request->validated();
+        $data['reviewed_fields'] ??= [];
+
+        $this->workflows->saveStep($workflow, null, $data);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Step added to the workflow.')]);
 

@@ -7,16 +7,14 @@ return [
     | Resubmission policy
     |--------------------------------------------------------------------------
     |
-    | When a returned travel order is resubmitted, the default is to resume at
-    | the step that returned it. The other policies only apply when the
-    | creator made a material change. `restart` starts the frozen chain again;
-    | `restart_from_first_affected` starts at the earliest step that the
-    | changed fields can affect.
+    | Material changes restart from the earliest configured workflow step that
+    | reviews a changed field. Minor changes resume at the step that returned
+    | the order. The review-field mapping is frozen when the order is submitted.
     |
     */
 
     'resubmission' => [
-        'policy' => env('TRAVEL_ORDER_RESUBMISSION_POLICY', 'resume'),
+        'policy' => env('TRAVEL_ORDER_RESUBMISSION_POLICY', 'restart_from_first_affected'),
 
         /*
         | Fields an approver's decision depends on. Changing any of these is a
@@ -53,24 +51,19 @@ return [
             'submission_notes',
         ],
 
-        /*
-        | Which step types a changed field affects, used only by the
-        | `restart_from_first_affected` policy. A field missing here is treated
-        | as affecting the whole chain, so the safe fallback is step zero.
-        */
-        'affected_step_types' => [
-            'purpose' => ['department_head_approval'],
-            'date_from' => ['department_head_approval'],
-            'date_to' => ['department_head_approval'],
-            'travel_classification_id' => ['department_head_approval'],
-            'origin_id' => ['department_head_approval'],
-            'destination_id' => ['department_head_approval'],
-            'official_station_id' => ['department_head_approval'],
-            'employee_id' => ['department_head_approval'],
-            'fund_source_id' => ['budget_review'],
-            'other_expenses' => ['budget_review'],
-            'expense_type_ids' => ['budget_review'],
-            'transportation_mode_ids' => ['budget_review'],
+        'reviewable_fields' => [
+            'purpose' => 'Travel purpose',
+            'date_from' => 'Travel start date',
+            'date_to' => 'Travel end date',
+            'travel_classification_id' => 'Travel classification',
+            'fund_source_id' => 'Fund source',
+            'origin_id' => 'Origin',
+            'destination_id' => 'Destination',
+            'official_station_id' => 'Official station',
+            'other_expenses' => 'Other expenses',
+            'expense_type_ids' => 'Expense types',
+            'transportation_mode_ids' => 'Transportation modes',
+            'employee_id' => 'Traveler',
         ],
     ],
 

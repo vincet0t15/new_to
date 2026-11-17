@@ -4,6 +4,7 @@ use App\Models\Employee;
 use App\Models\Office;
 use App\Models\Permission;
 use App\Models\User;
+use App\Models\Workflow;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -101,6 +102,23 @@ test('an office can be created', function () {
     expect($office->office_code)->toBe('MO');
 });
 
+test('creating an office does not assign an approval workflow', function () {
+    $workflow = Workflow::factory()->create();
+
+    $this->actingAs(officeUser(['offices.create']))
+        ->post(route('offices.store'), [
+            'office_name' => 'Planning Office',
+            'workflow_id' => $workflow->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('offices', [
+        'office_name' => 'Planning Office',
+        'workflow_id' => null,
+    ]);
+});
+
 test('creating an office requires a name', function () {
     $this->actingAs(officeUser(['offices.create']))
         ->post(route('offices.store'), [
@@ -151,6 +169,25 @@ test('an office can be updated', function () {
 
     expect($office->office_name)->toBe('New Name')
         ->and($office->office_code)->toBe('NEW');
+});
+
+test('updating an office cannot change its workflow assignment', function () {
+    $workflow = Workflow::factory()->create();
+    $otherWorkflow = Workflow::factory()->create();
+    $office = Office::factory()->create([
+        'workflow_id' => $workflow->id,
+    ]);
+
+    $this->actingAs(officeUser(['offices.update']))
+        ->put(route('offices.update', $office), [
+            'office_name' => $office->office_name,
+            'office_code' => $office->office_code,
+            'workflow_id' => $otherWorkflow->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($office->fresh()->workflow_id)->toBe($workflow->id);
 });
 
 test('an office may keep its own name when updated', function () {

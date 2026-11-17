@@ -180,18 +180,18 @@ class DemoDataSeeder extends Seeder
     ];
 
     /**
-     * Who answers each approval seat, keyed by office code and step slug.
+     * Who answers each approval seat, keyed by office code and step type name.
      *
      * @var array<int, array{office: string, username: string, step: string, is_deputy: bool}>
      */
     private const DESIGNATIONS = [
-        ['office' => 'MEO', 'username' => 'head.engineer', 'step' => 'department_head_approval', 'is_deputy' => false],
-        ['office' => 'MEO', 'username' => 'deputy.engineer', 'step' => 'department_head_approval', 'is_deputy' => true],
-        ['office' => 'SBO', 'username' => 'head.sbo', 'step' => 'department_head_approval', 'is_deputy' => false],
-        ['office' => 'MBO', 'username' => 'budget', 'step' => 'budget_review', 'is_deputy' => false],
-        ['office' => 'MO', 'username' => 'mayor', 'step' => 'mayor_approval', 'is_deputy' => false],
-        ['office' => 'VMAYOR', 'username' => 'vicemayor', 'step' => 'vice_mayor_approval', 'is_deputy' => false],
-        ['office' => 'HRMO', 'username' => 'hrmo', 'step' => 'hrmo_review', 'is_deputy' => false],
+        ['office' => 'MEO', 'username' => 'head.engineer', 'step' => 'Department Head Approval', 'is_deputy' => false],
+        ['office' => 'MEO', 'username' => 'deputy.engineer', 'step' => 'Department Head Approval', 'is_deputy' => true],
+        ['office' => 'SBO', 'username' => 'head.sbo', 'step' => 'Department Head Approval', 'is_deputy' => false],
+        ['office' => 'MBO', 'username' => 'budget', 'step' => 'Budget Review', 'is_deputy' => false],
+        ['office' => 'MO', 'username' => 'mayor', 'step' => 'Mayor Approval', 'is_deputy' => false],
+        ['office' => 'VMAYOR', 'username' => 'vicemayor', 'step' => 'Vice Mayor Approval', 'is_deputy' => false],
+        ['office' => 'HRMO', 'username' => 'hrmo', 'step' => 'HRMO Review', 'is_deputy' => false],
     ];
 
     /**
@@ -227,9 +227,9 @@ class DemoDataSeeder extends Seeder
         );
 
         $stepTypes = WorkflowStepType::query()
-            ->whereIn('slug', array_column(self::DESIGNATIONS, 'step'))
+            ->whereIn('name', array_column(self::DESIGNATIONS, 'step'))
             ->get()
-            ->keyBy('slug');
+            ->keyBy('name');
 
         /** @var array<string, Employee> $employees */
         $employees = [];

@@ -16,7 +16,6 @@ class EloquentWorkflowStepTypeRepository implements WorkflowStepTypeRepository
             ->when($search !== null && $search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', '%'.$search.'%')
-                        ->orWhere('slug', 'like', '%'.$search.'%')
                         ->orWhere('signature_title', 'like', '%'.$search.'%');
                 });
             })

@@ -71,10 +71,16 @@ final class TravelOrderSubmissionService
                 ->values()
                 ->all();
 
+            $routedStepReviewFields = $steps
+                ->map(fn (WorkflowStep $step): array => $step->reviewed_fields ?? [])
+                ->values()
+                ->all();
+
             $order->forceFill([
                 'workflow_id' => $workflow->id,
                 'status' => TravelOrderStatus::Submitted,
                 'routed_steps' => $routedSteps,
+                'routed_step_review_fields' => $routedStepReviewFields,
                 'current_step_index' => null,
                 'recipient_user_id' => null,
                 'submitted_at' => now(),

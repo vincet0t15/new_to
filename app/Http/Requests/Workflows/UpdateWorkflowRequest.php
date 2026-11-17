@@ -33,6 +33,8 @@ class UpdateWorkflowRequest extends StoreWorkflowRequest
                 'alpha_dash',
                 Rule::unique('workflows', 'slug')->ignore($workflow),
             ],
+            'assigned_office_ids' => ['sometimes', 'array'],
+            'assigned_office_ids.*' => ['required', 'integer', 'distinct', 'exists:offices,id'],
         ];
     }
 

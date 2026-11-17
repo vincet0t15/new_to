@@ -66,7 +66,12 @@ class WorkflowController extends Controller
         return Inertia::render('workflows/edit', [
             'workflow' => $workflow,
             'stepTypes' => $this->stepTypes->allForSelection(),
-            'offices' => Office::query()->orderBy('office_name')->get(['id', 'office_name']),
+            'offices' => Office::query()
+                ->with('workflow:id,name,is_default,is_active')
+                ->orderBy('office_name')
+                ->get(['id', 'office_name', 'workflow_id']),
+            'assignedOfficeIds' => $workflow->offices()->pluck('id')->all(),
+            'reviewableFields' => config('travel-orders.resubmission.reviewable_fields', []),
             'canDelete' => $this->canDelete($request),
         ]);
     }

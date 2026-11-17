@@ -29,6 +29,7 @@ type Props = {
     workflowId: number;
     stepTypes: WorkflowStepType[];
     offices: Pick<Office, 'id' | 'office_name'>[];
+    reviewableFields: Record<string, string>;
     step?: WorkflowStep;
 };
 
@@ -38,6 +39,7 @@ export function StepDialog({
     workflowId,
     stepTypes,
     offices,
+    reviewableFields,
     step,
 }: Props) {
     const isEdit = Boolean(step);
@@ -48,6 +50,7 @@ export function StepDialog({
             office_id: step?.office_id ?? '',
             sort_order: step?.sort_order ?? 1,
             auto_skip_creator: step?.auto_skip_creator ?? true,
+            reviewed_fields: step?.reviewed_fields ?? [],
             is_active: step?.is_active ?? true,
         });
 
@@ -77,7 +80,7 @@ export function StepDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>
@@ -182,6 +185,52 @@ export function StepDialog({
                             />
                             <InputError message={errors.sort_order} />
                         </div>
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium">
+                                Fields reviewed by this step
+                            </legend>
+                            <p className="text-xs text-muted-foreground">
+                                Material changes to these fields will send a
+                                returned order back to this step or an earlier
+                                reviewing step.
+                            </p>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {Object.entries(reviewableFields).map(
+                                    ([field, label]) => (
+                                        <label
+                                            key={field}
+                                            className="flex items-start gap-2 text-sm"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={data.reviewed_fields.includes(
+                                                    field,
+                                                )}
+                                                onChange={(event) =>
+                                                    setData(
+                                                        'reviewed_fields',
+                                                        event.target.checked
+                                                            ? [
+                                                                  ...data.reviewed_fields,
+                                                                  field,
+                                                              ]
+                                                            : data.reviewed_fields.filter(
+                                                                  (
+                                                                      reviewedField,
+                                                                  ) =>
+                                                                      reviewedField !==
+                                                                      field,
+                                                              ),
+                                                    )
+                                                }
+                                            />
+                                            <span>{label}</span>
+                                        </label>
+                                    ),
+                                )}
+                            </div>
+                            <InputError message={errors.reviewed_fields} />
+                        </fieldset>
                         <div className="flex items-center gap-2">
                             <input
                                 id="auto_skip_creator"

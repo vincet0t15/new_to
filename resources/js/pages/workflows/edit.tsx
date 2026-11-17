@@ -7,20 +7,22 @@ import {
     Plus,
     Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import workflowsRoutes from '@/routes/workflows';
-import type { Office } from '@/types/office';
+import type { WorkflowOfficeOption } from '@/types/office';
 import type {
     Workflow,
     WorkflowStep,
     WorkflowStepType,
+    WorkflowUpdateRequest,
 } from '@/types/workflow';
 import type { FormEvent } from 'react';
 import { StepDialog } from './step-dialog';
@@ -28,7 +30,9 @@ import { StepDialog } from './step-dialog';
 type Props = {
     workflow: Workflow;
     stepTypes: WorkflowStepType[];
-    offices: Pick<Office, 'id' | 'office_name'>[];
+    offices: WorkflowOfficeOption[];
+    assignedOfficeIds: number[];
+    reviewableFields: Record<string, string>;
     canDelete: boolean;
 };
 
@@ -36,24 +40,66 @@ export default function WorkflowEdit({
     workflow: initial,
     stepTypes,
     offices,
+    assignedOfficeIds,
+    reviewableFields,
     canDelete,
 }: Props) {
     const [workflow, setWorkflow] = useState(initial);
     const [stepOpen, setStepOpen] = useState(false);
     const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
 
-    const { data, setData, put, errors, processing } = useForm({
-        name: initial.name,
-        slug: initial.slug,
-        description: initial.description ?? '',
-        is_default: initial.is_default,
-        is_active: initial.is_active,
-    });
+    const { data, setData, put, errors, processing } =
+        useForm<WorkflowUpdateRequest>({
+            name: initial.name,
+            slug: initial.slug,
+            description: initial.description ?? '',
+            is_default: initial.is_default,
+            is_active: initial.is_active,
+            assigned_office_ids: assignedOfficeIds,
+        });
+    const assignedOfficeError =
+        errors.assigned_office_ids ??
+        Object.entries(errors).find(([key]) =>
+            key.startsWith('assigned_office_ids.'),
+        )?.[1];
+
+    useEffect(() => {
+        setWorkflow(initial);
+    }, [initial]);
+
+    const selectedOfficeIds = new Set(data.assigned_office_ids);
 
     const handleSave = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+
+        const officesToReassign = data.is_default
+            ? []
+            : offices.filter(
+                  (office) =>
+                      selectedOfficeIds.has(office.id) &&
+                      office.workflow_id !== null &&
+                      office.workflow_id !== workflow.id,
+              );
+
+        if (
+            officesToReassign.length > 0 &&
+            !window.confirm(
+                `These offices will be moved from their current workflow to "${data.name}": ${officesToReassign
+                    .map((office) => office.office_name)
+                    .join(', ')}. Continue?`,
+            )
+        ) {
+            return;
+        }
+
         put(workflowsRoutes.update(workflow).url, {
             onSuccess: () => {
+                const isActive = data.is_default || data.is_active;
+
+                if (isActive !== data.is_active) {
+                    setData('is_active', isActive);
+                }
+
                 // keep local state in sync with the saved values
                 setWorkflow((prev) => ({
                     ...prev,
@@ -61,7 +107,7 @@ export default function WorkflowEdit({
                     slug: data.slug,
                     description: data.description,
                     is_default: data.is_default,
-                    is_active: data.is_active,
+                    is_active: isActive,
                 }));
             },
         });
@@ -162,9 +208,12 @@ export default function WorkflowEdit({
                             <input
                                 type="checkbox"
                                 checked={data.is_default}
-                                onChange={(e) =>
-                                    setData('is_default', e.target.checked)
-                                }
+                                onChange={(e) => {
+                                    setData('is_default', e.target.checked);
+                                    if (e.target.checked) {
+                                        setData('assigned_office_ids', []);
+                                    }
+                                }}
                             />
                             <span className="text-sm">Default workflow</span>
                         </label>
@@ -178,11 +227,99 @@ export default function WorkflowEdit({
                             />
                             <span className="text-sm">Active</span>
                         </label>
-                        <Button
-                            type="submit"
-                            disabled={processing}
-                            className="ml-auto"
-                        >
+                    </div>
+
+                    {data.is_default ? (
+                        <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+                            This is the fallback workflow for offices without a
+                            specific assignment. Explicit assignments to it are
+                            cleared when you save.
+                        </div>
+                    ) : (
+                        <section className="space-y-3 rounded-md border p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <h2 className="text-sm font-semibold">
+                                        Assigned Offices
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground">
+                                        Select the offices that use this
+                                        workflow instead of the default. No
+                                        selection means offices use the default
+                                        workflow.
+                                    </p>
+                                </div>
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                    {data.assigned_office_ids.length} selected
+                                </span>
+                            </div>
+
+                            <div className="max-h-64 space-y-1 overflow-y-auto rounded-md border p-2">
+                                {offices.length > 0 ? (
+                                    offices.map((office) => {
+                                        const isSelected =
+                                            selectedOfficeIds.has(office.id);
+                                        const assignedElsewhere =
+                                            office.workflow_id !== null &&
+                                            office.workflow_id !== workflow.id;
+
+                                        return (
+                                            <label
+                                                key={office.id}
+                                                className="flex cursor-pointer items-start gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted/50"
+                                            >
+                                                <Checkbox
+                                                    className="mt-0.5"
+                                                    checked={isSelected}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) => {
+                                                        setData(
+                                                            'assigned_office_ids',
+                                                            checked === true
+                                                                ? [
+                                                                      ...data.assigned_office_ids,
+                                                                      office.id,
+                                                                  ]
+                                                                : data.assigned_office_ids.filter(
+                                                                      (id) =>
+                                                                          id !==
+                                                                          office.id,
+                                                                  ),
+                                                        );
+                                                    }}
+                                                />
+                                                <span className="min-w-0 flex-1">
+                                                    <span className="block truncate">
+                                                        {office.office_name}
+                                                    </span>
+                                                    {assignedElsewhere && (
+                                                        <span className="block text-xs text-muted-foreground">
+                                                            Currently assigned
+                                                            to{' '}
+                                                            {office.workflow
+                                                                ?.name ??
+                                                                'another workflow'}
+                                                            ; selecting it will
+                                                            move the assignment.
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </label>
+                                        );
+                                    })
+                                ) : (
+                                    <p className="px-2 py-4 text-center text-sm text-muted-foreground">
+                                        No offices are available.
+                                    </p>
+                                )}
+                            </div>
+                            <InputError message={assignedOfficeError} />
+                        </section>
+                    )}
+
+                    <div className="flex justify-end">
+                        <Button type="submit" disabled={processing}>
                             {processing && <Spinner />}
                             Save Changes
                         </Button>
@@ -321,6 +458,7 @@ export default function WorkflowEdit({
                         workflowId={workflow.id}
                         stepTypes={stepTypes}
                         offices={offices}
+                        reviewableFields={reviewableFields}
                         step={editingStep ?? undefined}
                     />
                 )}

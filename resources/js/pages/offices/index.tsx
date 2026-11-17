@@ -18,7 +18,6 @@ import {
 import officesRoutes from '@/routes/offices';
 import type { Office } from '@/types/office';
 import type { PaginatedDataResponse } from '@/types/pagination';
-import type { WorkflowOption } from '@/types/workflow';
 import type { KeyboardEvent } from 'react';
 import { CreateOfficeDialog } from './create';
 import { DeleteOfficeDialog } from './delete';
@@ -29,14 +28,9 @@ type OfficesIndexProps = {
     filters: {
         search?: string;
     };
-    workflows: WorkflowOption[];
 };
 
-export default function OfficesIndex({
-    offices,
-    filters,
-    workflows,
-}: OfficesIndexProps) {
+export default function OfficesIndex({ offices, filters }: OfficesIndexProps) {
     const { data, setData } = useForm({
         search: filters.search ?? '',
     });
@@ -202,7 +196,6 @@ export default function OfficesIndex({
                     <CreateOfficeDialog
                         isOpen={createOpen}
                         onClose={() => setCreateOpen(false)}
-                        workflows={workflows}
                     />
                 )}
 
@@ -211,7 +204,6 @@ export default function OfficesIndex({
                         isOpen={editOpen}
                         onClose={() => setEditOpen(false)}
                         office={selectedOffice}
-                        workflows={workflows}
                     />
                 )}
 

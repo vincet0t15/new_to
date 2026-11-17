@@ -41,7 +41,9 @@ class WorkflowStepTypeController extends Controller
      */
     public function store(StoreWorkflowStepTypeRequest $request): RedirectResponse
     {
-        $this->stepTypes->create($request->validated());
+        $data = $request->validated();
+
+        $this->stepTypes->create($data);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Step type created.')]);
 

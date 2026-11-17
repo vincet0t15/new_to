@@ -88,7 +88,6 @@ export default function StepTypesIndex({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Name</TableHead>
-                                <TableHead>Slug</TableHead>
                                 <TableHead>Signature Title</TableHead>
                                 <TableHead>Signatory</TableHead>
                                 <TableHead>Usage</TableHead>
@@ -104,9 +103,6 @@ export default function StepTypesIndex({
                                     <TableRow key={type.id}>
                                         <TableCell className="font-medium">
                                             {type.name}
-                                        </TableCell>
-                                        <TableCell className="text-muted-foreground">
-                                            {type.slug}
                                         </TableCell>
                                         <TableCell>
                                             {type.signature_title ?? '—'}
@@ -166,7 +162,7 @@ export default function StepTypesIndex({
                             ) : (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={7}
+                                        colSpan={6}
                                         className="h-24 text-center text-muted-foreground"
                                     >
                                         No step types found.

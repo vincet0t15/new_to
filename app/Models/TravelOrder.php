@@ -18,9 +18,10 @@ use Illuminate\Support\Carbon;
 /**
  * A travel order and its routing state.
  *
- * routed_steps is the frozen list of workflow step ids captured at submission.
- * current_step_index points into that list. Deliveries hold who currently
- * answers the step, and actions hold the immutable audit trail.
+ * routed_steps and routed_step_review_fields freeze the workflow chain and its
+ * review rules at submission. current_step_index points into that route.
+ * Deliveries hold who currently answers the step, and actions hold the audit
+ * trail.
  *
  * @property int $id
  * @property string|null $control_no
@@ -51,6 +52,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $returned_at
  * @property Carbon|null $last_resubmitted_at
  * @property array<int, int>|null $routed_steps
+ * @property array<int, array<int, string>>|null $routed_step_review_fields
  * @property int|null $current_step_index
  * @property int|null $recipient_user_id
  * @property Carbon|null $submitted_at
@@ -101,6 +103,7 @@ use Illuminate\Support\Carbon;
     'returned_at',
     'last_resubmitted_at',
     'routed_steps',
+    'routed_step_review_fields',
     'current_step_index',
     'recipient_user_id',
     'submitted_at',
@@ -348,6 +351,7 @@ class TravelOrder extends Model
             'date_to' => 'date',
             'status' => TravelOrderStatus::class,
             'routed_steps' => 'array',
+            'routed_step_review_fields' => 'array',
             'current_step_index' => 'integer',
             'submitted_at' => 'datetime',
             'returned_at' => 'datetime',

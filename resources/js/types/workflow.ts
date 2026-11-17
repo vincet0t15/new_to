@@ -15,7 +15,6 @@ export type WorkflowSummary = WorkflowOption & {
 export type WorkflowStepType = {
     id: number;
     name: string;
-    slug: string;
     signature_label: string | null;
     signature_title: string | null;
     is_signatory: boolean;
@@ -33,6 +32,7 @@ export type WorkflowStep = {
     office_id: number | null;
     sort_order: number;
     auto_skip_creator: boolean;
+    reviewed_fields: string[] | null;
     is_active: boolean;
     step_type: Pick<
         WorkflowStepType,
@@ -53,7 +53,9 @@ export type WorkflowCreateRequest = {
     is_active: boolean;
 };
 
-export type WorkflowUpdateRequest = WorkflowCreateRequest;
+export type WorkflowUpdateRequest = WorkflowCreateRequest & {
+    assigned_office_ids: number[];
+};
 
 export type WorkflowStepRequest = {
     workflow_step_type_id: number | '';
@@ -61,12 +63,12 @@ export type WorkflowStepRequest = {
     office_id: number | '';
     sort_order: number;
     auto_skip_creator: boolean;
+    reviewed_fields: string[];
     is_active: boolean;
 };
 
 export type WorkflowStepTypeRequest = {
     name: string;
-    slug: string;
     signature_label: string;
     signature_title: string;
     is_signatory: boolean;

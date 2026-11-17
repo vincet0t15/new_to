@@ -30,7 +30,6 @@ export function EditStepTypeDialog({ isOpen, onClose, stepType }: Props) {
     const { data, setData, put, errors, processing } =
         useForm<WorkflowStepTypeRequest>({
             name: stepType.name,
-            slug: stepType.slug,
             signature_label: stepType.signature_label ?? '',
             signature_title: stepType.signature_title ?? '',
             is_signatory: stepType.is_signatory,
@@ -68,18 +67,6 @@ export function EditStepTypeDialog({ isOpen, onClose, stepType }: Props) {
                                 autoFocus
                             />
                             <InputError message={errors.name} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="slug">Slug *</Label>
-                            <Input
-                                id="slug"
-                                value={data.slug}
-                                onChange={(e) =>
-                                    setData('slug', e.target.value)
-                                }
-                                required
-                            />
-                            <InputError message={errors.slug} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="signature_label">
