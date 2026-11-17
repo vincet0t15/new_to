@@ -61,7 +61,7 @@ class SampleEmploymentAndPositionSeeder extends Seeder
                 ['name' => $position['name']],
                 [
                     'description' => 'Sample position for '.$position['name'].'.',
-                    'employment_type_id' => $typeMap[$position['employment_type']] ?? null,
+                    'employment_type_id' => $typeMap[$position['employment_type']],
                 ],
             );
         }

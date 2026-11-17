@@ -3,7 +3,7 @@
 use App\Http\Controllers\TravelOrders\TravelOrderController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-orders.view-own'])
+Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-orders.view'])
     ->prefix('employee/travel-orders')
     ->name('travel-orders.')
     ->group(function () {

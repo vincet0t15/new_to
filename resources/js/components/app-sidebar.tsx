@@ -21,11 +21,13 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import accounts from '@/routes/accounts';
 import designations from '@/routes/designations';
 import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
 import offices from '@/routes/offices';
 import positions from '@/routes/positions';
+import roles from '@/routes/roles';
 import travelOrders from '@/routes/travel-orders';
 import workflowStepTypes from '@/routes/workflow-step-types';
 import workflows from '@/routes/workflows';
@@ -84,6 +86,23 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
             ],
         },
         {
+            label: 'Access Control',
+            items: [
+                {
+                    title: 'User Accounts',
+                    href: accounts.index().url,
+                    icon: UserCog,
+                    permission: 'accounts.view',
+                },
+                {
+                    title: 'Roles & Permissions',
+                    href: roles.index().url,
+                    icon: ShieldCheck,
+                    permission: 'roles.view',
+                },
+            ],
+        },
+        {
             label: 'Workflow',
             items: [
                 {
@@ -134,7 +153,7 @@ export function AppSidebar() {
                                 title: 'My Travel Orders',
                                 href: travelOrders.index().url,
                                 icon: FileText,
-                                permission: 'travel-orders.view-own',
+                                permission: 'travel-orders.view',
                             },
                             {
                                 title: 'New Travel Order',

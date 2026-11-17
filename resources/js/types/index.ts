@@ -1,3 +1,4 @@
+export type * from './access';
 export type * from './auth';
 export type * from './employee';
 export type * from './employment-type';

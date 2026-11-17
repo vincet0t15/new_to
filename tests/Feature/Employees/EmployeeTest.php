@@ -6,6 +6,7 @@ use App\Models\Office;
 use App\Models\Permission;
 use App\Models\Position;
 use App\Models\User;
+use Database\Seeders\EmployeeSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -44,6 +45,15 @@ function employeeLookups(): array
         'employment_type' => EmploymentType::factory()->create(['name' => 'Permanent']),
     ];
 }
+
+test('employee seeder fills the database to at least ten employees without duplicating on rerun', function () {
+    Employee::factory()->count(2)->create();
+
+    app(EmployeeSeeder::class)->run();
+    app(EmployeeSeeder::class)->run();
+
+    expect(Employee::query()->count())->toBe(10);
+});
 
 test('guests are redirected to the login page', function () {
     $this->get(route('employees.index'))
