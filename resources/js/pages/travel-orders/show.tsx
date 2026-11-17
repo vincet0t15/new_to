@@ -3,6 +3,7 @@ import { ArrowLeft, Pencil, Send, Trash2 } from 'lucide-react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
+import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { RouteProgress } from '@/components/travel-orders/route-progress';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import travelOrdersRoutes from '@/routes/travel-orders';
 import type {
     TravelOrder,
     TravelOrderAbilities,
+    TravelOrderRevision,
     TravelOrderRouteStep,
     TravelOrderTimelineEntry,
 } from '@/types';
@@ -18,11 +20,13 @@ type Props = {
     travelOrder: TravelOrder;
     route: TravelOrderRouteStep[];
     timeline: TravelOrderTimelineEntry[];
+    revisions: TravelOrderRevision[];
     can: TravelOrderAbilities;
     urls: {
         index: string;
         edit: string;
         submit: string;
+        resubmit: string;
         destroy: string;
     };
 };
@@ -31,11 +35,16 @@ export default function ShowTravelOrder({
     travelOrder,
     route,
     timeline,
+    revisions,
     can,
     urls,
 }: Props) {
     const submit = () => {
         router.post(urls.submit, {}, { preserveScroll: true });
+    };
+
+    const resubmit = () => {
+        router.visit(urls.edit);
     };
 
     const destroy = () => {
@@ -64,6 +73,27 @@ export default function ShowTravelOrder({
                         description="Details, route progress, and audit trail."
                     />
                     <div className="ml-auto flex flex-wrap gap-2">
+                        {travelOrder.status === 'returned' && (
+                            <div className="mr-auto w-full rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+                                <p className="font-medium">
+                                    Returned for revision
+                                    {travelOrder.returned_from_step
+                                        ? ` at ${travelOrder.returned_from_step}`
+                                        : ''}
+                                    {travelOrder.returned_at
+                                        ? ` on ${travelOrder.returned_at}`
+                                        : ''}
+                                    {travelOrder.returnedBy?.name
+                                        ? ` by ${travelOrder.returnedBy.name}`
+                                        : ''}
+                                </p>
+                                {travelOrder.return_remarks && (
+                                    <p className="mt-1 whitespace-pre-wrap">
+                                        {travelOrder.return_remarks}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                         {can.edit && (
                             <Can permission="travel-orders.update">
                                 <Button
@@ -72,6 +102,14 @@ export default function ShowTravelOrder({
                                 >
                                     <Pencil className="size-4" />
                                     Edit
+                                </Button>
+                            </Can>
+                        )}
+                        {can.resubmit && (
+                            <Can permission="travel-orders.resubmit">
+                                <Button onClick={resubmit}>
+                                    <Send className="size-4" />
+                                    Resubmit for approval
                                 </Button>
                             </Can>
                         )}
@@ -103,6 +141,13 @@ export default function ShowTravelOrder({
                                 Audit trail
                             </h3>
                             <ActionTimeline actions={timeline} />
+                        </section>
+
+                        <section className="space-y-3 rounded-xl border p-4">
+                            <h3 className="text-base font-semibold">
+                                Revision history
+                            </h3>
+                            <RevisionTimeline revisions={revisions} />
                         </section>
                     </div>
 

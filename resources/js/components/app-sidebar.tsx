@@ -7,6 +7,7 @@ import {
     Inbox,
     LayoutGrid,
     Plus,
+    RotateCcw,
     ShieldCheck,
     UserCog,
     Users,
@@ -155,6 +156,12 @@ export function AppSidebar() {
                                 title: 'My Travel Orders',
                                 href: travelOrders.index().url,
                                 icon: FileText,
+                                permission: 'travel-orders.view',
+                            },
+                            {
+                                title: 'Returned for Revision',
+                                href: travelOrders.returned().url,
+                                icon: RotateCcw,
                                 permission: 'travel-orders.view',
                             },
                             {

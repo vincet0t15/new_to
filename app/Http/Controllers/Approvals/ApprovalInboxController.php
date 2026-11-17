@@ -95,6 +95,7 @@ class ApprovalInboxController extends Controller
             'office',
             'employee',
             'creator',
+            'returnedBy',
             'workflow',
             'deliveries.user',
             'actions.actor',
@@ -111,6 +112,7 @@ class ApprovalInboxController extends Controller
             'travelOrder' => $travelOrder,
             'route' => $this->presenter->route($travelOrder),
             'timeline' => $this->presenter->timeline($travelOrder),
+            'revisions' => $this->presenter->revisions($travelOrder),
             'currentStep' => $step === null ? null : [
                 'label' => $step->displayLabel(),
                 'office' => $step->office->office_name

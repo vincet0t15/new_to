@@ -33,11 +33,27 @@ export type TravelOrderAction = {
     step_index: number | null;
     step_label: string | null;
     event: string;
+    revision_number: number | null;
     actor_user_id: number | null;
     remarks: string | null;
     meta: Record<string, unknown> | null;
     created_at: string | null;
     actor?: { id: number; name: string } | null;
+};
+
+export type TravelOrderRevision = {
+    revision_number: number;
+    returned_by: string | null;
+    returned_at: string | null;
+    return_remarks: string | null;
+    returned_from_step: string | null;
+    revised_by: string | null;
+    revision_remarks: string | null;
+    change_type: 'minor' | 'material';
+    changed_fields: string[] | null;
+    previous_data: Record<string, unknown> | null;
+    new_data: Record<string, unknown> | null;
+    resubmitted_at: string | null;
 };
 
 export type TravelOrder = {
@@ -56,6 +72,13 @@ export type TravelOrder = {
     fund_source: string | null;
     travel_classification: string | null;
     status: TravelOrderStatus;
+    revision_number: number;
+    returned_by_user_id: number | null;
+    returned_from_step_index: number | null;
+    returned_from_step: string | null;
+    return_remarks: string | null;
+    returned_at: string | null;
+    last_resubmitted_at: string | null;
     routed_steps: number[] | null;
     current_step_index: number | null;
     recipient_user_id: number | null;
@@ -65,6 +88,7 @@ export type TravelOrder = {
     employee?: { id: number; full_name?: string } | null;
     office?: { id: number; office_name: string } | null;
     creator?: { id: number; name: string } | null;
+    returnedBy?: { id: number; name: string } | null;
     deliveries?: TravelOrderDelivery[];
     actions?: TravelOrderAction[];
 };
@@ -97,6 +121,7 @@ export type TravelOrderTimelineEntry = {
     event_label: string;
     step_label: string | null;
     step_index: number | null;
+    revision_id: number | null;
     actor: string | null;
     remarks: string | null;
     created_at: string | null;
@@ -105,6 +130,7 @@ export type TravelOrderTimelineEntry = {
 export type TravelOrderAbilities = {
     submit: boolean;
     edit: boolean;
+    resubmit: boolean;
     delete: boolean;
 };
 

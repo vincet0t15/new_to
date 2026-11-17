@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\TravelOrderChangeType;
 use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
 use App\Enums\WorkflowEvent;
@@ -34,6 +35,8 @@ final class TravelOrderApprovalService
     public function __construct(
         private readonly WorkflowRouteResolver $routes,
         private readonly TravelOrderAudit $audit,
+        private readonly TravelOrderChangeDetector $changes,
+        private readonly TravelOrderNotifier $notifier,
     ) {
         //
     }
@@ -210,20 +213,29 @@ final class TravelOrderApprovalService
                 ],
             );
 
+            $this->notifier->routed($order, $target, $step);
+
             return $order->refresh();
         });
     }
 
     /**
-     * Send the order back to its creator.
+     * Send the order back to its creator and open a revision.
      *
-     * Phase 2 records the return and closes the step. The revision and
-     * resubmission flow belongs to Phase 3, so the order is parked in the
-     * returned state instead of being moved again.
+     * The returning step is remembered before the route state is cleared, so
+     * resubmission can deliver the corrected order to the same office. The
+     * revision row captures the content as it was when it was sent back;
+     * otherwise the creator's edits would erase the comparison baseline.
      */
     public function returnTo(TravelOrder $order, User $actor, string $remarks): TravelOrder
     {
-        return DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
+        $remarks = trim($remarks);
+
+        if ($remarks === '') {
+            throw TravelOrderRoutingException::returnRemarksRequired();
+        }
+
+        $returned = DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
             $order = $this->lock($order);
 
             $this->ensureSubmitted($order);
@@ -235,15 +247,32 @@ final class TravelOrderApprovalService
             }
 
             $index = (int) $order->current_step_index;
+            $returnedAt = now();
 
             $this->claimForAction($order, $actor);
             $this->markActed($order, $actor, 'return');
             $this->closeOpenDeliveries($order);
 
+            $revision = $order->revisions()->updateOrCreate(
+                ['revision_number' => $order->revision_number],
+                [
+                    'returned_by_user_id' => $actor->id,
+                    'returned_at' => $returnedAt,
+                    'return_remarks' => $remarks,
+                    'change_type' => TravelOrderChangeType::Minor,
+                    'previous_data' => $this->changes->snapshot($order),
+                ],
+            );
+
             $order->forceFill([
                 'status' => TravelOrderStatus::Returned,
                 'current_step_index' => null,
                 'recipient_user_id' => null,
+                'returned_by_user_id' => $actor->id,
+                'returned_from_step_index' => $index,
+                'returned_from_step' => $step->displayLabel(),
+                'return_remarks' => $remarks,
+                'returned_at' => $returnedAt,
             ])->save();
 
             $this->audit->record(
@@ -253,10 +282,16 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
+                null,
+                $revision->id,
             );
 
             return $order->refresh();
         });
+
+        $this->notifier->returned($returned, $actor);
+
+        return $returned;
     }
 
     /**
@@ -337,6 +372,10 @@ final class TravelOrderApprovalService
                     null,
                     ['user_id' => $recipient->id],
                 );
+            }
+
+            foreach ($recipients as $recipient) {
+                $this->notifier->routed($order, $recipient, $step);
             }
 
             return true;

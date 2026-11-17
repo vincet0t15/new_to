@@ -9,6 +9,7 @@ import {
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
+import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { RouteProgress } from '@/components/travel-orders/route-progress';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
@@ -18,6 +19,7 @@ import type {
     ApprovalAbilities,
     TravelOrder,
     TravelOrderDeliveryStatus,
+    TravelOrderRevision,
     TravelOrderRouteStep,
     TravelOrderTimelineEntry,
 } from '@/types';
@@ -26,6 +28,7 @@ type Props = {
     travelOrder: TravelOrder;
     route: TravelOrderRouteStep[];
     timeline: TravelOrderTimelineEntry[];
+    revisions: TravelOrderRevision[];
     currentStep: {
         label: string;
         office: string | null;
@@ -48,6 +51,7 @@ export default function ShowApproval({
     travelOrder,
     route,
     timeline,
+    revisions,
     currentStep,
     myDeliveryStatus,
     forwardCandidates,
@@ -103,6 +107,13 @@ export default function ShowApproval({
                                 Audit trail
                             </h3>
                             <ActionTimeline actions={timeline} />
+                        </section>
+
+                        <section className="space-y-3 rounded-xl border p-4">
+                            <h3 className="text-base font-semibold">
+                                Revision history
+                            </h3>
+                            <RevisionTimeline revisions={revisions} />
                         </section>
                     </div>
 

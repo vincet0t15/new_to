@@ -16,6 +16,13 @@ interface TravelOrderRepository
     public function findForCreator(User $user, int $id): ?TravelOrder;
 
     /**
+     * Travel orders returned to this account for revision.
+     *
+     * @return LengthAwarePaginator<int, TravelOrder>
+     */
+    public function paginateReturnedForCreator(User $user, ?string $search = null, int $perPage = 15): LengthAwarePaginator;
+
+    /**
      * Travel orders waiting for this account's action.
      *
      * @return LengthAwarePaginator<int, TravelOrder>

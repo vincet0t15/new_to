@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $step_index
  * @property string|null $step_label
  * @property WorkflowEvent $event
+ * @property int|null $revision_id
  * @property int|null $actor_user_id
  * @property string|null $remarks
  * @property array<string, mixed>|null $meta
@@ -31,6 +32,7 @@ use Illuminate\Support\Carbon;
     'step_index',
     'step_label',
     'event',
+    'revision_id',
     'actor_user_id',
     'remarks',
     'meta',
@@ -66,6 +68,7 @@ class TravelOrderAction extends Model
         return [
             'travel_order_id' => 'integer',
             'step_index' => 'integer',
+            'revision_id' => 'integer',
             'actor_user_id' => 'integer',
             'event' => WorkflowEvent::class,
             'meta' => 'array',

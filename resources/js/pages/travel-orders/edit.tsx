@@ -8,23 +8,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Combobox } from '@/components/ui/combobox';
+import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import travelOrdersRoutes from '@/routes/travel-orders';
-import type { TravelOrder, TravelOrderFormOptions } from '@/types';
+import type {
+    TravelOrder,
+    TravelOrderFormOptions,
+    TravelOrderRevision,
+} from '@/types';
 
 type Props = {
     travelOrder: TravelOrder;
     options: TravelOrderFormOptions;
     canSubmit: boolean;
+    canResubmit: boolean;
     submitUrl: string;
+    resubmitUrl: string;
+    revisions: TravelOrderRevision[];
 };
 
 export default function EditTravelOrder({
     travelOrder,
     options,
     canSubmit,
+    canResubmit,
     submitUrl,
+    resubmitUrl,
+    revisions,
 }: Props) {
     const [submitting, setSubmitting] = useState(false);
+    const [resubmitting, setResubmitting] = useState(false);
     const { data, setData, put, processing, errors } = useForm({
         employee_id: travelOrder.employee_id ?? '',
         office_id: travelOrder.office_id ?? '',
@@ -35,6 +47,7 @@ export default function EditTravelOrder({
         date_from: travelOrder.date_from ?? '',
         date_to: travelOrder.date_to ?? '',
         submission_notes: travelOrder.submission_notes ?? '',
+        revision_remarks: '',
     });
 
     const submit = () => {
@@ -49,6 +62,21 @@ export default function EditTravelOrder({
             {
                 preserveScroll: true,
                 onFinish: () => setSubmitting(false),
+            },
+        );
+    };
+
+    const resubmitForApproval = () => {
+        setResubmitting(true);
+        router.post(
+            resubmitUrl,
+            {
+                ...data,
+                revision_remarks: data.revision_remarks,
+            },
+            {
+                preserveScroll: true,
+                onFinish: () => setResubmitting(false),
             },
         );
     };
@@ -75,6 +103,33 @@ export default function EditTravelOrder({
                         description="Update the travel order details."
                     />
                 </div>
+
+                {travelOrder.status === 'returned' && (
+                    <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
+                        <p className="font-medium">
+                            Returned for revision
+                            {travelOrder.returned_from_step
+                                ? ` at ${travelOrder.returned_from_step}`
+                                : ''}
+                            {travelOrder.returned_at
+                                ? ` on ${travelOrder.returned_at}`
+                                : ''}
+                            {travelOrder.returnedBy?.name
+                                ? ` by ${travelOrder.returnedBy.name}`
+                                : ''}
+                        </p>
+                        {travelOrder.return_remarks && (
+                            <p className="mt-1 whitespace-pre-wrap">
+                                {travelOrder.return_remarks}
+                            </p>
+                        )}
+                        <p className="mt-1 text-xs">
+                            Current revision {travelOrder.revision_number}.
+                            Saving keeps this travel order returned; use
+                            Resubmit to file it.
+                        </p>
+                    </div>
+                )}
 
                 {(errors as Record<string, string | undefined>).routing && (
                     <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
@@ -235,6 +290,14 @@ export default function EditTravelOrder({
                             </div>
                         </section>
                     </div>
+                    <div className="space-y-6">
+                        <section className="space-y-3 rounded-xl border p-4">
+                            <h3 className="text-base font-semibold">
+                                Revision history
+                            </h3>
+                            <RevisionTimeline revisions={revisions} />
+                        </section>
+                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -259,6 +322,39 @@ export default function EditTravelOrder({
                                 <Send className="size-4" />
                                 Submit for approval
                             </Button>
+                        </Can>
+                    )}
+                    {canResubmit && (
+                        <Can permission="travel-orders.resubmit">
+                            <div className="flex w-full flex-col gap-2 sm:w-auto">
+                                <Label htmlFor="revision_remarks">
+                                    Resubmission remarks *
+                                </Label>
+                                <textarea
+                                    id="revision_remarks"
+                                    rows={3}
+                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={data.revision_remarks}
+                                    onChange={(event) =>
+                                        setData(
+                                            'revision_remarks',
+                                            event.target.value,
+                                        )
+                                    }
+                                    placeholder="What did you change?"
+                                />
+                                <InputError message={errors.revision_remarks} />
+                                <Button
+                                    onClick={resubmitForApproval}
+                                    disabled={resubmitting}
+                                >
+                                    {resubmitting && (
+                                        <Loader2 className="size-4 animate-spin" />
+                                    )}
+                                    <Send className="size-4" />
+                                    Resubmit for approval
+                                </Button>
+                            </div>
                         </Can>
                     )}
                 </div>

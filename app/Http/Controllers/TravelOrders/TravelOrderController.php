@@ -5,6 +5,7 @@ namespace App\Http\Controllers\TravelOrders;
 use App\Enums\TravelOrderStatus;
 use App\Exceptions\TravelOrderRoutingException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\TravelOrders\ResubmitTravelOrderRequest;
 use App\Http\Requests\TravelOrders\StoreTravelOrderRequest;
 use App\Http\Requests\TravelOrders\UpdateTravelOrderRequest;
 use App\Models\Employee;
@@ -12,6 +13,7 @@ use App\Models\Office;
 use App\Models\TravelOrder;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\TravelOrderResubmissionService;
 use App\Services\TravelOrderRoutePresenter;
 use App\Services\TravelOrderSubmissionService;
 use App\Services\WorkflowRouteResolver;
@@ -28,6 +30,7 @@ class TravelOrderController extends Controller
         private readonly WorkflowRouteResolver $routes,
         private readonly TravelOrderSubmissionService $submissions,
         private readonly TravelOrderRoutePresenter $presenter,
+        private readonly TravelOrderResubmissionService $resubmissions,
     ) {
         //
     }
@@ -52,8 +55,24 @@ class TravelOrderController extends Controller
     }
 
     /**
-     * Show the form for a new travel order.
+     * List the travel orders returned to the signed-in user for revision.
      */
+    public function returned(Request $request): Response
+    {
+        $user = $request->user();
+        $search = $request->string('search')->toString();
+
+        return Inertia::render('travel-orders/returned', [
+            'travelOrders' => $this->travelOrders->paginateReturnedForCreator(
+                $user,
+                $search !== '' ? $search : null,
+            ),
+            'filters' => [
+                'search' => $search,
+            ],
+        ]);
+    }
+
     public function create(Request $request): Response
     {
         $user = $request->user();
@@ -135,22 +154,27 @@ class TravelOrderController extends Controller
     {
         $this->authorizeOwner($request->user(), $travelOrder);
 
-        if ($travelOrder->status !== TravelOrderStatus::Draft) {
+        if (! in_array($travelOrder->status, [TravelOrderStatus::Draft, TravelOrderStatus::Returned], true)) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => __('Only draft travel orders can be edited.'),
+                'message' => __('Only draft or returned travel orders can be edited.'),
             ]);
 
             return to_route('travel-orders.show', $travelOrder);
         }
 
-        $travelOrder->load(['office', 'employee']);
+        $travelOrder->load(['office', 'employee', 'returnedBy']);
 
         return Inertia::render('travel-orders/edit', [
             'travelOrder' => $travelOrder,
             'options' => $this->formOptions($travelOrder->office),
-            'canSubmit' => $travelOrder->created_by === $request->user()?->id,
+            'canSubmit' => $travelOrder->status === TravelOrderStatus::Draft
+                && $travelOrder->created_by === $request->user()?->id,
+            'canResubmit' => $travelOrder->status === TravelOrderStatus::Returned
+                && $travelOrder->created_by === $request->user()?->id,
             'submitUrl' => route('travel-orders.submit', $travelOrder),
+            'resubmitUrl' => route('travel-orders.resubmit', $travelOrder),
+            'revisions' => $this->presenter->revisions($travelOrder),
         ]);
     }
 
@@ -161,10 +185,10 @@ class TravelOrderController extends Controller
     {
         $this->authorizeOwner($request->user(), $travelOrder);
 
-        if ($travelOrder->status !== TravelOrderStatus::Draft) {
+        if (! in_array($travelOrder->status, [TravelOrderStatus::Draft, TravelOrderStatus::Returned], true)) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => __('Only draft travel orders can be edited.'),
+                'message' => __('Only draft or returned travel orders can be edited.'),
             ]);
 
             return back();
@@ -218,8 +242,54 @@ class TravelOrderController extends Controller
     }
 
     /**
-     * Show a travel order owned by the user.
+     * File a returned travel order back into its approval chain.
      */
+    public function resubmit(ResubmitTravelOrderRequest $request, TravelOrder $travelOrder): RedirectResponse
+    {
+        $this->authorizeOwner($request->user(), $travelOrder);
+
+        abort_unless($request->user()?->can('travel-orders.resubmit'), 403);
+
+        $data = $request->validated();
+        $remarks = trim((string) ($data['revision_remarks'] ?? ''));
+
+        try {
+            DB::transaction(function () use ($data, $travelOrder, $request, $remarks): void {
+                $this->travelOrders->update($travelOrder, [
+                    'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
+                    'office_id' => $data['office_id'] ?? $travelOrder->office_id,
+                    'travel_classification' => $data['travel_classification'] ?? null,
+                    'fund_source' => $data['fund_source'] ?? null,
+                    'purpose' => $data['purpose'],
+                    'submission_notes' => $data['submission_notes'] ?? null,
+                    'destination' => $data['destination'],
+                    'date_from' => $data['date_from'],
+                    'date_to' => $data['date_to'],
+                ]);
+
+                $this->resubmissions->resubmit(
+                    $travelOrder,
+                    $request->user(),
+                    $remarks,
+                );
+            });
+        } catch (TravelOrderRoutingException $exception) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $exception->getMessage(),
+            ]);
+
+            return back()->withErrors(['routing' => $exception->getMessage()]);
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Travel order resubmitted.'),
+        ]);
+
+        return to_route('travel-orders.show', $travelOrder);
+    }
+
     public function show(Request $request, TravelOrder $travelOrder): Response
     {
         $this->authorizeOwner($request->user(), $travelOrder);
@@ -228,6 +298,7 @@ class TravelOrderController extends Controller
             'office',
             'employee',
             'creator',
+            'returnedBy',
             'workflow',
             'deliveries.user',
             'actions.actor',
@@ -237,15 +308,19 @@ class TravelOrderController extends Controller
             'travelOrder' => $travelOrder,
             'route' => $this->presenter->route($travelOrder),
             'timeline' => $this->presenter->timeline($travelOrder),
+            'revisions' => $this->presenter->revisions($travelOrder),
             'can' => [
                 'submit' => $travelOrder->status === TravelOrderStatus::Draft,
-                'edit' => $travelOrder->status === TravelOrderStatus::Draft,
+                'edit' => $travelOrder->status === TravelOrderStatus::Draft
+                    || $travelOrder->status === TravelOrderStatus::Returned,
+                'resubmit' => $travelOrder->status === TravelOrderStatus::Returned,
                 'delete' => $travelOrder->status === TravelOrderStatus::Draft,
             ],
             'urls' => [
                 'index' => route('travel-orders.index'),
                 'edit' => route('travel-orders.edit', $travelOrder),
                 'submit' => route('travel-orders.submit', $travelOrder),
+                'resubmit' => route('travel-orders.resubmit', $travelOrder),
                 'destroy' => route('travel-orders.destroy', $travelOrder),
             ],
         ]);

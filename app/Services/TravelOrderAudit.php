@@ -29,11 +29,13 @@ final class TravelOrderAudit
         ?int $stepIndex = null,
         ?string $remarks = null,
         ?array $meta = null,
+        ?int $revisionId = null,
     ): TravelOrderAction {
         return $order->actions()->create([
             'step_index' => $stepIndex,
             'step_label' => $step?->displayLabel(),
             'event' => $event,
+            'revision_id' => $revisionId,
             'actor_user_id' => $actor?->id,
             'remarks' => $remarks,
             'meta' => $meta,

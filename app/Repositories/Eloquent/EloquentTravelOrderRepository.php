@@ -36,6 +36,29 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
             ->find($id);
     }
 
+    public function paginateReturnedForCreator(User $user, ?string $search = null, int $perPage = 15): LengthAwarePaginator
+    {
+        return TravelOrder::query()
+            ->forCreator($user)
+            ->where('status', TravelOrderStatus::Returned)
+            ->with([
+                'office:id,office_name',
+                'employee:id,first_name,last_name',
+                'returnedBy:id,name',
+            ])
+            ->when($search !== null && $search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('purpose', 'like', '%'.$search.'%')
+                        ->orWhere('destination', 'like', '%'.$search.'%')
+                        ->orWhere('to_number', 'like', '%'.$search.'%')
+                        ->orWhere('control_no', 'like', '%'.$search.'%');
+                });
+            })
+            ->orderByDesc('returned_at')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
     public function paginateInbox(User $user, int $perPage = 15): LengthAwarePaginator
     {
         return TravelOrder::query()

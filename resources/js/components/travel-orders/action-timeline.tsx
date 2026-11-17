@@ -8,6 +8,7 @@ const eventStyles: Record<string, string> = {
     acknowledged: 'text-emerald-600 dark:text-emerald-300',
     forwarded: 'text-indigo-600 dark:text-indigo-300',
     returned: 'text-amber-600 dark:text-amber-300',
+    resubmitted: 'text-blue-600 dark:text-blue-300',
     step_skipped: 'text-slate-500 dark:text-slate-400',
     filer_withheld: 'text-slate-500 dark:text-slate-400',
     completed: 'text-emerald-600 dark:text-emerald-300',

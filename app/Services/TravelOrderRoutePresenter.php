@@ -7,6 +7,7 @@ use App\Enums\WorkflowEvent;
 use App\Models\TravelOrder;
 use App\Models\TravelOrderAction;
 use App\Models\TravelOrderDelivery;
+use App\Models\TravelOrderRevision;
 use App\Models\WorkflowStep;
 
 /**
@@ -114,6 +115,7 @@ final class TravelOrderRoutePresenter
                 'event_label' => $action->event->label(),
                 'step_label' => $action->step_label,
                 'step_index' => $action->step_index,
+                'revision_id' => $action->revision_id,
                 'actor' => $action->actor?->name,
                 'remarks' => $action->remarks,
                 'created_at' => $action->created_at?->toIso8601String(),
@@ -123,8 +125,47 @@ final class TravelOrderRoutePresenter
     }
 
     /**
-     * The step entries, frozen for a submitted order and planned otherwise.
+     * The return-and-resubmission rounds, oldest first.
      *
+     * @return array<int, array{
+     *     revision_number: int,
+     *     returned_by: string|null,
+     *     returned_at: string|null,
+     *     return_remarks: string|null,
+     *     returned_from_step: string|null,
+     *     revised_by: string|null,
+     *     revision_remarks: string|null,
+     *     change_type: string,
+     *     changed_fields: array<int, string>|null,
+     *     previous_data: array<string, mixed>|null,
+     *     new_data: array<string, mixed>|null,
+     *     resubmitted_at: string|null
+     * }>
+     */
+    public function revisions(TravelOrder $order): array
+    {
+        $order->loadMissing(['revisions.returnedBy:id,name', 'revisions.revisedBy:id,name']);
+
+        return $order->revisions
+            ->map(fn (TravelOrderRevision $revision): array => [
+                'revision_number' => (int) $revision->revision_number,
+                'returned_by' => $revision->returnedBy?->name,
+                'returned_at' => $revision->returned_at?->toIso8601String(),
+                'return_remarks' => $revision->return_remarks,
+                'returned_from_step' => $order->returned_from_step,
+                'revised_by' => $revision->revisedBy?->name,
+                'revision_remarks' => $revision->revision_remarks,
+                'change_type' => $revision->change_type->value,
+                'changed_fields' => $revision->changed_fields,
+                'previous_data' => $revision->previous_data,
+                'new_data' => $revision->new_data,
+                'resubmitted_at' => $revision->resubmitted_at?->toIso8601String(),
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * @return array<int, array{index: int, step: WorkflowStep|null}>
      */
     private function stepsFor(TravelOrder $order): array
@@ -224,6 +265,10 @@ final class TravelOrderRoutePresenter
 
     private function returnedIndex(TravelOrder $order): ?int
     {
+        if ($order->returned_from_step_index !== null) {
+            return (int) $order->returned_from_step_index;
+        }
+
         $action = $order->actions
             ->where('event', WorkflowEvent::Returned)
             ->sortByDesc('id')

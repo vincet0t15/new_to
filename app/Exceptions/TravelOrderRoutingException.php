@@ -48,6 +48,31 @@ final class TravelOrderRoutingException extends RuntimeException
         return new self('Only the person who created this travel order can submit it.');
     }
 
+    public static function notReturned(): self
+    {
+        return new self('Only a travel order returned for revision can be resubmitted.');
+    }
+
+    public static function notReturnable(): self
+    {
+        return new self('Only a travel order that has been returned for revision can be edited this way.');
+    }
+
+    public static function onlyCreatorCanResubmit(): self
+    {
+        return new self('Only the person who created this travel order can resubmit it.');
+    }
+
+    public static function returnRemarksRequired(): self
+    {
+        return new self('Please explain what needs to be revised.');
+    }
+
+    public static function resubmissionRemarksRequired(): self
+    {
+        return new self('Please describe what you changed before resubmitting.');
+    }
+
     public static function staleAction(): self
     {
         return new self('This travel order is no longer waiting for your action.');

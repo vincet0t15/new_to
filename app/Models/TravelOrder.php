@@ -36,6 +36,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $fund_source
  * @property string|null $travel_classification
  * @property TravelOrderStatus $status
+ * @property int $revision_number
+ * @property int|null $returned_by_user_id
+ * @property int|null $returned_from_step_index
+ * @property string|null $returned_from_step
+ * @property string|null $return_remarks
+ * @property Carbon|null $returned_at
+ * @property Carbon|null $last_resubmitted_at
  * @property array<int, int>|null $routed_steps
  * @property int|null $current_step_index
  * @property int|null $recipient_user_id
@@ -45,9 +52,11 @@ use Illuminate\Support\Carbon;
  * @property-read Employee|null $employee
  * @property-read Office|null $office
  * @property-read User $creator
+ * @property-read User|null $returnedBy
  * @property-read Workflow|null $workflow
  * @property-read Collection<int, TravelOrderDelivery> $deliveries
  * @property-read Collection<int, TravelOrderAction> $actions
+ * @property-read Collection<int, TravelOrderRevision> $revisions
  */
 #[Fillable([
     'control_no',
@@ -64,6 +73,13 @@ use Illuminate\Support\Carbon;
     'fund_source',
     'travel_classification',
     'status',
+    'revision_number',
+    'returned_by_user_id',
+    'returned_from_step_index',
+    'returned_from_step',
+    'return_remarks',
+    'returned_at',
+    'last_resubmitted_at',
     'routed_steps',
     'current_step_index',
     'recipient_user_id',
@@ -112,6 +128,34 @@ class TravelOrder extends Model
     public function recipient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recipient_user_id');
+    }
+
+    /**
+     * The approver who most recently sent the order back for revision.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function returnedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'returned_by_user_id');
+    }
+
+    /**
+     * Every return-and-resubmission round, oldest first.
+     *
+     * @return HasMany<TravelOrderRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(TravelOrderRevision::class)->orderBy('revision_number');
+    }
+
+    /**
+     * The revision row opened by the most recent return, if any.
+     */
+    public function latestRevision(): ?TravelOrderRevision
+    {
+        return $this->revisions()->orderByDesc('revision_number')->first();
     }
 
     /**
@@ -180,6 +224,14 @@ class TravelOrder extends Model
     }
 
     /**
+     * Whether the order is sitting with its creator for revision.
+     */
+    public function isReturned(): bool
+    {
+        return $this->status === TravelOrderStatus::Returned;
+    }
+
+    /**
      * @param  Builder<TravelOrder>  $query
      * @return Builder<TravelOrder>
      */
@@ -201,12 +253,17 @@ class TravelOrder extends Model
             'created_by' => 'integer',
             'workflow_id' => 'integer',
             'recipient_user_id' => 'integer',
+            'revision_number' => 'integer',
+            'returned_by_user_id' => 'integer',
+            'returned_from_step_index' => 'integer',
             'date_from' => 'date',
             'date_to' => 'date',
             'status' => TravelOrderStatus::class,
             'routed_steps' => 'array',
             'current_step_index' => 'integer',
             'submitted_at' => 'datetime',
+            'returned_at' => 'datetime',
+            'last_resubmitted_at' => 'datetime',
         ];
     }
 }
