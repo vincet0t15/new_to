@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
- * The header bell's two actions.
+ * The header bell's actions and the account's notification inbox.
  *
  * Opening a notice marks it read and then sends the account to the screen the
  * notification was written for. Every lookup is scoped through the signed-in
@@ -17,6 +20,39 @@ use Illuminate\Http\Request;
  */
 final class NotificationController extends Controller
 {
+    /**
+     * The full list of notifications addressed to the signed-in account.
+     */
+    public function index(Request $request): Response
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        $requested = $request->query('status');
+        $status = is_string($requested)
+            && in_array($requested, ['all', 'unread', 'read'], true)
+                ? $requested
+                : 'all';
+
+        $notificationItems = $user->notifications()
+            ->when($status === 'unread', fn ($query) => $query->whereNull('read_at'))
+            ->when($status === 'read', fn ($query) => $query->whereNotNull('read_at'))
+            ->latest()
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (DatabaseNotification $notification): array => $this->present($notification));
+
+        return Inertia::render('notifications/index', [
+            'notificationItems' => $notificationItems,
+            'filters' => ['status' => $status],
+            'counts' => [
+                'all' => $user->notifications()->count(),
+                'unread' => $user->unreadNotifications()->count(),
+                'read' => $user->notifications()->whereNotNull('read_at')->count(),
+            ],
+        ]);
+    }
+
     /**
      * Open one notification and mark it as read.
      */
@@ -44,5 +80,25 @@ final class NotificationController extends Controller
         $user->unreadNotifications()->update(['read_at' => now()]);
 
         return back();
+    }
+
+    /**
+     * The compact row the inbox screen renders.
+     *
+     * @return array{id: string, title: string, message: string, kind: string, url: string|null, read_at: string|null, created_at: string|null}
+     */
+    private function present(DatabaseNotification $notification): array
+    {
+        $data = $notification->data;
+
+        return [
+            'id' => $notification->id,
+            'title' => is_string($data['title'] ?? null) ? $data['title'] : __('Notification'),
+            'message' => is_string($data['message'] ?? null) ? $data['message'] : '',
+            'kind' => is_string($data['kind'] ?? null) ? $data['kind'] : 'general',
+            'url' => is_string($data['url'] ?? null) ? $data['url'] : null,
+            'read_at' => $notification->read_at?->toIso8601String(),
+            'created_at' => $notification->created_at?->toIso8601String(),
+        ];
     }
 }

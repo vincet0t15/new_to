@@ -3,6 +3,7 @@ import {
     SidebarGroup,
     SidebarGroupLabel,
     SidebarMenu,
+    SidebarMenuBadge,
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
@@ -54,6 +55,14 @@ export function NavMain({ groups }: { groups: NavGroup[] }) {
                                         <span>{item.title}</span>
                                     </Link>
                                 </SidebarMenuButton>
+                                {typeof item.badge === 'number' &&
+                                    item.badge > 0 && (
+                                        <SidebarMenuBadge>
+                                            {item.badge > 99
+                                                ? '99+'
+                                                : item.badge}
+                                        </SidebarMenuBadge>
+                                    )}
                             </SidebarMenuItem>
                         ))}
                     </SidebarMenu>

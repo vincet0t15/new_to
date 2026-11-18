@@ -12,3 +12,10 @@ export type AppNotification = {
     read_at: string | null;
     created_at: string | null;
 };
+
+/**
+ * A row on the full notifications inbox.
+ */
+export type NotificationInboxItem = AppNotification & {
+    kind: string;
+};

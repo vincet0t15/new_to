@@ -46,6 +46,7 @@ import employmentTypes from '@/routes/employment-types';
 import expenseTypes from '@/routes/expense-types';
 import fundSources from '@/routes/fund-sources';
 import locations from '@/routes/locations';
+import notifications from '@/routes/notifications';
 import offices from '@/routes/offices';
 import perDiemConfigurations from '@/routes/per-diem-configurations';
 import positions from '@/routes/positions';
@@ -77,9 +78,24 @@ function overviewGroup(href: string, title: string): NavGroup {
  * The employee workspace: file an order, follow it, and pick up anything that
  * came back for revision.
  */
-function employeeGroups(dashboardUrl: string): NavGroup[] {
+function employeeGroups(dashboardUrl: string, unreadCount: number): NavGroup[] {
     return [
-        overviewGroup(dashboardUrl, 'Dashboard'),
+        {
+            label: 'Overview',
+            items: [
+                {
+                    title: 'Dashboard',
+                    href: dashboardUrl,
+                    icon: LayoutGrid,
+                },
+                {
+                    title: 'Inbox',
+                    href: notifications.index().url,
+                    icon: Inbox,
+                    badge: unreadCount,
+                },
+            ],
+        },
         {
             label: 'Travel Orders',
             items: [
@@ -304,7 +320,8 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
 }
 
 export function AppSidebar() {
-    const { portals, currentPortal } = usePage().props;
+    const { portals, currentPortal, unreadNotificationsCount } =
+        usePage().props;
     const portal =
         portals.find((option) => option.key === currentPortal) ?? portals[0];
 
@@ -314,7 +331,7 @@ export function AppSidebar() {
         portal?.key === 'admin'
             ? adminGroups(workspaceUrl)
             : portal?.key === 'employee'
-              ? employeeGroups(workspaceUrl)
+              ? employeeGroups(workspaceUrl, unreadNotificationsCount)
               : portal?.key === 'department-head'
                 ? departmentHeadGroups(workspaceUrl)
                 : portal?.key === 'approvals'

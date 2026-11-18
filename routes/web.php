@@ -9,6 +9,8 @@ Route::inertia('/', 'welcome')->name('home');
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
 
+    Route::get('notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
     Route::get('notifications/{notification}', [NotificationController::class, 'open'])
         ->name('notifications.open');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])

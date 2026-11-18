@@ -15,6 +15,7 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useInitials } from '@/hooks/use-initials';
+import notificationRoutes from '@/routes/notifications';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
 export function AppSidebarHeader({
@@ -64,7 +65,7 @@ export function AppSidebarHeader({
                                     className="text-xs font-normal text-primary hover:underline"
                                     onClick={() =>
                                         router.post(
-                                            '/notifications/read-all',
+                                            notificationRoutes.readAll().url,
                                             {},
                                             { preserveScroll: true },
                                         )
@@ -80,7 +81,11 @@ export function AppSidebarHeader({
                                 {notifications.map((notification) => (
                                     <Link
                                         key={notification.id}
-                                        href={`/notifications/${notification.id}`}
+                                        href={
+                                            notificationRoutes.open(
+                                                notification.id,
+                                            ).url
+                                        }
                                         className={`block px-4 py-3 text-sm hover:bg-muted/50 ${
                                             notification.read_at
                                                 ? ''
@@ -99,6 +104,13 @@ export function AppSidebarHeader({
                                 No notifications yet
                             </div>
                         )}
+                        <DropdownMenuSeparator />
+                        <Link
+                            href={notificationRoutes.index().url}
+                            className="block px-4 py-2 text-center text-sm font-medium text-primary hover:bg-muted/50"
+                        >
+                            Open inbox
+                        </Link>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
