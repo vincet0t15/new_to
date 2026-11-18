@@ -37,6 +37,8 @@ Route::middleware(['auth', 'verified', 'portal:department-head'])
         Route::middleware('permission:travel-orders.view')->group(function () {
             Route::get('inbox', [ApprovalInboxController::class, 'index'])
                 ->name('inbox');
+            Route::get('history', [ApprovalInboxController::class, 'history'])
+                ->name('history');
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
                 ->name('travel-orders.show');
 
@@ -65,6 +67,8 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
         Route::middleware('permission:travel-orders.view')->group(function () {
             Route::get('inbox', [ApprovalInboxController::class, 'index'])
                 ->name('inbox');
+            Route::get('history', [ApprovalInboxController::class, 'history'])
+                ->name('history');
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
                 ->name('travel-orders.show');
 

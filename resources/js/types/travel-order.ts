@@ -177,6 +177,25 @@ export type ApprovalInboxItem = {
     url: string;
 };
 
+export type ApprovalHistoryItem = {
+    id: number;
+    control_no: string | null;
+    to_number: string | null;
+    purpose: string | null;
+    destination: string | null;
+    date_from: string | null;
+    date_to: string | null;
+    employee: string | null;
+    office: string | null;
+    step_label: string | null;
+    your_action: string;
+    your_action_event: string | null;
+    action_at: string | null;
+    delivery_status: TravelOrderDeliveryStatus;
+    status: TravelOrderStatus;
+    url: string;
+};
+
 export type TravelOrderLookupOption = {
     id: number;
     name: string;

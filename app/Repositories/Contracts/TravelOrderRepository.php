@@ -30,6 +30,15 @@ interface TravelOrderRepository
     public function paginateInbox(User $user, int $perPage = 15): LengthAwarePaginator;
 
     /**
+     * Every travel order that was ever delivered to this account, newest
+     * activity first. Unlike the inbox this keeps documents after they were
+     * acted on, so the account can always find what passed through it.
+     *
+     * @return LengthAwarePaginator<int, TravelOrder>
+     */
+    public function paginateHistory(User $user, int $perPage = 15): LengthAwarePaginator;
+
+    /**
      * @param  array<string, mixed>  $data
      */
     public function create(array $data): TravelOrder;

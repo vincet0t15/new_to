@@ -6,6 +6,7 @@ use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\TravelOrder;
+use App\Models\TravelOrderAction;
 use App\Models\TravelOrderDelivery;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
@@ -74,6 +75,98 @@ class ApprovalInboxController extends Controller
             'deliveries' => $deliveries,
             'portal' => $prefix,
         ]);
+    }
+
+    /**
+     * Every order that was ever delivered to this account, including the ones
+     * already acted on. This is the counterpart to the inbox: the inbox is the
+     * work queue, while the history is the permanent record.
+     */
+    public function history(Request $request): Response
+    {
+        $user = $request->user();
+
+        abort_unless($user instanceof User, 401);
+
+        $prefix = $this->portalPrefix($request);
+
+        $history = $this->travelOrders
+            ->paginateHistory($user)
+            ->through(function (TravelOrder $order) use ($prefix): array {
+                $delivery = $order->deliveries->first();
+                $action = $delivery === null
+                    ? $order->actions->first()
+                    : $order->actions->firstWhere('step_index', $delivery->step_index);
+                $deliveryStatus = $delivery?->status;
+
+                $stepLabel = $deliveryStatus === TravelOrderDeliveryStatus::Acted
+                    ? $action?->step_label
+                    : null;
+
+                if (
+                    $stepLabel === null
+                    && $delivery !== null
+                    && $order->status === TravelOrderStatus::Submitted
+                    && $order->current_step_index === $delivery->step_index
+                ) {
+                    $stepLabel = $this->approvals->currentStep($order)?->displayLabel();
+                }
+
+                $actionAt = match ($deliveryStatus) {
+                    TravelOrderDeliveryStatus::Acted => $action instanceof TravelOrderAction
+                        ? ($action->created_at ?? $delivery->acted_at)
+                        : $delivery->acted_at,
+                    TravelOrderDeliveryStatus::Received => $delivery->received_at,
+                    TravelOrderDeliveryStatus::Pending => $delivery->created_at,
+                    TravelOrderDeliveryStatus::Closed => $delivery->updated_at,
+                    null => null,
+                };
+
+                return [
+                    'id' => $order->id,
+                    'control_no' => $order->control_no,
+                    'to_number' => $order->to_number,
+                    'purpose' => $order->purpose,
+                    'destination' => $order->destination,
+                    'date_from' => $order->date_from?->toDateString(),
+                    'date_to' => $order->date_to?->toDateString(),
+                    'employee' => $order->employee?->full_name,
+                    'office' => $order->office?->office_name,
+                    'step_label' => $stepLabel ?? ($delivery === null
+                        ? null
+                        : 'Step '.($delivery->step_index + 1)),
+                    'your_action' => $this->actionLabel($deliveryStatus, $action?->event->label()),
+                    'your_action_event' => $deliveryStatus === TravelOrderDeliveryStatus::Acted
+                        ? $action?->event->value
+                        : $deliveryStatus?->value,
+                    'action_at' => $actionAt?->toIso8601String(),
+                    'delivery_status' => $deliveryStatus instanceof TravelOrderDeliveryStatus
+                        ? $deliveryStatus->value
+                        : TravelOrderDeliveryStatus::Closed->value,
+                    'status' => $order->status->value,
+                    'url' => "/{$prefix}/travel-orders/{$order->id}",
+                ];
+            });
+
+        return Inertia::render('approvals/history', [
+            'historyItems' => $history,
+            'portal' => $prefix,
+        ]);
+    }
+
+    /**
+     * How the account's latest copy reads on the history screen.
+     */
+    private function actionLabel(
+        ?TravelOrderDeliveryStatus $status,
+        ?string $eventLabel,
+    ): string {
+        return match ($status) {
+            TravelOrderDeliveryStatus::Pending => __('Waiting'),
+            TravelOrderDeliveryStatus::Received => __('Received'),
+            TravelOrderDeliveryStatus::Acted => $eventLabel ?? __('Acted'),
+            TravelOrderDeliveryStatus::Closed, null => __('Closed'),
+        };
     }
 
     /**

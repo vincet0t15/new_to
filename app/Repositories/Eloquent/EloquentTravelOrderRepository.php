@@ -84,6 +84,26 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
             ->withQueryString();
     }
 
+    public function paginateHistory(User $user, int $perPage = 15): LengthAwarePaginator
+    {
+        return TravelOrder::query()
+            ->whereHas('deliveries', fn ($query) => $query->where('user_id', $user->id))
+            ->with([
+                'office:id,office_name',
+                'employee:id,first_name,middle_name,last_name,suffix',
+                'deliveries' => fn ($query) => $query
+                    ->where('user_id', $user->id)
+                    ->orderByDesc('id'),
+                'actions' => fn ($query) => $query
+                    ->where('actor_user_id', $user->id)
+                    ->orderByDesc('id'),
+            ])
+            ->orderByDesc('updated_at')
+            ->orderByDesc('id')
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
     public function create(array $data): TravelOrder
     {
         return TravelOrder::create($data);

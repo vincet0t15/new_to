@@ -138,6 +138,12 @@ function departmentHeadGroups(dashboardUrl: string): NavGroup[] {
                     icon: Inbox,
                     permission: 'travel-orders.view',
                 },
+                {
+                    title: 'History',
+                    href: departmentHead.history().url,
+                    icon: History,
+                    permission: 'travel-orders.view',
+                },
             ],
         },
     ];
@@ -156,6 +162,12 @@ function approvalsGroups(inboxUrl: string): NavGroup[] {
                     title: 'Approval Inbox',
                     href: inboxUrl,
                     icon: Inbox,
+                    permission: 'travel-orders.view',
+                },
+                {
+                    title: 'History',
+                    href: approvals.history().url,
+                    icon: History,
                     permission: 'travel-orders.view',
                 },
             ],
