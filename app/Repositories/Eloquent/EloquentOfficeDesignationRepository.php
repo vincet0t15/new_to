@@ -18,6 +18,7 @@ class EloquentOfficeDesignationRepository implements OfficeDesignationRepository
                 'office:id,office_name',
                 'stepType:id,name,is_signatory',
                 'employee:id,first_name,middle_name,last_name,suffix,office_id',
+                'employee.office:id,office_name',
                 'employee.user:id,employee_id',
             ])
             ->when($officeId !== null, fn ($query) => $query->where('office_id', $officeId))

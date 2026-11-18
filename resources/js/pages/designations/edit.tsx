@@ -52,12 +52,6 @@ export function EditDesignationDialog({
             ends_at: designation.ends_at ?? '',
         });
 
-    const filteredEmployees = employees.filter(
-        (employee) =>
-            data.office_id === '' ||
-            employee.office_id === Number(data.office_id),
-    );
-
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         put(designations.update(designation).url, {
@@ -127,16 +121,18 @@ export function EditDesignationDialog({
                                 onValueChange={(value) =>
                                     setData('employee_id', Number(value))
                                 }
-                                options={filteredEmployees.map((employee) => ({
+                                options={employees.map((employee) => ({
                                     value: String(employee.id),
-                                    label: employee.has_account
-                                        ? employee.full_name
-                                        : `${employee.full_name} (no account)`,
+                                    label: `${employee.full_name} · ${employee.office_name}${employee.has_account ? '' : ' (no account)'}`,
                                 }))}
                                 placeholder="Select an employee"
-                                searchPlaceholder="Search employee..."
+                                searchPlaceholder="Search employee or office..."
                                 emptyMessage="No employees found."
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Any active employee can hold this step, even one
+                                from another office.
+                            </p>
                             <InputError message={errors.employee_id} />
                         </div>
                         <div className="flex items-center gap-2">

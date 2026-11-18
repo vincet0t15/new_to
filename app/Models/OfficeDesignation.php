@@ -15,9 +15,11 @@ use Illuminate\Support\Carbon;
  *
  * A designation belongs to the office and the reusable step type, not to one
  * workflow, so the same Budget Officer answers the budget step in both the
- * default and the Legislative chain. Deputies are second rows on the same step
- * and receive a copy alongside the primary holder; the first to act claims the
- * step, which is what keeps a leave of absence from stalling a document.
+ * default and the Legislative chain. The holder may belong to another office:
+ * acting and OIC assignments are just designations with effectivity dates.
+ * Deputies are second rows on the same step and receive a copy alongside the
+ * primary holder; the first to act claims the step, which is what keeps a
+ * leave of absence from stalling a document.
  *
  * @property int $id
  * @property int $office_id

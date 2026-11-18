@@ -77,7 +77,7 @@ export default function DesignationsIndex({
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Heading
                     title="Office Designations"
-                    description="Who answers each step for each office."
+                    description="Who answers each step for each office. Any active employee may hold a step, including someone acting from another office. When several people hold one step, the first to act claims it."
                 />
 
                 <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -151,7 +151,18 @@ export default function DesignationsIndex({
                                             {designation.step_type.name}
                                         </TableCell>
                                         <TableCell>
-                                            {designation.employee.full_name}
+                                            <span className="block">
+                                                {designation.employee.full_name}
+                                            </span>
+                                            {designation.employee.office_id !==
+                                                designation.office_id && (
+                                                <span className="block text-xs text-muted-foreground">
+                                                    Acting from{' '}
+                                                    {designation.employee.office
+                                                        ?.office_name ??
+                                                        'another office'}
+                                                </span>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Badge

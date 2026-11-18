@@ -144,6 +144,7 @@ export type OfficeDesignation = {
         id: number;
         full_name: string;
         office_id: number;
+        office: { id: number; office_name: string } | null;
         user: { id: number } | null;
     };
 };

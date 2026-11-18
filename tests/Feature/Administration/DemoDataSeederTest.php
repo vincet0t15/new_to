@@ -19,7 +19,7 @@ test('the demo roster is seeded once and survives a rerun', function () {
 
     expect(Employee::query()->count())->toBe(9)
         ->and(User::query()->count())->toBe(9)
-        ->and(OfficeDesignation::query()->count())->toBe(7)
+        ->and(OfficeDesignation::query()->count())->toBe(8)
         ->and(PerDiemConfiguration::query()->count())->toBe(1)
         ->and(PerDiemMealRule::query()->count())->toBe(3);
 });
@@ -81,7 +81,10 @@ test('the engineering chain resolves to its head and deputy', function () {
         ->and($preview['steps'][0]['designees'][1]['name'])->toBe('Tomas Dizon Aquino')
         ->and($preview['steps'][0]['designees'][1]['is_deputy'])->toBeTrue()
         ->and($preview['steps'][1]['designees'][0]['name'])->toBe('Corazon Santos Reyes')
+        ->and($preview['steps'][2]['designees'])->toHaveCount(2)
         ->and($preview['steps'][2]['designees'][0]['name'])->toBe('Rafael Cruz Mercado')
+        ->and($preview['steps'][2]['designees'][1]['name'])->toBe('Liza Garcia Navarro')
+        ->and($preview['steps'][2]['designees'][1]['is_deputy'])->toBeTrue()
         ->and($preview['steps'][3]['designees'][0]['name'])->toBe('Ramon Flores Bautista');
 });
 

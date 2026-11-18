@@ -39,7 +39,8 @@ use RuntimeException;
  *   head.sbo           Carlo Mendoza        SBO     Department Head
  *   budget             Corazon Reyes        MBO     Budget Officer
  *   mayor              Rafael Mercado       MO      Mayor
- *   vicemayor          Liza Navarro         VMAYOR  Vice Mayor (Mayor role)
+ *   vicemayor          Liza Navarro         VMAYOR  Vice Mayor (Mayor role),
+ *                                                 acting on the Mayor step
  *   hrmo               Ramon Bautista       HRMO    HRMO
  *
  * The engineering and Legislative offices are the two chains that can be
@@ -48,6 +49,11 @@ use RuntimeException;
  * real person with a real account. The Vice Mayor holds the Mayor role because
  * the system has no separate Vice Mayor role; what changes the legislative
  * chain is the workflow, not the account's role.
+ *
+ * To show cross-office acting, the Vice Mayor is also a deputy holder of the
+ * Mayor Approval step for the Mayor's Office. The two receive the step
+ * together and the first to act claims it, the same rule as any other
+ * multi-holder step.
  */
 class DemoDataSeeder extends Seeder
 {
@@ -183,7 +189,7 @@ class DemoDataSeeder extends Seeder
     /**
      * Who answers each approval seat, keyed by office code and step type name.
      *
-     * @var array<int, array{office: string, username: string, step: string, is_deputy: bool}>
+     * @var array<int, array{office: string, username: string, step: string, is_deputy: bool, is_acting?: bool}>
      */
     private const DESIGNATIONS = [
         ['office' => 'MEO', 'username' => 'head.engineer', 'step' => 'Department Head Approval', 'is_deputy' => false],
@@ -191,6 +197,7 @@ class DemoDataSeeder extends Seeder
         ['office' => 'SBO', 'username' => 'head.sbo', 'step' => 'Department Head Approval', 'is_deputy' => false],
         ['office' => 'MBO', 'username' => 'budget', 'step' => 'Budget Review', 'is_deputy' => false],
         ['office' => 'MO', 'username' => 'mayor', 'step' => 'Mayor Approval', 'is_deputy' => false],
+        ['office' => 'MO', 'username' => 'vicemayor', 'step' => 'Mayor Approval', 'is_deputy' => true, 'is_acting' => true],
         ['office' => 'VMAYOR', 'username' => 'vicemayor', 'step' => 'Vice Mayor Approval', 'is_deputy' => false],
         ['office' => 'HRMO', 'username' => 'hrmo', 'step' => 'HRMO Review', 'is_deputy' => false],
     ];
@@ -316,6 +323,9 @@ class DemoDataSeeder extends Seeder
                 [
                     'is_deputy' => $definition['is_deputy'],
                     'is_active' => true,
+                    'starts_at' => ($definition['is_acting'] ?? false)
+                        ? now()->startOfYear()->toDateString()
+                        : null,
                 ],
             );
         }

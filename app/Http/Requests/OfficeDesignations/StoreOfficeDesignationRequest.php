@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\OfficeDesignations;
 
-use App\Models\Employee;
 use App\Models\OfficeDesignation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,7 +29,10 @@ class StoreOfficeDesignationRequest extends FormRequest
     }
 
     /**
-     * Validate the designation against the office it belongs to.
+     * Keep one active row per employee, office, and step.
+     *
+     * The employee may belong to another office: acting and OIC assignments
+     * routinely put somebody from elsewhere on a seat they are covering.
      */
     public function withValidator(Validator $validator): void
     {
@@ -44,20 +46,6 @@ class StoreOfficeDesignationRequest extends FormRequest
             }
 
             if ($validator->errors()->isNotEmpty()) {
-                return;
-            }
-
-            $belongsToOffice = Employee::query()
-                ->whereKey($employeeId)
-                ->where('office_id', $officeId)
-                ->exists();
-
-            if (! $belongsToOffice) {
-                $validator->errors()->add(
-                    'employee_id',
-                    'The selected employee does not belong to this office.',
-                );
-
                 return;
             }
 

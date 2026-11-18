@@ -53,12 +53,6 @@ export function CreateDesignationDialog({
             ends_at: '',
         });
 
-    const filteredEmployees = employees.filter(
-        (employee) =>
-            data.office_id === '' ||
-            employee.office_id === Number(data.office_id),
-    );
-
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         post(designations.store().url, {
@@ -77,6 +71,8 @@ export function CreateDesignationDialog({
                         <DialogTitle>Add Designation</DialogTitle>
                         <DialogDescription>
                             Assign an employee to answer a step for an office.
+                            The employee may come from another office when
+                            acting on the seat.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
@@ -149,16 +145,18 @@ export function CreateDesignationDialog({
                                         value === '' ? '' : Number(value),
                                     )
                                 }
-                                options={filteredEmployees.map((employee) => ({
+                                options={employees.map((employee) => ({
                                     value: String(employee.id),
-                                    label: employee.has_account
-                                        ? employee.full_name
-                                        : `${employee.full_name} (no account)`,
+                                    label: `${employee.full_name} · ${employee.office_name}${employee.has_account ? '' : ' (no account)'}`,
                                 }))}
                                 placeholder="Select an employee"
-                                searchPlaceholder="Search employee..."
+                                searchPlaceholder="Search employee or office..."
                                 emptyMessage="No employees found."
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Any active employee can hold this step, even one
+                                from another office.
+                            </p>
                             <InputError message={errors.employee_id} />
                         </div>
                         <div className="flex items-center gap-2">
