@@ -130,7 +130,7 @@ final class TravelOrderChangeDetector
             'restart' => 0,
             'restart_from_first_affected' => min(
                 $base,
-                $this->firstAffectedIndex($order, $changedFields) ?? 0,
+                $this->firstAffectedIndex($order, $changedFields),
             ),
             default => $base,
         };
@@ -144,7 +144,7 @@ final class TravelOrderChangeDetector
      *
      * @param  array<int, string>  $changedFields
      */
-    public function firstAffectedIndex(TravelOrder $order, array $changedFields): ?int
+    public function firstAffectedIndex(TravelOrder $order, array $changedFields): int
     {
         $ids = $order->routed_steps;
         $reviewedFieldsByStep = $order->routed_step_review_fields;
@@ -163,10 +163,6 @@ final class TravelOrderChangeDetector
             $fieldIndex = null;
 
             foreach (array_values($reviewedFieldsByStep) as $index => $fields) {
-                if (! is_array($fields)) {
-                    return 0;
-                }
-
                 if (in_array($field, $fields, true)) {
                     $fieldIndex = $index;
 

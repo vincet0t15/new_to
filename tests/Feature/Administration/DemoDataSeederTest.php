@@ -10,6 +10,7 @@ use App\Models\PerDiemMealRule;
 use App\Models\User;
 use App\Services\WorkflowRouteResolver;
 use Database\Seeders\DemoDataSeeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 
 test('the demo roster is seeded once and survives a rerun', function () {
@@ -117,8 +118,6 @@ test('the sample per diem covers the provincial destination', function () {
             fn (mixed $amount): string => (string) $amount
         )->all())->toBe(['80.00', '120.00', '120.00'])
         ->and($configuration->perDiemMealRules->pluck('cutoff_time')->map(
-            fn (mixed $time): string => $time instanceof \Illuminate\Support\Carbon
-                ? $time->format('H:i')
-                : (string) $time
+            fn (mixed $time): string => Carbon::parse((string) $time)->format('H:i')
         )->all())->toBe(['08:00', '12:00', '18:00']);
 });

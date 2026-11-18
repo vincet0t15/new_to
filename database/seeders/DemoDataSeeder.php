@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\WorkflowStepType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Hash;
 use RuntimeException;
 
@@ -277,7 +278,7 @@ class DemoDataSeeder extends Seeder
                 // A demo account is verified because it exists to be signed in
                 // to immediately; there is no mailbox to confirm.
                 $user->password = Hash::make(self::PASSWORD);
-                $user->email_verified_at = now();
+                $user->email_verified_at = Carbon::now();
             }
 
             $user->employee_id = $employee->id;
