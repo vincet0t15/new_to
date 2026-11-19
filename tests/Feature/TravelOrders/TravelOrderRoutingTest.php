@@ -198,7 +198,7 @@ test('a receipt step must be acknowledged and a signature step approved', functi
         ->toThrow(TravelOrderRoutingException::class, 'Acknowledge it instead');
 });
 
-test('the last step completes the travel order', function () {
+test('the last step approves the travel order', function () {
     $chain = routingChain();
     $service = app(TravelOrderApprovalService::class);
 
@@ -207,7 +207,7 @@ test('the last step completes the travel order', function () {
     $order = $service->approve($order, $chain['budgetUser']);
     $order = $service->acknowledge($order, $chain['hrmoUser'], 'Received for records.');
 
-    expect($order->status)->toBe(TravelOrderStatus::Completed)
+    expect($order->status)->toBe(TravelOrderStatus::Approved)
         ->and($order->current_step_index)->toBeNull()
         ->and($order->recipient_user_id)->toBeNull()
         ->and($order->deliveries()->open()->count())->toBe(0);

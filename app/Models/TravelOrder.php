@@ -73,6 +73,8 @@ use Illuminate\Support\Carbon;
  * @property-read Collection<int, TravelOrderDelivery> $deliveries
  * @property-read Collection<int, TravelOrderAction> $actions
  * @property-read Collection<int, TravelOrderRevision> $revisions
+ * @property-read Collection<int, TravelOrderItinerary> $itineraries
+ * @property-read Collection<int, TripTicket> $tripTickets
  */
 #[Fillable([
     'control_no',
@@ -242,6 +244,29 @@ class TravelOrder extends Model
     public function latestRevision(): ?TravelOrderRevision
     {
         return $this->revisions()->orderByDesc('revision_number')->first();
+    }
+
+    /**
+     * The itinerary legs of this travel order, in travel order.
+     *
+     * @return HasMany<TravelOrderItinerary, $this>
+     */
+    public function itineraries(): HasMany
+    {
+        return $this->hasMany(TravelOrderItinerary::class)
+            ->orderBy('date_from')
+            ->orderBy('departure_time')
+            ->orderBy('id');
+    }
+
+    /**
+     * The trip tickets prepared for this order.
+     *
+     * @return HasMany<TripTicket, $this>
+     */
+    public function tripTickets(): HasMany
+    {
+        return $this->hasMany(TripTicket::class)->orderByDesc('created_at')->orderByDesc('id');
     }
 
     /**

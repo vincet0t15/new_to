@@ -17,6 +17,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import travelOrdersRoutes from '@/routes/travel-orders';
+import { formatDate } from '@/lib/date-format';
 import type { PaginatedDataResponse } from '@/types/pagination';
 import type { TravelOrder } from '@/types/travel-order';
 import type { KeyboardEvent } from 'react';
@@ -25,6 +26,18 @@ type Props = {
     travelOrders: PaginatedDataResponse<TravelOrder>;
     filters: { search?: string };
 };
+
+function formatDateRange(from: string | null, to: string | null): string {
+    if (!from && !to) {
+        return '—';
+    }
+
+    if (!from || !to) {
+        return formatDate(from ?? to);
+    }
+
+    return `${formatDate(from)} → ${formatDate(to)}`;
+}
 
 export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
     const { data, setData } = useForm({ search: filters.search ?? '' });
@@ -108,7 +121,10 @@ export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
                                             {order.destination ?? '—'}
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
-                                            {order.date_from} → {order.date_to}
+                                            {formatDateRange(
+                                                order.date_from,
+                                                order.date_to,
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <TravelOrderStatusBadge

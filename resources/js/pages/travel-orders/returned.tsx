@@ -15,6 +15,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import travelOrdersRoutes from '@/routes/travel-orders';
+import { formatDateTime } from '@/lib/date-format';
 import type { PaginatedDataResponse } from '@/types/pagination';
 import type { TravelOrder } from '@/types/travel-order';
 import type { KeyboardEvent } from 'react';
@@ -105,7 +106,7 @@ export default function TravelOrdersReturned({ travelOrders, filters }: Props) {
                                                 : ''}
                                         </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
-                                            {order.returned_at ?? '—'}
+                                            {formatDateTime(order.returned_at)}
                                         </TableCell>
                                         <TableCell className="max-w-[240px] truncate">
                                             {order.return_remarks ?? '—'}

@@ -3,16 +3,19 @@ import { ArrowLeft, Pencil, Send, Trash2 } from 'lucide-react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
+import { TravelOrderItineraryPanel } from '@/components/travel-orders/itinerary-panel';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
-import { RouteProgress } from '@/components/travel-orders/route-progress';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
+import { TravelOrderTripTicketPanel } from '@/components/travel-orders/trip-ticket-panel';
 import { Button } from '@/components/ui/button';
+import { formatDateTime } from '@/lib/date-format';
 import travelOrdersRoutes from '@/routes/travel-orders';
 import type {
     TravelOrder,
     TravelOrderAbilities,
     TravelOrderRevision,
     TravelOrderRouteStep,
+    TravelOrderShowOptions,
     TravelOrderTimelineEntry,
 } from '@/types';
 
@@ -21,6 +24,7 @@ type Props = {
     route: TravelOrderRouteStep[];
     timeline: TravelOrderTimelineEntry[];
     revisions: TravelOrderRevision[];
+    options: TravelOrderShowOptions;
     can: TravelOrderAbilities;
     urls: {
         index: string;
@@ -28,14 +32,15 @@ type Props = {
         submit: string;
         resubmit: string;
         destroy: string;
+        tripTicketCreate: string;
     };
 };
 
 export default function ShowTravelOrder({
     travelOrder,
-    route,
     timeline,
     revisions,
+    options,
     can,
     urls,
 }: Props) {
@@ -70,7 +75,7 @@ export default function ShowTravelOrder({
                     </Button>
                     <Heading
                         title={`Travel Order #${travelOrder.id}`}
-                        description="Details, route progress, and audit trail."
+                        description="Details and audit trail."
                     />
                     <div className="ml-auto flex flex-wrap gap-2">
                         {travelOrder.status === 'returned' && (
@@ -81,7 +86,7 @@ export default function ShowTravelOrder({
                                         ? ` at ${travelOrder.returned_from_step}`
                                         : ''}
                                     {travelOrder.returned_at
-                                        ? ` on ${travelOrder.returned_at}`
+                                        ? ` on ${formatDateTime(travelOrder.returned_at)}`
                                         : ''}
                                     {travelOrder.returnedBy?.name
                                         ? ` by ${travelOrder.returnedBy.name}`
@@ -132,33 +137,31 @@ export default function ShowTravelOrder({
                     </div>
                 </div>
 
-                <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="space-y-4 lg:col-span-2">
-                        <TravelOrderDetails travelOrder={travelOrder} />
+                <div className="space-y-4">
+                    <TravelOrderDetails travelOrder={travelOrder} />
 
-                        <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Audit trail
-                            </h3>
-                            <ActionTimeline actions={timeline} />
-                        </section>
+                    <TravelOrderItineraryPanel
+                        travelOrder={travelOrder}
+                        options={options}
+                        canManage={can.manageItinerary}
+                    />
 
-                        <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Revision history
-                            </h3>
-                            <RevisionTimeline revisions={revisions} />
-                        </section>
-                    </div>
+                    <TravelOrderTripTicketPanel
+                        travelOrder={travelOrder}
+                        canCreate={can.createTripTicket}
+                    />
 
-                    <div className="space-y-4">
-                        <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Approval route
-                            </h3>
-                            <RouteProgress steps={route} />
-                        </section>
-                    </div>
+                    <section className="space-y-3 rounded-xl border p-4">
+                        <h3 className="text-base font-semibold">Audit trail</h3>
+                        <ActionTimeline actions={timeline} />
+                    </section>
+
+                    <section className="space-y-3 rounded-xl border p-4">
+                        <h3 className="text-base font-semibold">
+                            Revision history
+                        </h3>
+                        <RevisionTimeline revisions={revisions} />
+                    </section>
                 </div>
             </div>
         </>

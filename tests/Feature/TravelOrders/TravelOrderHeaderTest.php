@@ -102,6 +102,51 @@ test('storing a draft persists the header lookups mirrors and pivots', function 
         ->and($order->transportationModes->pluck('id')->all())->toBe([$mode->id]);
 });
 
+test('the show payload exposes loaded lookups at their snake_case keys', function () {
+    $chain = routingChain();
+    $classification = TravelClassification::factory()->create(['name' => 'Official Business']);
+    $fundSource = FundSource::factory()->create(['name' => 'General Fund']);
+    $origin = Location::factory()->create(['name' => 'Municipal Hall']);
+    $destination = Location::factory()->create(['name' => 'Provincial Capitol']);
+    $station = Location::factory()->create(['name' => 'Municipal Hall Annex']);
+    $hotel = ExpenseType::factory()->create(['name' => 'Hotel Accommodation']);
+    $mode = TransportationMode::factory()->create(['name' => 'Government Vehicle']);
+
+    $order = TravelOrder::factory()->create([
+        'employee_id' => $chain['filerEmployee']->id,
+        'office_id' => $chain['office']->id,
+        'created_by' => $chain['filer']->id,
+        'workflow_id' => null,
+        'status' => TravelOrderStatus::Draft,
+        'travel_classification_id' => $classification->id,
+        'fund_source_id' => $fundSource->id,
+        'origin_id' => $origin->id,
+        'destination_id' => $destination->id,
+        'official_station_id' => $station->id,
+        'travel_classification' => $classification->name,
+        'fund_source' => $fundSource->name,
+    ]);
+
+    $order->expenseTypes()->attach($hotel->id);
+    $order->transportationModes()->attach($mode->id);
+
+    // Eloquent serialises a loaded relation to the same snake_case key as the
+    // legacy text column. The React detail screen relies on this shape, so a
+    // backend change that renames or drops a relation must fail here first.
+    $this->actingAs($chain['filer'])
+        ->get(route('travel-orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('travelOrder.travel_classification.name', 'Official Business')
+            ->where('travelOrder.fund_source.name', 'General Fund')
+            ->where('travelOrder.origin.name', 'Municipal Hall')
+            ->where('travelOrder.destination_location.name', 'Provincial Capitol')
+            ->where('travelOrder.official_station.name', 'Municipal Hall Annex')
+            ->where('travelOrder.expense_types.0.name', 'Hotel Accommodation')
+            ->where('travelOrder.transportation_modes.0.name', 'Government Vehicle')
+        );
+});
+
 test('the header requires a classification and a destination', function () {
     $chain = routingChain();
 

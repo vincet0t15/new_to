@@ -148,9 +148,9 @@ class TravelOrderController extends Controller
                 : __('Travel order saved as draft.'),
         ]);
 
-        return $travelOrder->status === TravelOrderStatus::Submitted
-            ? to_route('travel-orders.show', $travelOrder)
-            : to_route('travel-orders.edit', $travelOrder);
+        // Whether the order was filed or kept as a draft, the next thing the
+        // filer needs is the view where the itinerary and trip ticket live.
+        return to_route('travel-orders.show', $travelOrder);
     }
 
     /**
@@ -318,19 +318,37 @@ class TravelOrderController extends Controller
             'officialStation',
             'expenseTypes',
             'transportationModes',
+            'itineraries.fromLocation',
+            'itineraries.toLocation',
+            'itineraries.transportationMode',
+            'tripTickets.driver',
         ]);
+
+        $editable = $travelOrder->status === TravelOrderStatus::Draft
+            || $travelOrder->status === TravelOrderStatus::Returned;
 
         return Inertia::render('travel-orders/show', [
             'travelOrder' => $travelOrder,
             'route' => $this->presenter->route($travelOrder),
             'timeline' => $this->presenter->timeline($travelOrder),
             'revisions' => $this->presenter->revisions($travelOrder),
+            'options' => [
+                'locations' => Location::query()
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'is_active'])
+                    ->toArray(),
+                'transportationModes' => TransportationMode::query()
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'is_active', 'is_government'])
+                    ->toArray(),
+            ],
             'can' => [
                 'submit' => $travelOrder->status === TravelOrderStatus::Draft,
-                'edit' => $travelOrder->status === TravelOrderStatus::Draft
-                    || $travelOrder->status === TravelOrderStatus::Returned,
+                'edit' => $editable,
                 'resubmit' => $travelOrder->status === TravelOrderStatus::Returned,
                 'delete' => $travelOrder->status === TravelOrderStatus::Draft,
+                'manageItinerary' => $editable,
+                'createTripTicket' => $travelOrder->status === TravelOrderStatus::Approved,
             ],
             'urls' => [
                 'index' => route('travel-orders.index'),
@@ -338,6 +356,7 @@ class TravelOrderController extends Controller
                 'submit' => route('travel-orders.submit', $travelOrder),
                 'resubmit' => route('travel-orders.resubmit', $travelOrder),
                 'destroy' => route('travel-orders.destroy', $travelOrder),
+                'tripTicketCreate' => route('travel-orders.trip-tickets.create', $travelOrder),
             ],
         ]);
     }

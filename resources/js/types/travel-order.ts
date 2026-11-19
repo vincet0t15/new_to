@@ -61,6 +61,61 @@ export type TravelOrderRevision = {
     resubmitted_at: string | null;
 };
 
+export type TravelOrderItinerary = {
+    id: number;
+    travel_order_id: number;
+    date_from: string;
+    date_to: string;
+    departure_time: string;
+    arrival_time: string | null;
+    from_location_id: number | null;
+    to_location_id: number | null;
+    activity: string;
+    reason: string | null;
+    transportation_mode_id: number | null;
+    transportation_fare: string | null;
+    transportation_fare_is_auto: boolean;
+    per_diem: string | null;
+    per_diem_is_auto: boolean;
+    registration_fee: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    from_location?: TravelOrderLookupOption | null;
+    to_location?: TravelOrderLookupOption | null;
+    transportation_mode?: TravelOrderLookupOption | null;
+};
+
+export type TripTicketStatus = 'issued' | 'completed' | 'cancelled';
+
+export type TripTicket = {
+    id: number;
+    travel_order_id: number;
+    status: TripTicketStatus;
+    vehicle_plate_no: string;
+    vehicle_type: string | null;
+    driver_id: number | null;
+    fuel_type: string | null;
+    fuel_efficiency: string | null;
+    distance_km: string;
+    round_trip: boolean;
+    odometer_start: string | null;
+    odometer_end: string | null;
+    liters: string;
+    fuel_consumed: string | null;
+    remarks: string | null;
+    ticket_no: string | null;
+    created_by: number | null;
+    completed_at: string | null;
+    completed_by: number | null;
+    cancelled_at: string | null;
+    cancel_reason: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    driver?: { id: number; full_name: string } | null;
+    creator?: { id: number; name: string } | null;
+    completer?: { id: number; name: string } | null;
+};
+
 export type TravelOrder = {
     id: number;
     control_no: string | null;
@@ -80,8 +135,8 @@ export type TravelOrder = {
     origin_id: number | null;
     destination_id: number | null;
     official_station_id: number | null;
-    fund_source: string | null;
-    travel_classification: string | null;
+    fund_source: string | TravelOrderLookupOption | null;
+    travel_classification: string | TravelOrderLookupOption | null;
     status: TravelOrderStatus;
     revision_number: number;
     returned_by_user_id: number | null;
@@ -100,15 +155,15 @@ export type TravelOrder = {
     office?: { id: number; office_name: string } | null;
     creator?: { id: number; name: string } | null;
     returnedBy?: { id: number; name: string } | null;
-    travelClassification?: TravelOrderLookupOption | null;
-    fundSource?: TravelOrderLookupOption | null;
     origin?: TravelOrderLookupOption | null;
-    destinationLocation?: TravelOrderLookupOption | null;
-    officialStation?: TravelOrderLookupOption | null;
-    expenseTypes?: TravelOrderLookupOption[];
-    transportationModes?: TravelOrderLookupOption[];
+    destination_location?: TravelOrderLookupOption | null;
+    official_station?: TravelOrderLookupOption | null;
+    expense_types?: TravelOrderLookupOption[];
+    transportation_modes?: TravelOrderLookupOption[];
     deliveries?: TravelOrderDelivery[];
     actions?: TravelOrderAction[];
+    itineraries?: TravelOrderItinerary[];
+    trip_tickets?: TripTicket[];
 };
 
 export type TravelOrderRouteStepStatus =
@@ -150,6 +205,8 @@ export type TravelOrderAbilities = {
     edit: boolean;
     resubmit: boolean;
     delete: boolean;
+    manageItinerary: boolean;
+    createTripTicket: boolean;
 };
 
 export type ApprovalAbilities = {
@@ -209,6 +266,37 @@ export type TravelOrderFormOptions = {
     fundSources: TravelOrderLookupOption[];
     locations: TravelOrderLookupOption[];
     expenseTypes: TravelOrderLookupOption[];
+    transportationModes: TravelOrderLookupOption[];
+};
+
+export type TripTicketTravelOrder = {
+    id: number;
+    control_no: string | null;
+    to_number: string | null;
+    purpose: string | null;
+    date_from: string | null;
+    date_to: string | null;
+    status: TravelOrderStatus;
+    office?: { id: number; office_name: string } | null;
+    employee?: { id: number; full_name?: string } | null;
+    origin?: TravelOrderLookupOption | null;
+    destination?: TravelOrderLookupOption | null;
+    itineraries?: {
+        id: number;
+        date_from: string;
+        date_to: string;
+        from_location?: TravelOrderLookupOption | null;
+        to_location?: TravelOrderLookupOption | null;
+    }[];
+};
+
+export type TripTicketDriver = {
+    id: number;
+    full_name: string;
+};
+
+export type TravelOrderShowOptions = {
+    locations: TravelOrderLookupOption[];
     transportationModes: TravelOrderLookupOption[];
 };
 

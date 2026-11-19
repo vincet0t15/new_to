@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  *
  * A signature step advances on approval and a receipt step advances on
  * acknowledgement. Either way the order moves to the next step that has a
- * current designation with a login, and the last step completes it. Who holds
+ * current designation with a login, and the last step approves it. Who holds
  * a step is resolved when the order arrives, not when it was filed, so a
  * deputy covers a holder on leave and a changed designation is honoured.
  */
@@ -302,7 +302,7 @@ final class TravelOrderApprovalService
      * withheld, because that is a different fact from an empty step.
      *
      * Returns true when the order was delivered to a step and false when the
-     * route is exhausted, in which case the order is completed.
+     * route is exhausted, in which case the order is marked approved.
      */
     public function advance(TravelOrder $order, int $from, User $actor): bool
     {
@@ -536,7 +536,7 @@ final class TravelOrderApprovalService
         $this->closeOpenDeliveries($order);
 
         $order->forceFill([
-            'status' => TravelOrderStatus::Completed,
+            'status' => TravelOrderStatus::Approved,
             'current_step_index' => null,
             'recipient_user_id' => null,
         ])->save();

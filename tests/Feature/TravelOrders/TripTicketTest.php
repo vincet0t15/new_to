@@ -1,0 +1,328 @@
+<?php
+
+use App\Enums\SystemRole;
+use App\Enums\TravelOrderStatus;
+use App\Models\Office;
+use App\Models\TravelOrder;
+use App\Models\TripTicket;
+use App\Models\User;
+use App\Services\TripTicketService;
+use Database\Seeders\RolesAndPermissionsSeeder;
+use Inertia\Testing\AssertableInertia as Assert;
+
+beforeEach(function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
+});
+
+/**
+ * An order in the given state, with the account that filed it.
+ *
+ * @return array{order: TravelOrder, user: User}
+ */
+function tripTicketOrder(TravelOrderStatus $status = TravelOrderStatus::Approved): array
+{
+    $office = Office::factory()->create();
+    $employee = routingEmployee($office);
+    $user = routingUser(SystemRole::Employee, $employee);
+
+    $order = TravelOrder::factory()->create([
+        'employee_id' => $employee->id,
+        'office_id' => $office->id,
+        'created_by' => $user->id,
+        'status' => $status,
+        'purpose' => 'Attend the regional summit',
+        'date_from' => '2026-12-01',
+        'date_to' => '2026-12-03',
+    ]);
+
+    return compact('order', 'user');
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function tripTicketPayload(array $overrides = []): array
+{
+    return array_merge([
+        'vehicle_plate_no' => 'ABC-1234',
+        'vehicle_type' => 'Van',
+        'driver_id' => null,
+        'fuel_type' => 'Diesel',
+        'fuel_efficiency' => '10',
+        'distance_km' => '120',
+        'round_trip' => true,
+        'odometer_start' => '1000',
+    ], $overrides);
+}
+
+it('prepares a numbered trip ticket for an approved order', function () {
+    $context = tripTicketOrder();
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload(),
+    )->assertRedirect();
+
+    $ticket = $context['order']->tripTickets()->sole();
+
+    expect($ticket->ticket_no)->toMatch('/^TT-\d{4}-\d{5}$/');
+    expect($ticket->status->value)->toBe('issued');
+    expect($ticket->liters)->toBe('24.00');
+    expect($ticket->round_trip)->toBeTrue();
+});
+
+it('renders the trip ticket create page for the order creator', function () {
+    $context = tripTicketOrder();
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.trip-tickets.create', $context['order']),
+    )->assertInertia(fn (Assert $page): Assert => $page
+        ->component('trip-tickets/create')
+        ->where('travelOrder.id', $context['order']->id)
+        ->has('drivers')
+    );
+});
+
+it('sends the creator back to the order when it is not approved', function () {
+    $context = tripTicketOrder(TravelOrderStatus::Submitted);
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.trip-tickets.create', $context['order']),
+    )->assertRedirect(route('travel-orders.show', $context['order']));
+});
+
+it('refuses a ticket when the order is not approved', function () {
+    $context = tripTicketOrder(TravelOrderStatus::Submitted);
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload(),
+    )->assertSessionHasErrors('travel_order_id');
+
+    $this->assertDatabaseCount('trip_tickets', 0);
+});
+
+it('refuses a second ticket for the same plate on one order', function () {
+    $context = tripTicketOrder();
+
+    app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload(),
+    )->assertSessionHasErrors('vehicle_plate_no');
+
+    $this->assertDatabaseCount('trip_tickets', 1);
+});
+
+it('completes an issued ticket with the post-trip figures', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.complete', [
+            $context['order'],
+            $ticket,
+        ]),
+        [
+            'odometer_end' => '1250.50',
+            'fuel_consumed' => '22.50',
+            'remarks' => 'Arrived safely.',
+        ],
+    )->assertRedirect();
+
+    $ticket->refresh();
+
+    expect($ticket->status->value)->toBe('completed');
+    expect($ticket->odometer_end)->toBe('1250.50');
+    expect($ticket->fuel_consumed)->toBe('22.50');
+    expect($ticket->completed_by)->toBe($context['user']->id);
+    expect($ticket->completed_at)->not->toBeNull();
+});
+
+it('refuses an ending odometer below the starting reading', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.complete', [
+            $context['order'],
+            $ticket,
+        ]),
+        ['odometer_end' => '900'],
+    )->assertSessionHasErrors('odometer_end');
+
+    expect($ticket->refresh()->status->value)->toBe('issued');
+});
+
+it('cancels an issued ticket and then allows deleting it', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.cancel', [
+            $context['order'],
+            $ticket,
+        ]),
+        ['cancel_reason' => 'The trip was postponed.'],
+    )->assertRedirect();
+
+    expect($ticket->refresh()->status->value)->toBe('cancelled');
+
+    $this->actingAs($context['user'])->delete(
+        route('travel-orders.trip-tickets.destroy', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertRedirect(route('travel-orders.show', $context['order']));
+
+    $this->assertDatabaseCount('trip_tickets', 0);
+});
+
+it('refuses to delete a ticket that is still issued', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->delete(
+        route('travel-orders.trip-tickets.destroy', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertSessionHasErrors('status');
+
+    $this->assertDatabaseCount('trip_tickets', 1);
+});
+
+it('refuses a completed ticket from being edited or cancelled', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    app(TripTicketService::class)->complete($ticket, [], $context['user']);
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.trip-tickets.edit', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertRedirect(
+        route('travel-orders.trip-tickets.show', [
+            $context['order'],
+            $ticket,
+        ]),
+    );
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.cancel', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertSessionHasErrors('status');
+
+    expect($ticket->refresh()->status->value)->toBe('completed');
+});
+
+it('keeps the trip ticket to the order creator', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $stranger = routingUser(SystemRole::Employee, routingEmployee());
+
+    $this->actingAs($stranger)->get(
+        route('travel-orders.trip-tickets.show', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertForbidden();
+
+    $this->actingAs($stranger)->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload(['vehicle_plate_no' => 'XYZ-9876']),
+    )->assertForbidden();
+});
+
+it('renders the trip ticket and print pages', function () {
+    $context = tripTicketOrder();
+    $ticket = app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.trip-tickets.show', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertInertia(fn (Assert $page): Assert => $page
+        ->component('trip-tickets/show')
+        ->where('tripTicket.id', $ticket->id)
+        ->where('travelOrder.id', $context['order']->id)
+    );
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.trip-tickets.print', [
+            $context['order'],
+            $ticket,
+        ]),
+    )->assertInertia(fn (Assert $page): Assert => $page
+        ->component('trip-tickets/print')
+        ->where('tripTicket.id', $ticket->id)
+    );
+});
+
+it('lists the tickets on the travel order page', function () {
+    $context = tripTicketOrder();
+    app(TripTicketService::class)->create(
+        $context['order'],
+        tripTicketPayload(),
+        $context['user'],
+    );
+
+    $this->actingAs($context['user'])->get(
+        route('travel-orders.show', $context['order']),
+    )->assertInertia(fn (Assert $page): Assert => $page
+        ->component('travel-orders/show')
+        ->where('can.createTripTicket', true)
+        ->has('travelOrder.trip_tickets', 1)
+    );
+});
+
+it('does not leave a ticket behind when the order row is removed', function () {
+    $context = tripTicketOrder();
+    $ticket = TripTicket::factory()->create([
+        'travel_order_id' => $context['order']->id,
+    ]);
+
+    $context['order']->delete();
+
+    $this->assertDatabaseMissing('trip_tickets', ['id' => $ticket->id]);
+});

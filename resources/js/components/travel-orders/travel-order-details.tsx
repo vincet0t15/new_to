@@ -1,8 +1,41 @@
 import { TravelOrderStatusBadge } from '@/components/travel-orders/status-badge';
-import type { TravelOrder } from '@/types/travel-order';
+import { formatDate } from '@/lib/date-format';
+import type {
+    TravelOrder,
+    TravelOrderLookupOption,
+} from '@/types/travel-order';
 
 function Value({ children }: { children: React.ReactNode }) {
     return <dd className="font-medium">{children ?? '—'}</dd>;
+}
+
+function formatDateRange(from: string | null, to: string | null): string {
+    if (!from && !to) {
+        return '—';
+    }
+
+    if (!from || !to) {
+        return formatDate(from ?? to);
+    }
+
+    return `${formatDate(from)} – ${formatDate(to)}`;
+}
+
+/**
+ * The legacy text columns and their lookup relations share a name.
+ *
+ * Eloquent writes the loaded relation to the same snake_case key as the
+ * column, so on the detail screens the value can be either the mirrored
+ * name or the lookup object. Accept both instead of rendering the object.
+ */
+function lookupName(
+    value: string | TravelOrderLookupOption | null | undefined,
+): string | null {
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    return value?.name ?? null;
 }
 
 export function TravelOrderDetails({
@@ -47,7 +80,7 @@ export function TravelOrderDetails({
                 <div>
                     <dt className="text-muted-foreground">Destination</dt>
                     <Value>
-                        {travelOrder.destinationLocation?.name ??
+                        {travelOrder.destination_location?.name ??
                             travelOrder.destination}
                     </Value>
                 </div>
@@ -57,35 +90,34 @@ export function TravelOrderDetails({
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Official station</dt>
-                    <Value>{travelOrder.officialStation?.name}</Value>
+                    <Value>{travelOrder.official_station?.name}</Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Dates</dt>
                     <Value>
-                        {travelOrder.date_from} – {travelOrder.date_to}
+                        {formatDateRange(
+                            travelOrder.date_from,
+                            travelOrder.date_to,
+                        )}
                     </Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Classification</dt>
                     <Value>
-                        {travelOrder.travelClassification?.name ??
-                            travelOrder.travel_classification}
+                        {lookupName(travelOrder.travel_classification)}
                     </Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">Fund source</dt>
-                    <Value>
-                        {travelOrder.fundSource?.name ??
-                            travelOrder.fund_source}
-                    </Value>
+                    <Value>{lookupName(travelOrder.fund_source)}</Value>
                 </div>
                 <div>
                     <dt className="text-muted-foreground">
                         Transportation modes
                     </dt>
                     <Value>
-                        {travelOrder.transportationModes?.length
-                            ? travelOrder.transportationModes
+                        {travelOrder.transportation_modes?.length
+                            ? travelOrder.transportation_modes
                                   .map((mode) => mode.name)
                                   .join(', ')
                             : null}
@@ -96,8 +128,8 @@ export function TravelOrderDetails({
                         Expenses authorized
                     </dt>
                     <Value>
-                        {travelOrder.expenseTypes?.length
-                            ? travelOrder.expenseTypes
+                        {travelOrder.expense_types?.length
+                            ? travelOrder.expense_types
                                   .map((expenseType) => expenseType.name)
                                   .join(', ')
                             : null}

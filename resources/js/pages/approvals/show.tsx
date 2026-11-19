@@ -10,7 +10,6 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
-import { RouteProgress } from '@/components/travel-orders/route-progress';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
 import { Button } from '@/components/ui/button';
@@ -49,7 +48,6 @@ type Props = {
 
 export default function ShowApproval({
     travelOrder,
-    route,
     timeline,
     revisions,
     currentStep,
@@ -280,13 +278,6 @@ export default function ShowApproval({
                                     action.
                                 </p>
                             )}
-                        </section>
-
-                        <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Approval route
-                            </h3>
-                            <RouteProgress steps={route} />
                         </section>
                     </div>
                 </div>

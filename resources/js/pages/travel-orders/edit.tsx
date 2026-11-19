@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
+import { formatDateTime } from '@/lib/date-format';
 import travelOrdersRoutes from '@/routes/travel-orders';
 import type {
     TravelOrder,
@@ -60,10 +61,10 @@ export default function EditTravelOrder({
         date_to: toDateInput(travelOrder.date_to),
         submission_notes: travelOrder.submission_notes ?? '',
         other_expenses: travelOrder.other_expenses ?? '',
-        expense_type_ids: (travelOrder.expenseTypes ?? []).map((item) =>
+        expense_type_ids: (travelOrder.expense_types ?? []).map((item) =>
             String(item.id),
         ),
-        transportation_mode_ids: (travelOrder.transportationModes ?? []).map(
+        transportation_mode_ids: (travelOrder.transportation_modes ?? []).map(
             (item) => String(item.id),
         ),
         revision_remarks: '',
@@ -138,7 +139,7 @@ export default function EditTravelOrder({
                                 ? ` at ${travelOrder.returned_from_step}`
                                 : ''}
                             {travelOrder.returned_at
-                                ? ` on ${travelOrder.returned_at}`
+                                ? ` on ${formatDateTime(travelOrder.returned_at)}`
                                 : ''}
                             {travelOrder.returnedBy?.name
                                 ? ` by ${travelOrder.returnedBy.name}`

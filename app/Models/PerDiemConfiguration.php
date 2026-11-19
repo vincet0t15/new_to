@@ -9,9 +9,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
+ * @property int $id
+ * @property string $name
+ * @property Carbon|null $effective_from
+ * @property Carbon|null $effective_until
  * @property string|null $daily_rate
+ * @property bool $is_active
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 #[Fillable(['name', 'effective_from', 'effective_until', 'daily_rate', 'is_active'])]
 class PerDiemConfiguration extends Model
