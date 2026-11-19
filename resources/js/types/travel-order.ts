@@ -117,7 +117,8 @@ export type TripTicket = {
 };
 
 export type TravelOrder = {
-    id: number;    control_no: string | null;
+    id: number;
+    control_no: string | null;
     to_number: string | null;
     employee_id: number | null;
     office_id: number | null;

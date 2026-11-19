@@ -404,7 +404,8 @@ class TravelOrderController extends Controller
     /**
      * Remove a draft travel order owned by the user.
      */
-    public function destroy(Request $request, TravelOrder $travelOrder): RedirectResponse    {
+    public function destroy(Request $request, TravelOrder $travelOrder): RedirectResponse
+    {
         $this->authorizeOwner($request->user(), $travelOrder);
 
         if ($travelOrder->status !== TravelOrderStatus::Draft) {
@@ -645,15 +646,19 @@ class TravelOrderController extends Controller
         return [
             'certified' => [
                 'name' => $group?->certifiedEmployee?->full_name,
-                'title' => $group?->certified_title
-                    ?? $group?->certifiedEmployee?->position?->name
-                    ?? 'Municipal Budget Officer',
+                'title' => $group === null
+                    ? 'Municipal Budget Officer'
+                    : ($group->certified_title
+                        ?? $group->certifiedEmployee?->position->name
+                        ?? 'Municipal Budget Officer'),
             ],
             'approved' => [
                 'name' => $group?->approvedEmployee?->full_name,
-                'title' => $group?->approved_title
-                    ?? $group?->approvedEmployee?->position?->name
-                    ?? 'Municipal Mayor',
+                'title' => $group === null
+                    ? 'Municipal Mayor'
+                    : ($group->approved_title
+                        ?? $group->approvedEmployee?->position->name
+                        ?? 'Municipal Mayor'),
             ],
         ];
     }

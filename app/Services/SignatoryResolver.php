@@ -7,6 +7,7 @@ use App\Models\OfficeDesignation;
 use App\Models\TravelOrder;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepType;
+use Illuminate\Support\Collection;
 
 /**
  * Works out who the printed travel order names in each signature line.
@@ -192,9 +193,9 @@ final class SignatoryResolver
     /**
      * The step types of the order's frozen route, in route order.
      *
-     * @return \Illuminate\Support\Collection<int, WorkflowStepType>
+     * @return Collection<int, WorkflowStepType>
      */
-    private function routedTypes(TravelOrder $order): \Illuminate\Support\Collection
+    private function routedTypes(TravelOrder $order): Collection
     {
         $ids = $order->routed_steps;
 

@@ -5,7 +5,6 @@ use App\Models\Employee;
 use App\Models\ItinerarySignatoryGroup;
 use App\Models\Role;
 use App\Models\SignatoryGroup;
-use App\Models\TravelOrder;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;

@@ -56,9 +56,12 @@ export function EditItinerarySignatoryGroupDialog({
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        put(itinerarySignatoryGroupsRoutes.update(itinerarySignatoryGroup).url, {
-            onSuccess: () => onClose(),
-        });
+        put(
+            itinerarySignatoryGroupsRoutes.update(itinerarySignatoryGroup).url,
+            {
+                onSuccess: () => onClose(),
+            },
+        );
     };
 
     return (

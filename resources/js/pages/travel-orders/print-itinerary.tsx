@@ -16,11 +16,7 @@ import {
     itineraryLineTotal,
     itineraryTotals,
 } from '@/components/travel-orders/print/totals';
-import type {
-    ItinerarySignatories,
-    Letterhead,
-    TravelOrder,
-} from '@/types';
+import type { ItinerarySignatories, Letterhead, TravelOrder } from '@/types';
 
 type PrintItineraryProps = {
     travelOrder: TravelOrder;
@@ -204,10 +200,7 @@ export default function PrintItinerary({
                                 </tr>
                             ) : (
                                 itineraries.map((entry) => (
-                                    <tr
-                                        key={entry.id}
-                                        className="align-top"
-                                    >
+                                    <tr key={entry.id} className="align-top">
                                         <td className="border border-black px-2 py-1.5 whitespace-nowrap">
                                             {formatEntryDateRange(
                                                 entry.date_from,

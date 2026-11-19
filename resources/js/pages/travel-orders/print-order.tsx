@@ -11,11 +11,7 @@ import {
     formatLongDate,
     listPhrase,
 } from '@/components/travel-orders/print/format';
-import type {
-    Letterhead,
-    TravelOrder,
-    TravelOrderSignatories,
-} from '@/types';
+import type { Letterhead, TravelOrder, TravelOrderSignatories } from '@/types';
 
 /**
  * The travel order form itself.
@@ -101,9 +97,7 @@ export default function PrintTravelOrder({
                                         <p className="font-bold uppercase">
                                             {traveler.full_name}
                                         </p>
-                                        <p>
-                                            {traveler.position?.name ?? '—'}
-                                        </p>
+                                        <p>{traveler.position?.name ?? '—'}</p>
                                     </div>
                                 ) : (
                                     <p>—</p>
