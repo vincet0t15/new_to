@@ -25,6 +25,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import travelOrders from '@/routes/travel-orders';
+import { formatDate } from '@/lib/date-format';
 import type {
     TravelOrder,
     TravelOrderItinerary,
@@ -55,8 +56,8 @@ type ItineraryFormData = {
 };
 
 const emptyForm = (travelOrder: TravelOrder): ItineraryFormData => ({
-    date_from: travelOrder.date_from ?? '',
-    date_to: travelOrder.date_to ?? '',
+    date_from: travelOrder.date_from?.slice(0, 10) ?? '',
+    date_to: travelOrder.date_to?.slice(0, 10) ?? '',
     departure_time: '',
     arrival_time: '',
     from_location_id:
@@ -76,8 +77,8 @@ const emptyForm = (travelOrder: TravelOrder): ItineraryFormData => ({
 });
 
 const formFromRow = (entry: TravelOrderItinerary): ItineraryFormData => ({
-    date_from: entry.date_from,
-    date_to: entry.date_to,
+    date_from: entry.date_from.slice(0, 10),
+    date_to: entry.date_to.slice(0, 10),
     departure_time: entry.departure_time?.slice(0, 5) ?? '',
     arrival_time: entry.arrival_time?.slice(0, 5) ?? '',
     from_location_id:
@@ -114,14 +115,6 @@ function lineTotal(entry: TravelOrderItinerary): number {
         Number(entry.per_diem ?? 0) +
         Number(entry.registration_fee ?? 0)
     );
-}
-
-function formatDate(value: string): string {
-    const date = new Date(`${value}T00:00:00`);
-
-    return Number.isNaN(date.getTime())
-        ? value
-        : date.toLocaleDateString(undefined, { dateStyle: 'medium' });
 }
 
 function formatTime(value: string | null): string {
@@ -271,7 +264,7 @@ export function TravelOrderItineraryPanel({
                                             ? ` – ${formatDate(entry.date_to)}`
                                             : ''}
                                     </TableCell>
-                                    <TableCell className="min-w-[180px]">
+                                    <TableCell className="min-w-[180px] whitespace-normal">
                                         <div className="flex items-start gap-1.5">
                                             <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
                                             <span>
@@ -296,7 +289,7 @@ export function TravelOrderItineraryPanel({
                                                 : ''}
                                         </div>
                                     </TableCell>
-                                    <TableCell className="max-w-[220px]">
+                                    <TableCell className="max-w-[280px] min-w-[200px] break-words whitespace-normal">
                                         {entry.activity}
                                     </TableCell>
                                     <TableCell>

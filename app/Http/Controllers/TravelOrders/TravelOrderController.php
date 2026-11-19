@@ -18,6 +18,7 @@ use App\Models\TravelClassification;
 use App\Models\TravelOrder;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\SignatoryResolver;
 use App\Services\TravelOrderResubmissionService;
 use App\Services\TravelOrderRoutePresenter;
 use App\Services\TravelOrderSubmissionService;
@@ -357,15 +358,53 @@ class TravelOrderController extends Controller
                 'resubmit' => route('travel-orders.resubmit', $travelOrder),
                 'destroy' => route('travel-orders.destroy', $travelOrder),
                 'tripTicketCreate' => route('travel-orders.trip-tickets.create', $travelOrder),
+                'printOrder' => route('travel-orders.print.order', $travelOrder),
+                'printItinerary' => route('travel-orders.print.itinerary', $travelOrder),
             ],
+        ]);
+    }
+
+    /**
+     * Print the travel order form itself.
+     *
+     * The signature lines were frozen when the order was submitted, so a
+     * designation changing hands later does not restyle a filed copy. A draft
+     * has never been routed, so its lines resolve live.
+     */
+    public function printOrder(Request $request, TravelOrder $travelOrder): Response
+    {
+        $this->authorizePrintViewer($request->user(), $travelOrder);
+
+        $travelOrder->load($this->printRelations());
+
+        return Inertia::render('travel-orders/print-order', [
+            'travelOrder' => $travelOrder,
+            'letterhead' => $this->letterhead(),
+            'signatories' => $travelOrder->signatories
+                ?? app(SignatoryResolver::class)->for($travelOrder),
+        ]);
+    }
+
+    /**
+     * Print the Actual Itinerary of Travel (Appendix A).
+     */
+    public function printItinerary(Request $request, TravelOrder $travelOrder): Response
+    {
+        $this->authorizePrintViewer($request->user(), $travelOrder);
+
+        $travelOrder->load($this->printRelations());
+
+        return Inertia::render('travel-orders/print-itinerary', [
+            'travelOrder' => $travelOrder,
+            'letterhead' => $this->letterhead(),
+            'itinerarySignatories' => $this->itinerarySignatories($travelOrder),
         ]);
     }
 
     /**
      * Remove a draft travel order owned by the user.
      */
-    public function destroy(Request $request, TravelOrder $travelOrder): RedirectResponse
-    {
+    public function destroy(Request $request, TravelOrder $travelOrder): RedirectResponse    {
         $this->authorizeOwner($request->user(), $travelOrder);
 
         if ($travelOrder->status !== TravelOrderStatus::Draft) {
@@ -546,6 +585,91 @@ class TravelOrderController extends Controller
         }
 
         return array_values(array_unique($ids));
+    }
+
+    /**
+     * The relations a printed document reads.
+     *
+     * @return list<string>
+     */
+    private function printRelations(): array
+    {
+        return [
+            'employee.position',
+            'employee.office',
+            'office',
+            'creator',
+            'officialStation',
+            'destinationLocation',
+            'expenseTypes',
+            'transportationModes',
+            'itineraries.fromLocation',
+            'itineraries.toLocation',
+            'itineraries.transportationMode',
+        ];
+    }
+
+    /**
+     * The LGU letterhead configured for printed documents.
+     *
+     * @return array{republic: string, province: string, municipality: string, office_name: string, official_station: string, station_line: string|null}
+     */
+    private function letterhead(): array
+    {
+        /** @var array{republic: string, province: string, municipality: string, office_name: string, official_station: string, station_line: string|null} $letterhead */
+        $letterhead = config('travel-orders.letterhead');
+
+        return $letterhead;
+    }
+
+    /**
+     * The two itinerary (Appendix A) signature lines for a travel order.
+     *
+     * The office the order is filed from names an itinerary signatory group;
+     * whichever of its two lines names an employee prints that name, with the
+     * group's own printed title, then the employee's position, then the
+     * standard role title of the line. A line the group leaves alone prints the
+     * standard role title over an empty name.
+     *
+     * @return array{certified: array{name: string|null, title: string}, approved: array{name: string|null, title: string}}
+     */
+    private function itinerarySignatories(TravelOrder $travelOrder): array
+    {
+        $group = $travelOrder->office()
+            ->with([
+                'itinerarySignatoryGroup.certifiedEmployee.position',
+                'itinerarySignatoryGroup.approvedEmployee.position',
+            ])
+            ->first()?->itinerarySignatoryGroup;
+
+        return [
+            'certified' => [
+                'name' => $group?->certifiedEmployee?->full_name,
+                'title' => $group?->certified_title
+                    ?? $group?->certifiedEmployee?->position?->name
+                    ?? 'Municipal Budget Officer',
+            ],
+            'approved' => [
+                'name' => $group?->approvedEmployee?->full_name,
+                'title' => $group?->approved_title
+                    ?? $group?->approvedEmployee?->position?->name
+                    ?? 'Municipal Mayor',
+            ],
+        ];
+    }
+
+    /**
+     * Allow the owner, or somebody the order was delivered to, to print it.
+     */
+    private function authorizePrintViewer(?User $user, TravelOrder $travelOrder): void
+    {
+        abort_unless($user instanceof User, 401);
+
+        abort_unless(
+            $travelOrder->isOwnedBy($user)
+                || $travelOrder->deliveries()->where('user_id', $user->id)->exists(),
+            403,
+        );
     }
 
     /**

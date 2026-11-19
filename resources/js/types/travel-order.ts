@@ -117,8 +117,7 @@ export type TripTicket = {
 };
 
 export type TravelOrder = {
-    id: number;
-    control_no: string | null;
+    id: number;    control_no: string | null;
     to_number: string | null;
     employee_id: number | null;
     office_id: number | null;
@@ -151,7 +150,13 @@ export type TravelOrder = {
     submitted_at: string | null;
     created_at: string | null;
     updated_at: string | null;
-    employee?: { id: number; full_name?: string } | null;
+    employee?: {
+        id: number;
+        full_name?: string;
+        monthly_salary?: string | null;
+        position?: { id: number; name: string } | null;
+        office?: { id: number; office_name: string } | null;
+    } | null;
     office?: { id: number; office_name: string } | null;
     creator?: { id: number; name: string } | null;
     returnedBy?: { id: number; name: string } | null;
@@ -164,6 +169,49 @@ export type TravelOrder = {
     actions?: TravelOrderAction[];
     itineraries?: TravelOrderItinerary[];
     trip_tickets?: TripTicket[];
+};
+
+/**
+ * One signature line as frozen on a submitted travel order.
+ *
+ * `title` is the workflow step's printed title, `position` the signer's own
+ * position, and `title_override` a signatory group's replacement for both.
+ */
+export type TravelOrderSignatoryLine = {
+    name: string | null;
+    title: string | null;
+    position: string | null;
+    title_override: string | null;
+};
+
+/**
+ * The travel order's printed signature lines, keyed by step meaning.
+ */
+export type TravelOrderSignatories = {
+    department_head_approval: TravelOrderSignatoryLine;
+    budget_office_approval: TravelOrderSignatoryLine;
+    mayor_approval: TravelOrderSignatoryLine;
+    oic_approval: TravelOrderSignatoryLine;
+};
+
+/**
+ * The LGU letterhead printed on travel order and Appendix A sheets.
+ */
+export type Letterhead = {
+    republic: string;
+    province: string;
+    municipality: string;
+    office_name: string;
+    official_station: string;
+    station_line: string | null;
+};
+
+/**
+ * The two Appendix A signature lines.
+ */
+export type ItinerarySignatories = {
+    certified: { name: string | null; title: string };
+    approved: { name: string | null; title: string };
 };
 
 export type TravelOrderRouteStepStatus =

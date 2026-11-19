@@ -28,6 +28,7 @@ final class TravelOrderSubmissionService
         private readonly WorkflowRouteResolver $routes,
         private readonly TravelOrderApprovalService $approvals,
         private readonly TravelOrderAudit $audit,
+        private readonly SignatoryResolver $signatories,
     ) {
         //
     }
@@ -84,6 +85,12 @@ final class TravelOrderSubmissionService
                 'current_step_index' => null,
                 'recipient_user_id' => null,
                 'submitted_at' => now(),
+            ]);
+
+            // The printed signature lines are frozen with the route so a
+            // designation changing hands later does not restyle a filed copy.
+            $order->forceFill([
+                'signatories' => $this->signatories->for($order, forceLive: true),
             ])->save();
 
             $this->audit->record($order, WorkflowEvent::Submitted, $actor);

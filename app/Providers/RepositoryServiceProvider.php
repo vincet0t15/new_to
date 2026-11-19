@@ -6,11 +6,13 @@ use App\Repositories\Contracts\EmployeeRepository;
 use App\Repositories\Contracts\EmploymentTypeRepository;
 use App\Repositories\Contracts\ExpenseTypeRepository;
 use App\Repositories\Contracts\FundSourceRepository;
+use App\Repositories\Contracts\ItinerarySignatoryGroupRepository;
 use App\Repositories\Contracts\LocationRepository;
 use App\Repositories\Contracts\OfficeDesignationRepository;
 use App\Repositories\Contracts\OfficeRepository;
 use App\Repositories\Contracts\PerDiemConfigurationRepository;
 use App\Repositories\Contracts\PositionRepository;
+use App\Repositories\Contracts\SignatoryGroupRepository;
 use App\Repositories\Contracts\TransportationModeRepository;
 use App\Repositories\Contracts\TravelClassificationRepository;
 use App\Repositories\Contracts\TravelOrderRepository;
@@ -20,11 +22,13 @@ use App\Repositories\Eloquent\EloquentEmployeeRepository;
 use App\Repositories\Eloquent\EloquentEmploymentTypeRepository;
 use App\Repositories\Eloquent\EloquentExpenseTypeRepository;
 use App\Repositories\Eloquent\EloquentFundSourceRepository;
+use App\Repositories\Eloquent\EloquentItinerarySignatoryGroupRepository;
 use App\Repositories\Eloquent\EloquentLocationRepository;
 use App\Repositories\Eloquent\EloquentOfficeDesignationRepository;
 use App\Repositories\Eloquent\EloquentOfficeRepository;
 use App\Repositories\Eloquent\EloquentPerDiemConfigurationRepository;
 use App\Repositories\Eloquent\EloquentPositionRepository;
+use App\Repositories\Eloquent\EloquentSignatoryGroupRepository;
 use App\Repositories\Eloquent\EloquentTransportationModeRepository;
 use App\Repositories\Eloquent\EloquentTravelClassificationRepository;
 use App\Repositories\Eloquent\EloquentTravelOrderRepository;
@@ -53,5 +57,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(WorkflowRepository::class, EloquentWorkflowRepository::class);
         $this->app->bind(WorkflowStepTypeRepository::class, EloquentWorkflowStepTypeRepository::class);
         $this->app->bind(OfficeDesignationRepository::class, EloquentOfficeDesignationRepository::class);
+        $this->app->bind(SignatoryGroupRepository::class, EloquentSignatoryGroupRepository::class);
+        $this->app->bind(ItinerarySignatoryGroupRepository::class, EloquentItinerarySignatoryGroupRepository::class);
     }
 }

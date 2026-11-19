@@ -13,29 +13,9 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { formatDate, formatDateTime } from '@/lib/date-format';
 import type { PaginatedDataResponse } from '@/types/pagination';
 import type { ApprovalHistoryItem } from '@/types/travel-order';
-
-function formatDate(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleDateString(undefined, {
-        dateStyle: 'medium',
-    });
-}
-
-function formatDateTime(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    });
-}
 
 const actionClasses: Record<string, string> = {
     approved:

@@ -22,14 +22,18 @@ use Illuminate\Support\Carbon;
  * @property string $office_name
  * @property string|null $office_code
  * @property int|null $workflow_id
+ * @property int|null $signatory_group_id
+ * @property int|null $itinerary_signatory_group_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Workflow|null $workflow
  * @property-read Collection<int, Employee> $employees
  * @property-read Collection<int, WorkflowStep> $workflowSteps
  * @property-read Collection<int, OfficeDesignation> $designations
+ * @property-read SignatoryGroup|null $signatoryGroup
+ * @property-read ItinerarySignatoryGroup|null $itinerarySignatoryGroup
  */
-#[Fillable(['office_name', 'office_code', 'workflow_id'])]
+#[Fillable(['office_name', 'office_code', 'workflow_id', 'signatory_group_id', 'itinerary_signatory_group_id'])]
 class Office extends Model
 {
     /** @use HasFactory<OfficeFactory> */
@@ -73,5 +77,31 @@ class Office extends Model
     public function designations(): HasMany
     {
         return $this->hasMany(OfficeDesignation::class);
+    }
+
+    /**
+     * The reusable signatory group this office's travel orders print.
+     *
+     * Null means every signature line keeps the signer its designation
+     * resolves to.
+     *
+     * @return BelongsTo<SignatoryGroup, $this>
+     */
+    public function signatoryGroup(): BelongsTo
+    {
+        return $this->belongsTo(SignatoryGroup::class);
+    }
+
+    /**
+     * The reusable itinerary signatory group this office's Appendix A prints.
+     *
+     * Null means the two lines print their standard role titles over an empty
+     * name.
+     *
+     * @return BelongsTo<ItinerarySignatoryGroup, $this>
+     */
+    public function itinerarySignatoryGroup(): BelongsTo
+    {
+        return $this->belongsTo(ItinerarySignatoryGroup::class);
     }
 }

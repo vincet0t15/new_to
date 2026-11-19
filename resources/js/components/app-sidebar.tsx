@@ -7,6 +7,7 @@ import {
     ChartColumn,
     ClipboardList,
     FileText,
+    FileSignature,
     GitBranch,
     History,
     Inbox,
@@ -16,6 +17,7 @@ import {
     LayoutGrid,
     ListChecks,
     MapPin,
+    PenLine,
     Plus,
     Receipt,
     RotateCcw,
@@ -45,12 +47,14 @@ import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
 import expenseTypes from '@/routes/expense-types';
 import fundSources from '@/routes/fund-sources';
+import itinerarySignatoryGroups from '@/routes/itinerary-signatory-groups';
 import locations from '@/routes/locations';
 import notifications from '@/routes/notifications';
 import offices from '@/routes/offices';
 import perDiemConfigurations from '@/routes/per-diem-configurations';
 import positions from '@/routes/positions';
 import roles from '@/routes/roles';
+import signatoryGroups from '@/routes/signatory-groups';
 import travelOrders from '@/routes/travel-orders';
 import transportationModes from '@/routes/transportation-modes';
 import travelClassifications from '@/routes/travel-classifications';
@@ -273,6 +277,18 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: locations.index().url,
                     icon: MapPin,
                     permission: 'locations.view',
+                },
+                {
+                    title: 'Travel Order Signatories',
+                    href: signatoryGroups.index().url,
+                    icon: PenLine,
+                    permission: 'signatory-groups.view',
+                },
+                {
+                    title: 'Itinerary Signatories',
+                    href: itinerarySignatoryGroups.index().url,
+                    icon: FileSignature,
+                    permission: 'itinerary-signatory-groups.view',
                 },
             ],
         },

@@ -67,4 +67,25 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Printed letterhead
+    |--------------------------------------------------------------------------
+    |
+    | The LGU name that heads every printed travel order and Appendix A. The
+    | seal artwork is /LGU.png and the campaign logo is /Bagong Pilipinas
+    | logo.png, both shipped in the public directory. An office that files an
+    | order still prints its own name beneath this letterhead.
+    |
+    */
+
+    'letterhead' => [
+        'republic' => env('TRAVEL_ORDER_REPUBLIC', 'Republic of the Philippines'),
+        'province' => env('TRAVEL_ORDER_PROVINCE', 'Province of Palawan'),
+        'municipality' => env('TRAVEL_ORDER_MUNICIPALITY', 'Municipality of San Vicente'),
+        'office_name' => env('TRAVEL_ORDER_OFFICE', 'Municipality of San Vicente'),
+        'official_station' => env('TRAVEL_ORDER_STATION', 'San Vicente, Palawan'),
+        'station_line' => env('TRAVEL_ORDER_STATION_LINE'),
+    ],
+
 ];

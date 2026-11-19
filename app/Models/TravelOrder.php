@@ -56,6 +56,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $current_step_index
  * @property int|null $recipient_user_id
  * @property Carbon|null $submitted_at
+ * @property array<string, array{name: string|null, title: string|null, position: string|null, title_override: string|null}>|null $signatories
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Employee|null $employee
@@ -109,6 +110,7 @@ use Illuminate\Support\Carbon;
     'current_step_index',
     'recipient_user_id',
     'submitted_at',
+    'signatories',
 ])]
 class TravelOrder extends Model
 {
@@ -379,6 +381,7 @@ class TravelOrder extends Model
             'routed_step_review_fields' => 'array',
             'current_step_index' => 'integer',
             'submitted_at' => 'datetime',
+            'signatories' => 'array',
             'returned_at' => 'datetime',
             'last_resubmitted_at' => 'datetime',
         ];

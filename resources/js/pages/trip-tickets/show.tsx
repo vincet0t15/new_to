@@ -17,6 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { formatDate, formatDateTime } from '@/lib/date-format';
 import travelOrders from '@/routes/travel-orders';
 import tripTickets from '@/routes/travel-orders/trip-tickets';
 import type { TripTicket, TripTicketTravelOrder } from '@/types';
@@ -43,32 +44,12 @@ function money(value: string | null): string {
     return `${Number(value).toFixed(2)} L`;
 }
 
-function dateTime(value: string | null): string {
-    if (!value) {
-        return '—';
-    }
-
-    return new Date(value).toLocaleString(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    });
-}
-
 function dateRange(from: string | null, to: string | null): string {
     if (!from || !to) {
         return '—';
     }
 
-    const start = new Date(`${from}T00:00:00`);
-    const end = new Date(`${to}T00:00:00`);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-        return `${from} – ${to}`;
-    }
-
-    return `${start.toLocaleDateString(undefined, {
-        dateStyle: 'medium',
-    })} – ${end.toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+    return `${formatDate(from)} – ${formatDate(to)}`;
 }
 
 export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
@@ -288,7 +269,9 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 <Detail
                                     label="Prepared at"
-                                    value={dateTime(tripTicket.created_at)}
+                                    value={formatDateTime(
+                                        tripTicket.created_at,
+                                    )}
                                 />
                                 <Detail
                                     label="Completed by"
@@ -296,11 +279,15 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 <Detail
                                     label="Completed at"
-                                    value={dateTime(tripTicket.completed_at)}
+                                    value={formatDateTime(
+                                        tripTicket.completed_at,
+                                    )}
                                 />
                                 <Detail
                                     label="Cancelled at"
-                                    value={dateTime(tripTicket.cancelled_at)}
+                                    value={formatDateTime(
+                                        tripTicket.cancelled_at,
+                                    )}
                                 />
                                 <Detail
                                     label="Cancel reason"

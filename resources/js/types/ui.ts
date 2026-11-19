@@ -6,6 +6,14 @@ export type AppLayoutProps = {
     breadcrumbs?: BreadcrumbItem[];
 };
 
+/**
+ * One entry in a plain label/id picker, such as the signer dropdowns.
+ */
+export type SelectOption = {
+    id: number;
+    name: string;
+};
+
 export type AppVariant = 'header' | 'sidebar';
 
 export type FlashToast = {

@@ -66,3 +66,15 @@ Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-ord
             ->name('trip-tickets.print')
             ->scopeBindings();
     });
+
+Route::middleware(['auth', 'verified'])
+    ->prefix('travel-orders/{travelOrder}/print')
+    ->name('travel-orders.print.')
+    ->group(function () {
+        Route::get('/order', [TravelOrderController::class, 'printOrder'])
+            ->middleware('permission:travel-orders.print')
+            ->name('order');
+        Route::get('/itinerary', [TravelOrderController::class, 'printItinerary'])
+            ->middleware('permission:travel-orders.print')
+            ->name('itinerary');
+    });

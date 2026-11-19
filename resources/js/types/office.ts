@@ -11,6 +11,14 @@ export type Office = {
     } | null;
 };
 
+/**
+ * The fields a signatory group picker needs to list and tick an office.
+ */
+export type OfficeSelectOption = {
+    id: number;
+    office_name: string;
+};
+
 export type WorkflowOfficeOption = {
     id: number;
     office_name: string;

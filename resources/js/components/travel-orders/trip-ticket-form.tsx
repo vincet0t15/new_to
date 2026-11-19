@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatDate } from '@/lib/date-format';
 import type {
     TripTicket,
     TripTicketDriver,
@@ -36,16 +37,7 @@ function formatDateRange(from: string | null, to: string | null): string {
         return '—';
     }
 
-    const start = new Date(`${from}T00:00:00`);
-    const end = new Date(`${to}T00:00:00`);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-        return `${from} – ${to}`;
-    }
-
-    return `${start.toLocaleDateString(undefined, {
-        dateStyle: 'medium',
-    })} – ${end.toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+    return `${formatDate(from)} – ${formatDate(to)}`;
 }
 
 export function TripTicketForm({

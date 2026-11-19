@@ -3,6 +3,7 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { TripTicketStatusBadge } from '@/components/travel-orders/status-badge';
+import { formatDate } from '@/lib/date-format';
 import tripTickets from '@/routes/travel-orders/trip-tickets';
 import type { TripTicket, TripTicketTravelOrder } from '@/types';
 
@@ -40,16 +41,7 @@ function dateRange(from: string | null, to: string | null): string {
         return '—';
     }
 
-    const start = new Date(`${from}T00:00:00`);
-    const end = new Date(`${to}T00:00:00`);
-
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-        return `${from} – ${to}`;
-    }
-
-    return `${start.toLocaleDateString(undefined, {
-        dateStyle: 'medium',
-    })} – ${end.toLocaleDateString(undefined, { dateStyle: 'medium' })}`;
+    return `${formatDate(from)} – ${formatDate(to)}`;
 }
 
 function liters(value: string | null): string {

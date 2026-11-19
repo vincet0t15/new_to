@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Printer, Send, Trash2 } from 'lucide-react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
@@ -33,6 +33,8 @@ type Props = {
         resubmit: string;
         destroy: string;
         tripTicketCreate: string;
+        printOrder: string;
+        printItinerary: string;
     };
 };
 
@@ -110,6 +112,28 @@ export default function ShowTravelOrder({
                                 </Button>
                             </Can>
                         )}
+                        <Can permission="travel-orders.print">
+                            <Button variant="outline" asChild>
+                                <a
+                                    href={urls.printOrder}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <Printer className="size-4" />
+                                    Print Travel Order
+                                </a>
+                            </Button>
+                            <Button variant="outline" asChild>
+                                <a
+                                    href={urls.printItinerary}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <Printer className="size-4" />
+                                    Print Itinerary
+                                </a>
+                            </Button>
+                        </Can>
                         {can.resubmit && (
                             <Can permission="travel-orders.resubmit">
                                 <Button onClick={resubmit}>
