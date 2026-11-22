@@ -80,6 +80,88 @@ final class TravelOrderApprovalService
     }
 
     /**
+     * Record Budget office earmark/fund allocation details.
+     */
+    public function earmark(TravelOrder $order, User $actor, ?string $remarks = null): TravelOrder
+    {
+        return DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
+            $order = $this->lock($order);
+            $this->ensureSubmitted($order);
+            $step = $this->currentStep($order);
+
+            if ($step === null || $order->activeDeliveryFor($actor) === null) {
+                throw TravelOrderRoutingException::staleAction();
+            }
+
+            $index = (int) $order->current_step_index;
+            $remarks = $this->nullableRemarks($remarks);
+
+            $order->forceFill([
+                'earmarked_by_user_id' => $actor->id,
+                'earmarked_at' => now(),
+                'earmark_remarks' => $remarks,
+            ])->save();
+
+            $this->audit->record(
+                $order,
+                WorkflowEvent::Earmarked,
+                $actor,
+                $step,
+                $index,
+                $remarks,
+            );
+
+            return $order->refresh();
+        });
+    }
+
+    /**
+     * Record HRMO series number/control and release details.
+     */
+    public function record(TravelOrder $order, User $actor, array $data): TravelOrder
+    {
+        return DB::transaction(function () use ($order, $actor, $data): TravelOrder {
+            $order = $this->lock($order);
+            $this->ensureSubmitted($order);
+            $step = $this->currentStep($order);
+
+            if ($step === null || $order->activeDeliveryFor($actor) === null) {
+                throw TravelOrderRoutingException::staleAction();
+            }
+
+            $index = (int) $order->current_step_index;
+            $controlNo = $this->nullableRemarks($data['control_no'] ?? null);
+            $toNumber = $this->nullableRemarks($data['to_number'] ?? null);
+            $remarks = $this->nullableRemarks($data['remarks'] ?? null);
+
+            $order->forceFill([
+                'control_no' => $controlNo ?? $order->control_no,
+                'to_number' => $toNumber ?? $order->to_number,
+                'recorded_by_user_id' => $actor->id,
+                'recorded_at' => now(),
+                'recording_remarks' => $remarks,
+                'distributed_at' => ($data['distributed'] ?? false) ? now() : $order->distributed_at,
+            ])->save();
+
+            $this->audit->record(
+                $order,
+                WorkflowEvent::Recorded,
+                $actor,
+                $step,
+                $index,
+                $remarks,
+                [
+                    'control_no' => $order->control_no,
+                    'to_number' => $order->to_number,
+                    'distributed' => $order->distributed_at !== null,
+                ],
+            );
+
+            return $order->refresh();
+        });
+    }
+
+    /**
      * Clear a signature step and send the order onward.
      */
     public function approve(TravelOrder $order, User $actor, ?string $remarks = null): TravelOrder
@@ -576,6 +658,13 @@ final class TravelOrderApprovalService
         if ($order->status !== TravelOrderStatus::Submitted) {
             throw TravelOrderRoutingException::staleAction();
         }
+    }
+
+    private function nullableRemarks(?string $remarks): ?string
+    {
+        $remarks = trim((string) $remarks);
+
+        return $remarks === '' ? null : $remarks;
     }
 
     private function closeOpenDeliveries(TravelOrder $order): void

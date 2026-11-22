@@ -43,6 +43,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $official_station_id
  * @property string|null $fund_source
  * @property string|null $travel_classification
+ * @property int|null $earmarked_by_user_id
+ * @property Carbon|null $earmarked_at
+ * @property string|null $earmark_remarks
  * @property TravelOrderStatus $status
  * @property int $revision_number
  * @property int|null $returned_by_user_id
@@ -57,6 +60,10 @@ use Illuminate\Support\Carbon;
  * @property int|null $recipient_user_id
  * @property Carbon|null $submitted_at
  * @property array<string, array{name: string|null, title: string|null, position: string|null, title_override: string|null}>|null $signatories
+ * @property int|null $recorded_by_user_id
+ * @property Carbon|null $recorded_at
+ * @property string|null $recording_remarks
+ * @property Carbon|null $distributed_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Employee|null $employee
@@ -80,6 +87,10 @@ use Illuminate\Support\Carbon;
 #[Fillable([
     'control_no',
     'to_number',
+    'recorded_by_user_id',
+    'recorded_at',
+    'recording_remarks',
+    'distributed_at',
     'employee_id',
     'office_id',
     'created_by',
@@ -97,6 +108,9 @@ use Illuminate\Support\Carbon;
     'official_station_id',
     'fund_source',
     'travel_classification',
+    'earmarked_by_user_id',
+    'earmarked_at',
+    'earmark_remarks',
     'status',
     'revision_number',
     'returned_by_user_id',
@@ -228,6 +242,22 @@ class TravelOrder extends Model
     public function returnedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'returned_by_user_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function earmarkedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'earmarked_by_user_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function recordedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'recorded_by_user_id');
     }
 
     /**
@@ -374,6 +404,8 @@ class TravelOrder extends Model
             'origin_id' => 'integer',
             'destination_id' => 'integer',
             'official_station_id' => 'integer',
+            'earmarked_by_user_id' => 'integer',
+            'recorded_by_user_id' => 'integer',
             'date_from' => 'date',
             'date_to' => 'date',
             'status' => TravelOrderStatus::class,
@@ -382,8 +414,11 @@ class TravelOrder extends Model
             'current_step_index' => 'integer',
             'submitted_at' => 'datetime',
             'signatories' => 'array',
+            'earmarked_at' => 'datetime',
             'returned_at' => 'datetime',
             'last_resubmitted_at' => 'datetime',
+            'recorded_at' => 'datetime',
+            'distributed_at' => 'datetime',
         ];
     }
 }

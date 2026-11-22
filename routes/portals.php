@@ -58,6 +58,12 @@ Route::middleware(['auth', 'verified', 'portal:department-head'])
             Route::post('travel-orders/{travelOrder}/forward', [TravelOrderActionController::class, 'forward'])
                 ->middleware('permission:travel-orders.forward')
                 ->name('travel-orders.forward');
+            Route::post('travel-orders/{travelOrder}/earmark', [TravelOrderActionController::class, 'earmark'])
+                ->middleware('permission:travel-orders.earmark')
+                ->name('travel-orders.earmark');
+            Route::post('travel-orders/{travelOrder}/record', [TravelOrderActionController::class, 'record'])
+                ->middleware('permission:inbox.receive')
+                ->name('travel-orders.record');
         });
     });
 
@@ -88,6 +94,12 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
             Route::post('travel-orders/{travelOrder}/forward', [TravelOrderActionController::class, 'forward'])
                 ->middleware('permission:travel-orders.forward')
                 ->name('travel-orders.forward');
+            Route::post('travel-orders/{travelOrder}/earmark', [TravelOrderActionController::class, 'earmark'])
+                ->middleware('permission:travel-orders.earmark')
+                ->name('travel-orders.earmark');
+            Route::post('travel-orders/{travelOrder}/record', [TravelOrderActionController::class, 'record'])
+                ->middleware('permission:inbox.receive')
+                ->name('travel-orders.record');
         });
     });
 

@@ -56,6 +56,12 @@ enum WorkflowEvent: string
     /** The filer resubmitted a returned travel order. */
     case Resubmitted = 'resubmitted';
 
+    /** Budget office recorded fund earmark/allocation details. */
+    case Earmarked = 'earmarked';
+
+    /** HRMO recorded series/control number and release details. */
+    case Recorded = 'recorded';
+
     public function label(): string
     {
         return match ($this) {
@@ -72,6 +78,8 @@ enum WorkflowEvent: string
             self::PulledBack => 'Pulled back',
             self::Cancelled => 'Cancelled',
             self::Resubmitted => 'Resubmitted',
+            self::Earmarked => 'Earmarked',
+            self::Recorded => 'Recorded',
         };
     }
 }

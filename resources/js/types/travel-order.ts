@@ -137,6 +137,13 @@ export type TravelOrder = {
     official_station_id: number | null;
     fund_source: string | TravelOrderLookupOption | null;
     travel_classification: string | TravelOrderLookupOption | null;
+    earmarked_by_user_id: number | null;
+    earmarked_at: string | null;
+    earmark_remarks: string | null;
+    recorded_by_user_id: number | null;
+    recorded_at: string | null;
+    recording_remarks: string | null;
+    distributed_at: string | null;
     status: TravelOrderStatus;
     revision_number: number;
     returned_by_user_id: number | null;
@@ -264,6 +271,8 @@ export type ApprovalAbilities = {
     acknowledge: boolean;
     return: boolean;
     forward: boolean;
+    earmark: boolean;
+    record: boolean;
 };
 
 export type ApprovalInboxItem = {

@@ -212,6 +212,7 @@ class ApprovalInboxController extends Controller
         $isHolder = $delivery !== null;
         $isSubmitted = $travelOrder->status === TravelOrderStatus::Submitted;
         $candidates = $this->approvals->forwardCandidates($travelOrder, $user);
+        $stepName = $step?->stepType->name;
 
         return Inertia::render('approvals/show', [
             'travelOrder' => $travelOrder,
@@ -238,6 +239,8 @@ class ApprovalInboxController extends Controller
                 'acknowledge' => $isSubmitted && $isHolder && $step?->stepType->is_signatory === false,
                 'return' => $isSubmitted && $isHolder,
                 'forward' => $isSubmitted && $isHolder && $candidates->isNotEmpty(),
+                'earmark' => $isSubmitted && $isHolder && $stepName === 'Budget Review' && $user->can('travel-orders.earmark'),
+                'record' => $isSubmitted && $isHolder && $stepName === 'HRMO Review',
             ],
             'urls' => [
                 'inbox' => route("{$prefix}.inbox"),
@@ -246,6 +249,8 @@ class ApprovalInboxController extends Controller
                 'acknowledge' => route("{$prefix}.travel-orders.acknowledge", $travelOrder),
                 'return' => route("{$prefix}.travel-orders.return", $travelOrder),
                 'forward' => route("{$prefix}.travel-orders.forward", $travelOrder),
+                'earmark' => route("{$prefix}.travel-orders.earmark", $travelOrder),
+                'record' => route("{$prefix}.travel-orders.record", $travelOrder),
             ],
         ]);
     }

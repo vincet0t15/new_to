@@ -43,6 +43,8 @@ type Props = {
         acknowledge: string;
         return: string;
         forward: string;
+        earmark: string;
+        record: string;
     };
 };
 
@@ -59,6 +61,9 @@ export default function ShowApproval({
     const { data, setData, post, processing, errors, reset } = useForm({
         remarks: '',
         to_user_id: '',
+        control_no: travelOrder.control_no ?? '',
+        to_number: travelOrder.to_number ?? '',
+        distributed: travelOrder.distributed_at !== null,
     });
 
     const actionError = (errors as Record<string, string | undefined>).action;
@@ -66,7 +71,8 @@ export default function ShowApproval({
     const act = (url: string) => {
         post(url, {
             preserveScroll: true,
-            onSuccess: () => reset(),
+            onSuccess: () =>
+                reset('remarks', 'to_user_id', 'distributed'),
         });
     };
 
@@ -75,7 +81,9 @@ export default function ShowApproval({
         can.approve ||
         can.acknowledge ||
         can.return ||
-        can.forward;
+        can.forward ||
+        can.earmark ||
+        can.record;
 
     return (
         <>
@@ -172,6 +180,12 @@ export default function ShowApproval({
                                         />
                                         <InputError message={errors.remarks} />
                                     </div>
+                                    {(travelOrder.earmarked_at || travelOrder.recorded_at) && (
+                                        <div className="rounded-lg border p-3 text-xs text-muted-foreground space-y-1">
+                                            {travelOrder.earmarked_at && <p>Earmarked: {travelOrder.earmarked_at}</p>}
+                                            {travelOrder.recorded_at && <p>Recorded: {travelOrder.recorded_at}{travelOrder.distributed_at ? ' · Distributed' : ''}</p>}
+                                        </div>
+                                    )}
 
                                     <div className="flex flex-wrap gap-2">
                                         {can.receive && (
@@ -190,6 +204,18 @@ export default function ShowApproval({
                                             >
                                                 <Check className="size-4" />
                                                 Receive
+                                            </Button>
+                                        )}
+                                        {can.earmark && (
+                                            <Button
+                                                variant="secondary"
+                                                disabled={processing}
+                                                onClick={() =>
+                                                    act(urls.earmark)
+                                                }
+                                            >
+                                                <Check className="size-4" />
+                                                Record Earmark
                                             </Button>
                                         )}
                                         {can.approve && (
@@ -225,6 +251,43 @@ export default function ShowApproval({
                                             </Button>
                                         )}
                                     </div>
+
+                                    {can.record && (
+                                        <div className="space-y-2 border-t pt-3">
+                                            <p className="text-sm font-medium">HRMO recording</p>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="to_number">Series/TO No.</Label>
+                                                <input
+                                                    id="to_number"
+                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                    value={data.to_number}
+                                                    onChange={(e) => setData('to_number', e.target.value)}
+                                                />
+                                                <InputError message={errors.to_number} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="control_no">Control No.</Label>
+                                                <input
+                                                    id="control_no"
+                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                    value={data.control_no}
+                                                    onChange={(e) => setData('control_no', e.target.value)}
+                                                />
+                                                <InputError message={errors.control_no} />
+                                            </div>
+                                            <label className="flex items-center gap-2 text-sm">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={data.distributed}
+                                                    onChange={(e) => setData('distributed', e.target.checked)}
+                                                />
+                                                Mark as distributed/released
+                                            </label>
+                                            <Button variant="secondary" disabled={processing} onClick={() => act(urls.record)}>
+                                                <Check className="size-4" /> Record &amp; Release
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     {can.forward && (
                                         <div className="space-y-2 border-t pt-3">

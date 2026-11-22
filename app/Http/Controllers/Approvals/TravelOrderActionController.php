@@ -10,6 +10,7 @@ use App\Services\TravelOrderApprovalService;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 /**
@@ -56,6 +57,34 @@ class TravelOrderActionController extends Controller
         return $this->run(
             fn () => $this->approvals->acknowledge($travelOrder, $actor, $remarks),
             __('Receipt acknowledged.'),
+        );
+    }
+
+    public function earmark(Request $request, TravelOrder $travelOrder): RedirectResponse
+    {
+        $actor = $this->actor($request);
+        $remarks = $this->remarks($request);
+
+        return $this->run(
+            fn () => $this->approvals->earmark($travelOrder, $actor, $remarks),
+            __('Fund earmark recorded.'),
+        );
+    }
+
+    public function record(Request $request, TravelOrder $travelOrder): RedirectResponse
+    {
+        $actor = $this->actor($request);
+
+        $validated = $request->validate([
+            'control_no' => ['nullable', 'string', 'max:40', Rule::unique('travel_orders', 'control_no')->ignore($travelOrder->id)],
+            'to_number' => ['nullable', 'string', 'max:40', Rule::unique('travel_orders', 'to_number')->ignore($travelOrder->id)],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+            'distributed' => ['sometimes', 'boolean'],
+        ]);
+
+        return $this->run(
+            fn () => $this->approvals->record($travelOrder, $actor, $validated),
+            __('Travel order recorded.'),
         );
     }
 

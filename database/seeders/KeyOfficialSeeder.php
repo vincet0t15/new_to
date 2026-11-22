@@ -6,9 +6,11 @@ use App\Enums\SystemRole;
 use App\Models\Employee;
 use App\Models\EmploymentType;
 use App\Models\Office;
+use App\Models\OfficeDesignation;
 use App\Models\Position;
 use App\Models\Role;
 use App\Models\User;
+use App\Models\WorkflowStepType;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -107,12 +109,15 @@ class KeyOfficialSeeder extends Seeder
             RolesAndPermissionsSeeder::class,
             OfficeSeeder::class,
             SampleEmploymentAndPositionSeeder::class,
+            WorkflowSeeder::class,
         ]);
 
         $employmentType = EmploymentType::query()->firstOrCreate(
             ['name' => 'Regular'],
             ['description' => 'Permanent full-time employee.'],
         );
+
+        $employees = [];
 
         foreach (self::PEOPLE as $person) {
             $office = Office::query()->where('office_code', $person['office_code'])->first();
@@ -173,6 +178,56 @@ class KeyOfficialSeeder extends Seeder
                 ->get();
 
             $user->syncRoles($roles->all());
+            $employees[$person['username']] = $employee;
+        }
+
+        $this->seedDesignations($employees);
+    }
+
+    /**
+     * Seed routing designations for key officials.
+     *
+     * Department Head designations are office-specific and are intentionally
+     * not guessed here. Administrators can assign them per office as needed.
+     *
+     * @param  array<string, Employee>  $employees
+     */
+    private function seedDesignations(array $employees): void
+    {
+        $designations = [
+            ['office' => 'MBO', 'step' => 'Budget Review', 'username' => 'budget.xherluck'],
+            ['office' => 'MO', 'step' => 'Mayor Approval', 'username' => 'mayor.ramir'],
+            ['office' => 'HRMO', 'step' => 'HRMO Review', 'username' => 'hrmo.maribel'],
+            ['office' => 'VMAYOR', 'step' => 'Vice Mayor Approval', 'username' => 'vicemayor.mechie'],
+        ];
+
+        $stepTypes = WorkflowStepType::query()
+            ->whereIn('name', array_column($designations, 'step'))
+            ->get()
+            ->keyBy('name');
+
+        foreach ($designations as $definition) {
+            $office = Office::query()->where('office_code', $definition['office'])->first();
+            $stepType = $stepTypes->get($definition['step']);
+            $employee = $employees[$definition['username']] ?? null;
+
+            if (! $office instanceof Office || ! $stepType instanceof WorkflowStepType || ! $employee instanceof Employee) {
+                throw new RuntimeException('Unable to seed designation for '.$definition['username'].'.');
+            }
+
+            OfficeDesignation::query()->updateOrCreate(
+                [
+                    'office_id' => $office->id,
+                    'workflow_step_type_id' => $stepType->id,
+                    'employee_id' => $employee->id,
+                ],
+                [
+                    'is_deputy' => false,
+                    'is_active' => true,
+                    'starts_at' => null,
+                    'ends_at' => null,
+                ],
+            );
         }
     }
 
