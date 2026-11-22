@@ -88,6 +88,17 @@ class KeyOfficialSeeder extends Seeder
             'position' => 'Computer Programmer',
             'roles' => [SystemRole::Employee],
         ],
+        [
+            'username' => 'vicemayor.mechie',
+            'email' => 'mechie.silagan@example.com',
+            'first_name' => 'Mechie',
+            'middle_name' => 'L.',
+            'last_name' => 'Silagan',
+            'suffix' => null,
+            'office_code' => 'SBO',
+            'position' => 'Municipal Vice Mayor',
+            'roles' => [SystemRole::Employee, SystemRole::ViceMayor],
+        ],
     ];
 
     public function run(): void

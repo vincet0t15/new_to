@@ -83,6 +83,7 @@ enum Portal: string
             self::Approvals => [
                 SystemRole::BudgetOfficer,
                 SystemRole::Mayor,
+                SystemRole::ViceMayor,
                 SystemRole::Hrmo,
             ],
             self::Admin => [SystemRole::Admin, SystemRole::SuperAdmin],

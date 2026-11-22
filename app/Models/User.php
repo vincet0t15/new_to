@@ -114,6 +114,7 @@ class User extends Authenticatable
             SystemRole::Admin->value,
             SystemRole::Hrmo->value,
             SystemRole::Mayor->value,
+            SystemRole::ViceMayor->value,
             SystemRole::BudgetOfficer->value,
             SystemRole::DepartmentHead->value,
             SystemRole::Employee->value,

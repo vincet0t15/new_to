@@ -83,6 +83,7 @@ final class TravelOrderNotification extends Notification implements ShouldQueue
         if ($notifiable->hasAnyRoleSlug([
             SystemRole::BudgetOfficer->value,
             SystemRole::Mayor->value,
+            SystemRole::ViceMayor->value,
             SystemRole::Hrmo->value,
         ])) {
             return route('approvals.travel-orders.show', $this->order);

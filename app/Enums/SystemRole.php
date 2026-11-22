@@ -15,6 +15,7 @@ enum SystemRole: string
     case DepartmentHead = 'department_head';
     case BudgetOfficer = 'budget_officer';
     case Mayor = 'mayor';
+    case ViceMayor = 'vice_mayor';
     case Hrmo = 'hrmo';
     case Admin = 'admin';
     case SuperAdmin = 'super_admin';
@@ -26,6 +27,7 @@ enum SystemRole: string
             self::DepartmentHead => 'Department Head',
             self::BudgetOfficer => 'Budget Officer',
             self::Mayor => "Mayor's Office",
+            self::ViceMayor => 'Vice Mayor',
             self::Hrmo => 'HRMO',
             self::Admin => 'Admin',
             self::SuperAdmin => 'Super Admin',
@@ -42,6 +44,7 @@ enum SystemRole: string
             self::DepartmentHead => 'Department Head Workspace',
             self::BudgetOfficer => 'Budget Office Workspace',
             self::Mayor => "Mayor's Office Workspace",
+            self::ViceMayor => 'Vice Mayor Workspace',
             self::Hrmo => 'HRMO Workspace',
             self::Admin => 'Administration',
             self::SuperAdmin => 'Super Administration',

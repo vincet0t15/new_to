@@ -66,6 +66,7 @@ class PortalResolver
             SystemRole::Admin->value => Portal::Admin,
             SystemRole::Hrmo->value,
             SystemRole::Mayor->value,
+            SystemRole::ViceMayor->value,
             SystemRole::BudgetOfficer->value => Portal::Approvals,
             SystemRole::DepartmentHead->value => Portal::DepartmentHead,
             default => Portal::Employee,
