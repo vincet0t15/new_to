@@ -212,6 +212,8 @@ class TravelOrderController extends Controller
             'officialStation',
             'expenseTypes',
             'transportationModes',
+            'revisions.returnedBy',
+            'revisions.revisedBy',
         ]);
 
         return Inertia::render('travel-orders/edit', [
@@ -335,6 +337,8 @@ class TravelOrderController extends Controller
             'workflow',
             'deliveries.user',
             'actions.actor',
+            'revisions.returnedBy',
+            'revisions.revisedBy',
             'travelClassification',
             'fundSource',
             'origin',

@@ -105,10 +105,11 @@ final class TravelOrderRoutePresenter
      */
     public function timeline(TravelOrder $order): array
     {
-        return $order->actions()
-            ->with('actor:id,name')
-            ->orderBy('id')
-            ->get()
+        $actions = $order->relationLoaded('actions')
+            ? $order->actions->sortBy('id')->values()
+            : $order->actions()->with('actor:id,name')->orderBy('id')->get();
+
+        return $actions
             ->map(fn (TravelOrderAction $action): array => [
                 'id' => $action->id,
                 'event' => $action->event->value,

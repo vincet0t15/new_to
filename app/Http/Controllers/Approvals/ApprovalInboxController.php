@@ -9,10 +9,12 @@ use App\Models\TravelOrder;
 use App\Models\TravelOrderAction;
 use App\Models\TravelOrderDelivery;
 use App\Models\User;
+use App\Models\WorkflowStep;
 use App\Repositories\Contracts\TravelOrderRepository;
 use App\Services\TravelOrderApprovalService;
 use App\Services\TravelOrderRoutePresenter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -44,32 +46,32 @@ class ApprovalInboxController extends Controller
         abort_unless($user instanceof User, 401);
 
         $prefix = $this->portalPrefix($request);
+        $inbox = $this->travelOrders->paginateInbox($user);
+        $currentSteps = $this->currentStepsFor($inbox->getCollection());
 
-        $deliveries = $this->travelOrders
-            ->paginateInbox($user)
-            ->through(function (TravelOrder $order) use ($prefix): array {
-                $step = $this->approvals->currentStep($order);
-                $delivery = $order->deliveries->first();
+        $deliveries = $inbox->through(function (TravelOrder $order) use ($prefix, $currentSteps): array {
+            $step = $this->currentStepFromMap($order, $currentSteps);
+            $delivery = $order->deliveries->first();
 
-                return [
-                    'id' => $order->id,
-                    'control_no' => $order->control_no,
-                    'to_number' => $order->to_number,
-                    'purpose' => $order->purpose,
-                    'destination' => $order->destination,
-                    'date_from' => $order->date_from?->toDateString(),
-                    'date_to' => $order->date_to?->toDateString(),
-                    'submitted_at' => $order->submitted_at?->toIso8601String(),
-                    'employee' => $order->employee?->full_name,
-                    'office' => $order->office?->office_name,
-                    'step_label' => $step?->displayLabel(),
-                    'is_signatory' => $step?->stepType->is_signatory ?? true,
-                    'delivery_status' => $delivery instanceof TravelOrderDelivery
-                        ? $delivery->status->value
-                        : TravelOrderDeliveryStatus::Pending->value,
-                    'url' => "/{$prefix}/travel-orders/{$order->id}",
-                ];
-            });
+            return [
+                'id' => $order->id,
+                'control_no' => $order->control_no,
+                'to_number' => $order->to_number,
+                'purpose' => $order->purpose,
+                'destination' => $order->destination,
+                'date_from' => $order->date_from?->toDateString(),
+                'date_to' => $order->date_to?->toDateString(),
+                'submitted_at' => $order->submitted_at?->toIso8601String(),
+                'employee' => $order->employee?->full_name,
+                'office' => $order->office?->office_name,
+                'step_label' => $step?->displayLabel(),
+                'is_signatory' => $step?->stepType->is_signatory ?? true,
+                'delivery_status' => $delivery instanceof TravelOrderDelivery
+                    ? $delivery->status->value
+                    : TravelOrderDeliveryStatus::Pending->value,
+                'url' => "/{$prefix}/travel-orders/{$order->id}",
+            ];
+        });
 
         return Inertia::render('approvals/inbox', [
             'deliveries' => $deliveries,
@@ -90,64 +92,64 @@ class ApprovalInboxController extends Controller
         abort_unless($user instanceof User, 401);
 
         $prefix = $this->portalPrefix($request);
+        $historyPage = $this->travelOrders->paginateHistory($user);
+        $currentSteps = $this->currentStepsFor($historyPage->getCollection());
 
-        $history = $this->travelOrders
-            ->paginateHistory($user)
-            ->through(function (TravelOrder $order) use ($prefix): array {
-                $delivery = $order->deliveries->first();
-                $action = $delivery === null
-                    ? $order->actions->first()
-                    : $order->actions->firstWhere('step_index', $delivery->step_index);
-                $deliveryStatus = $delivery?->status;
+        $history = $historyPage->through(function (TravelOrder $order) use ($prefix, $currentSteps): array {
+            $delivery = $order->deliveries->first();
+            $action = $delivery === null
+                ? $order->actions->first()
+                : $order->actions->firstWhere('step_index', $delivery->step_index);
+            $deliveryStatus = $delivery?->status;
 
-                $stepLabel = $deliveryStatus === TravelOrderDeliveryStatus::Acted
-                    ? $action?->step_label
-                    : null;
+            $stepLabel = $deliveryStatus === TravelOrderDeliveryStatus::Acted
+                ? $action?->step_label
+                : null;
 
-                if (
-                    $stepLabel === null
-                    && $delivery !== null
-                    && $order->status === TravelOrderStatus::Submitted
-                    && $order->current_step_index === $delivery->step_index
-                ) {
-                    $stepLabel = $this->approvals->currentStep($order)?->displayLabel();
-                }
+            if (
+                $stepLabel === null
+                && $delivery !== null
+                && $order->status === TravelOrderStatus::Submitted
+                && $order->current_step_index === $delivery->step_index
+            ) {
+                $stepLabel = $this->currentStepFromMap($order, $currentSteps)?->displayLabel();
+            }
 
-                $actionAt = match ($deliveryStatus) {
-                    TravelOrderDeliveryStatus::Acted => $action instanceof TravelOrderAction
-                        ? ($action->created_at ?? $delivery->acted_at)
-                        : $delivery->acted_at,
-                    TravelOrderDeliveryStatus::Received => $delivery->received_at,
-                    TravelOrderDeliveryStatus::Pending => $delivery->created_at,
-                    TravelOrderDeliveryStatus::Closed => $delivery->updated_at,
-                    null => null,
-                };
+            $actionAt = match ($deliveryStatus) {
+                TravelOrderDeliveryStatus::Acted => $action instanceof TravelOrderAction
+                    ? ($action->created_at ?? $delivery->acted_at)
+                    : $delivery->acted_at,
+                TravelOrderDeliveryStatus::Received => $delivery->received_at,
+                TravelOrderDeliveryStatus::Pending => $delivery->created_at,
+                TravelOrderDeliveryStatus::Closed => $delivery->updated_at,
+                null => null,
+            };
 
-                return [
-                    'id' => $order->id,
-                    'control_no' => $order->control_no,
-                    'to_number' => $order->to_number,
-                    'purpose' => $order->purpose,
-                    'destination' => $order->destination,
-                    'date_from' => $order->date_from?->toDateString(),
-                    'date_to' => $order->date_to?->toDateString(),
-                    'employee' => $order->employee?->full_name,
-                    'office' => $order->office?->office_name,
-                    'step_label' => $stepLabel ?? ($delivery === null
-                        ? null
-                        : 'Step '.($delivery->step_index + 1)),
-                    'your_action' => $this->actionLabel($deliveryStatus, $action?->event->label()),
-                    'your_action_event' => $deliveryStatus === TravelOrderDeliveryStatus::Acted
-                        ? $action?->event->value
-                        : $deliveryStatus?->value,
-                    'action_at' => $actionAt?->toIso8601String(),
-                    'delivery_status' => $deliveryStatus instanceof TravelOrderDeliveryStatus
-                        ? $deliveryStatus->value
-                        : TravelOrderDeliveryStatus::Closed->value,
-                    'status' => $order->status->value,
-                    'url' => "/{$prefix}/travel-orders/{$order->id}",
-                ];
-            });
+            return [
+                'id' => $order->id,
+                'control_no' => $order->control_no,
+                'to_number' => $order->to_number,
+                'purpose' => $order->purpose,
+                'destination' => $order->destination,
+                'date_from' => $order->date_from?->toDateString(),
+                'date_to' => $order->date_to?->toDateString(),
+                'employee' => $order->employee?->full_name,
+                'office' => $order->office?->office_name,
+                'step_label' => $stepLabel ?? ($delivery === null
+                    ? null
+                    : 'Step '.($delivery->step_index + 1)),
+                'your_action' => $this->actionLabel($deliveryStatus, $action?->event->label()),
+                'your_action_event' => $deliveryStatus === TravelOrderDeliveryStatus::Acted
+                    ? $action?->event->value
+                    : $deliveryStatus?->value,
+                'action_at' => $actionAt?->toIso8601String(),
+                'delivery_status' => $deliveryStatus instanceof TravelOrderDeliveryStatus
+                    ? $deliveryStatus->value
+                    : TravelOrderDeliveryStatus::Closed->value,
+                'status' => $order->status->value,
+                'url' => "/{$prefix}/travel-orders/{$order->id}",
+            ];
+        });
 
         return Inertia::render('approvals/history', [
             'historyItems' => $history,
@@ -193,6 +195,8 @@ class ApprovalInboxController extends Controller
             'workflow',
             'deliveries.user',
             'actions.actor',
+            'revisions.returnedBy',
+            'revisions.revisedBy',
             'travelClassification',
             'fundSource',
             'origin',
@@ -244,6 +248,53 @@ class ApprovalInboxController extends Controller
                 'forward' => route("{$prefix}.travel-orders.forward", $travelOrder),
             ],
         ]);
+    }
+
+    /**
+     * Preload current workflow steps for a page of orders.
+     *
+     * @param  Collection<int, TravelOrder>  $orders
+     * @return array<int, WorkflowStep>
+     */
+    private function currentStepsFor(Collection $orders): array
+    {
+        $ids = $orders
+            ->filter(fn (TravelOrder $order): bool => $order->status === TravelOrderStatus::Submitted
+                && $order->current_step_index !== null
+                && is_array($order->routed_steps)
+                && isset($order->routed_steps[$order->current_step_index]))
+            ->map(fn (TravelOrder $order): int => (int) $order->routed_steps[$order->current_step_index])
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($ids === []) {
+            return [];
+        }
+
+        return WorkflowStep::query()
+            ->with(['stepType', 'office'])
+            ->whereIn('id', $ids)
+            ->get()
+            ->keyBy('id')
+            ->all();
+    }
+
+    /**
+     * @param  array<int, WorkflowStep>  $currentSteps
+     */
+    private function currentStepFromMap(TravelOrder $order, array $currentSteps): ?WorkflowStep
+    {
+        $index = $order->current_step_index;
+        $ids = $order->routed_steps;
+
+        if ($index === null || ! is_array($ids) || ! isset($ids[$index])) {
+            return null;
+        }
+
+        $step = $currentSteps[(int) $ids[$index]] ?? null;
+
+        return $step instanceof WorkflowStep ? $step : null;
     }
 
     /**
