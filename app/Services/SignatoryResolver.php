@@ -203,15 +203,19 @@ final class SignatoryResolver
             return collect();
         }
 
+        // Positions belong to frozen steps, not to step types: a route is a
+        // list of step IDs, and two steps may even share one type. Sorting by
+        // type ID silently reorders the signature lines whenever those two ID
+        // sequences do not happen to line up.
         $positions = array_flip(array_map('intval', $ids));
 
         return WorkflowStep::query()
             ->with('stepType')
             ->whereIn('id', $ids)
             ->get()
+            ->sortBy(fn (WorkflowStep $step): int => $positions[(int) $step->id] ?? PHP_INT_MAX)
             ->pluck('stepType')
             ->filter()
-            ->sortBy(fn (WorkflowStepType $type): int => $positions[$type->id] ?? PHP_INT_MAX)
             ->values();
     }
 

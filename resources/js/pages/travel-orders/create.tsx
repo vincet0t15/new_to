@@ -17,16 +17,23 @@ import type {
     WorkflowPreview,
 } from '@/types';
 
+type Filer = {
+    name: string;
+    office?: string | null;
+};
+
 type Props = {
     options: TravelOrderFormOptions;
     initial: TravelOrderCreateRequest;
     routePreview: WorkflowPreview | null;
+    filer: Filer | null;
 };
 
 export default function CreateTravelOrder({
     options,
     initial,
     routePreview,
+    filer,
 }: Props) {
     const { data, setData, post, processing, errors } =
         useForm<TravelOrderCreateRequest>(initial);
@@ -69,9 +76,32 @@ export default function CreateTravelOrder({
                         {(errors as Record<string, string | undefined>).routing}
                     </div>
                 )}
+                {(errors as Record<string, string | undefined>).employee && (
+                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                        {
+                            (errors as Record<string, string | undefined>)
+                                .employee
+                        }
+                    </div>
+                )}
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
+                        {filer && (
+                            <section className="space-y-1 rounded-xl border p-4">
+                                <h3 className="text-base font-semibold">
+                                    Filer
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    {filer.name}
+                                    {filer.office ? ` · ${filer.office}` : ''}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Travel orders are filed for your own
+                                    employee record and office.
+                                </p>
+                            </section>
+                        )}
                         <TravelOrderHeaderFields
                             options={options}
                             data={data}

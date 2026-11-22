@@ -73,6 +73,7 @@ class ApprovalInboxController extends Controller
 
         return Inertia::render('approvals/inbox', [
             'deliveries' => $deliveries,
+            'stats' => $this->travelOrders->processingCounts($user),
             'portal' => $prefix,
         ]);
     }

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\TravelOrderStatus;
 use App\Enums\WorkflowEvent;
 use App\Exceptions\TravelOrderRoutingException;
+use App\Models\OfficeDesignation;
 use App\Models\TravelOrder;
 use App\Models\TravelOrderRevision;
 use App\Models\User;
@@ -25,6 +26,7 @@ final class TravelOrderResubmissionService
         private readonly TravelOrderChangeDetector $changes,
         private readonly TravelOrderApprovalService $approvals,
         private readonly TravelOrderAudit $audit,
+        private readonly WorkflowRouteResolver $routes,
     ) {
         //
     }
@@ -58,6 +60,8 @@ final class TravelOrderResubmissionService
                 array_keys($changed),
             );
 
+            $this->assertRoutableFrom($order, $resumeIndex);
+
             $revision->forceFill([
                 'revised_by_user_id' => $actor->id,
                 'revision_remarks' => $remarks,
@@ -76,6 +80,11 @@ final class TravelOrderResubmissionService
                 'recipient_user_id' => null,
                 'revision_number' => $previousRevision + 1,
                 'last_resubmitted_at' => now(),
+                'returned_by_user_id' => null,
+                'returned_from_step_index' => null,
+                'returned_from_step' => null,
+                'return_remarks' => null,
+                'returned_at' => null,
             ])->save();
 
             $this->audit->record(
@@ -140,6 +149,68 @@ final class TravelOrderResubmissionService
         return WorkflowStep::query()
             ->with(['stepType', 'office'])
             ->find((int) $ids[$index]);
+    }
+
+    /**
+     * Ensure the frozen route can still receive the order from the resume point.
+     */
+    private function assertRoutableFrom(TravelOrder $order, int $resumeIndex): void
+    {
+        $ids = $order->routed_steps;
+        $office = $order->office;
+
+        if (! is_array($ids) || $office === null) {
+            throw TravelOrderRoutingException::noRecipientLeft();
+        }
+
+        $count = count($ids);
+        $deliverable = false;
+
+        for ($index = max(0, $resumeIndex); $index < $count; $index++) {
+            $step = WorkflowStep::query()
+                ->with(['stepType', 'office'])
+                ->find((int) $ids[$index]);
+
+            if (! $step instanceof WorkflowStep) {
+                throw TravelOrderRoutingException::routeStepMissing($index + 1);
+            }
+
+            $designations = $this->routes->designationsFor($step, $office);
+            $recipients = $this->routes->recipientsFor($step, $office, $order->created_by);
+            $label = $step->displayLabel();
+
+            if ($recipients->isNotEmpty()) {
+                $deliverable = true;
+
+                continue;
+            }
+
+            $creatorIsHolder = $designations->contains(
+                fn (OfficeDesignation $designation): bool => $designation->employee->user?->id === $order->created_by,
+            );
+
+            if ($step->auto_skip_creator && $creatorIsHolder && $designations->count() === 1) {
+                continue;
+            }
+
+            if ($designations->isEmpty()) {
+                throw TravelOrderRoutingException::stepUndeliverable(
+                    $label,
+                    'no active designation is configured for this office and step.',
+                );
+            }
+
+            throw TravelOrderRoutingException::stepUndeliverable(
+                $label,
+                $creatorIsHolder && $step->auto_skip_creator
+                    ? 'the filer holds this step and no other designated employee has a login account.'
+                    : 'no designated employee has a login account.',
+            );
+        }
+
+        if (! $deliverable) {
+            throw TravelOrderRoutingException::noRecipientLeft();
+        }
     }
 
     /**

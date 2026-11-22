@@ -1,5 +1,6 @@
 export type * from './access';
 export type * from './auth';
+export type * from './dashboard';
 export type * from './employee';
 export type * from './employment-type';
 export type * from './navigation';

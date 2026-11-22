@@ -74,7 +74,9 @@ export default function PrintTravelOrder({
                         <div className="space-y-0.5">
                             <p>
                                 <strong>NUMBER:</strong>{' '}
-                                {travelOrder.to_number ?? '________________'}
+                                {travelOrder.control_no ??
+                                    travelOrder.to_number ??
+                                    `#${travelOrder.id}`}
                             </p>
                             <p>
                                 <strong>SERIES:</strong> ______________

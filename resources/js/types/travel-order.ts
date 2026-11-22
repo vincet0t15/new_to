@@ -350,8 +350,6 @@ export type TravelOrderShowOptions = {
 };
 
 export type TravelOrderCreateRequest = {
-    employee_id: number | '';
-    office_id: number | '';
     travel_classification_id: string;
     fund_source_id: string;
     origin_id: string;

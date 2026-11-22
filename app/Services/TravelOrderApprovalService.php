@@ -42,7 +42,10 @@ final class TravelOrderApprovalService
     }
 
     /**
-     * Stamp the order as seen by one holder without moving it.
+     * Record that one holder has seen the order without claiming the step.
+     *
+     * Receiving is a read receipt, not an action: the other open copies stay
+     * actionable so a deputy opening the order does not lock the primary out.
      */
     public function receive(TravelOrder $order, User $actor): TravelOrder
     {
@@ -57,8 +60,19 @@ final class TravelOrderApprovalService
                 throw TravelOrderRoutingException::staleAction();
             }
 
-            if ($delivery->status !== TravelOrderDeliveryStatus::Received) {
-                $this->claim($order, $delivery, $actor);
+            if ($delivery->status === TravelOrderDeliveryStatus::Pending) {
+                $delivery->forceFill([
+                    'status' => TravelOrderDeliveryStatus::Received,
+                    'received_at' => now(),
+                ])->save();
+
+                $this->audit->record(
+                    $order,
+                    WorkflowEvent::Received,
+                    $actor,
+                    $this->currentStep($order),
+                    $order->current_step_index,
+                );
             }
 
             return $order->refresh();
@@ -177,26 +191,12 @@ final class TravelOrderApprovalService
             $this->markActed($order, $actor, 'forward');
             $this->closeOpenDeliveries($order);
 
-            $delivery = $order->deliveries()
-                ->where('step_index', $index)
-                ->where('user_id', $target->id)
-                ->first();
-
-            if ($delivery instanceof TravelOrderDelivery) {
-                $delivery->forceFill([
-                    'status' => TravelOrderDeliveryStatus::Pending,
-                    'received_at' => null,
-                    'acted_at' => null,
-                    'acted_via' => null,
-                ])->save();
-            } else {
-                $order->deliveries()->create([
-                    'step_index' => $index,
-                    'step_type_id' => $step->workflow_step_type_id,
-                    'user_id' => $target->id,
-                    'status' => TravelOrderDeliveryStatus::Pending,
-                ]);
-            }
+            $order->deliveries()->create([
+                'step_index' => $index,
+                'step_type_id' => $step->workflow_step_type_id,
+                'user_id' => $target->id,
+                'status' => TravelOrderDeliveryStatus::Pending,
+            ]);
 
             $order->forceFill(['recipient_user_id' => $target->id])->save();
 
@@ -323,22 +323,15 @@ final class TravelOrderApprovalService
                 ->find((int) $ids[$index]);
 
             if (! $step instanceof WorkflowStep) {
-                $this->audit->record(
-                    $order,
-                    WorkflowEvent::StepSkipped,
-                    $actor,
-                    null,
-                    $index,
-                    'This step no longer exists in the workflow.',
-                );
-
-                continue;
+                throw TravelOrderRoutingException::routeStepMissing($index + 1);
             }
 
             $designations = $this->routes->designationsFor($step, $office);
             $recipients = $this->routes->recipientsFor($step, $office, $order->created_by);
 
             if ($recipients->isEmpty()) {
+                $this->assertDeliverableOrSkippable($order, $step, $designations);
+
                 $this->recordUnreachableStep($order, $actor, $step, $index, $designations);
 
                 continue;
@@ -488,6 +481,40 @@ final class TravelOrderApprovalService
                 'acted_via' => $via,
                 'updated_at' => now(),
             ]);
+    }
+
+    /**
+     * Fail closed when a required step cannot be delivered.
+     *
+     * @param  Collection<int, OfficeDesignation>  $designations
+     */
+    private function assertDeliverableOrSkippable(
+        TravelOrder $order,
+        WorkflowStep $step,
+        Collection $designations,
+    ): void {
+        $label = $step->displayLabel();
+        $creatorIsHolder = $designations->contains(
+            fn (OfficeDesignation $designation): bool => $designation->employee->user?->id === $order->created_by,
+        );
+
+        if ($step->auto_skip_creator && $creatorIsHolder && $designations->count() === 1) {
+            return;
+        }
+
+        if ($designations->isEmpty()) {
+            throw TravelOrderRoutingException::stepUndeliverable(
+                $label,
+                'no active designation is configured for this office and step.',
+            );
+        }
+
+        throw TravelOrderRoutingException::stepUndeliverable(
+            $label,
+            $creatorIsHolder && $step->auto_skip_creator
+                ? 'the filer holds this step and no other designated employee has a login account.'
+                : 'no designated employee has a login account.',
+        );
     }
 
     /**

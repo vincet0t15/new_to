@@ -44,19 +44,12 @@ export function TravelOrderTripTicketPanel({ travelOrder, canCreate }: Props) {
                         The vehicle paper issued for this approved trip.
                     </p>
                 </div>
-                <Button
-                    size="sm"
-                    onClick={createTicket}
-                    disabled={!canCreate}
-                    title={
-                        canCreate
-                            ? 'Prepare a trip ticket'
-                            : 'A trip ticket can only be prepared for an approved travel order.'
-                    }
-                >
-                    <Plus className="size-4" />
-                    Create trip ticket
-                </Button>
+                {canCreate && (
+                    <Button size="sm" onClick={createTicket}>
+                        <Plus className="size-4" />
+                        Create trip ticket
+                    </Button>
+                )}
             </div>
 
             <div className="overflow-x-auto rounded-md border">

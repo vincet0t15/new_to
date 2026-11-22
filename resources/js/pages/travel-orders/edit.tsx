@@ -47,8 +47,6 @@ export default function EditTravelOrder({
     const [submitting, setSubmitting] = useState(false);
     const [resubmitting, setResubmitting] = useState(false);
     const { data, setData, put, processing, errors } = useForm({
-        employee_id: travelOrder.employee_id ?? '',
-        office_id: travelOrder.office_id ?? '',
         travel_classification_id: toIdInput(
             travelOrder.travel_classification_id,
         ),

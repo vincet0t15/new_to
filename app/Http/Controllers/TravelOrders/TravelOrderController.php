@@ -48,15 +48,27 @@ class TravelOrderController extends Controller
     {
         $user = $request->user();
         $search = $request->string('search')->toString();
+        // An unrecognised value simply leaves the register unfiltered rather
+        // than turning a typo into an empty page.
+        $status = TravelOrderStatus::tryFrom($request->string('status')->toString());
 
         return Inertia::render('travel-orders/index', [
             'travelOrders' => $this->travelOrders->paginateForCreator(
                 $user,
                 $search !== '' ? $search : null,
+                status: $status,
             ),
             'filters' => [
                 'search' => $search,
+                'status' => $status !== null ? $status->value : '',
             ],
+            'statuses' => array_map(
+                fn (TravelOrderStatus $status): array => [
+                    'value' => $status->value,
+                    'label' => $status->label(),
+                ],
+                TravelOrderStatus::selectable(),
+            ),
         ]);
     }
 
@@ -79,17 +91,24 @@ class TravelOrderController extends Controller
         ]);
     }
 
-    public function create(Request $request): Response
+    public function create(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
         $employee = $user->employee;
         $office = $employee?->office;
 
+        if ($employee === null || $office === null) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('Your account must be linked to an employee record with an office before filing a travel order.'),
+            ]);
+
+            return to_route('travel-orders.index');
+        }
+
         return Inertia::render('travel-orders/create', [
             'options' => $this->formOptions(),
             'initial' => [
-                'employee_id' => $employee?->id,
-                'office_id' => $office?->id,
                 'travel_classification_id' => '',
                 'fund_source_id' => '',
                 'origin_id' => '',
@@ -104,6 +123,10 @@ class TravelOrderController extends Controller
                 'transportation_mode_ids' => [],
             ],
             'routePreview' => $office === null ? null : $this->routes->preview($office),
+            'filer' => $employee === null ? null : [
+                'name' => $employee->full_name,
+                'office' => $office?->office_name,
+            ],
         ]);
     }
 
@@ -120,12 +143,20 @@ class TravelOrderController extends Controller
             abort_unless($user->can('travel-orders.send'), 403);
         }
 
+        $employee = $user->employee;
+
+        if ($employee === null || $employee->office_id === null) {
+            return back()->withErrors([
+                'employee' => __('Your account must be linked to an employee record with an office before filing a travel order.'),
+            ]);
+        }
+
         try {
-            $travelOrder = DB::transaction(function () use ($data, $user, $submit): TravelOrder {
+            $travelOrder = DB::transaction(function () use ($data, $user, $submit, $employee): TravelOrder {
                 $travelOrder = $this->travelOrders->create([
                     ...$this->contentPayload($data),
-                    'employee_id' => $data['employee_id'] ?? $user->employee?->id,
-                    'office_id' => $data['office_id'] ?? $user->employee?->office_id,
+                    'employee_id' => $employee->id,
+                    'office_id' => $employee->office_id,
                     'created_by' => $user->id,
                     'status' => TravelOrderStatus::Draft,
                 ]);
@@ -215,11 +246,7 @@ class TravelOrderController extends Controller
         $data = $request->validated();
 
         DB::transaction(function () use ($data, $travelOrder): void {
-            $this->travelOrders->update($travelOrder, [
-                ...$this->contentPayload($data),
-                'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
-                'office_id' => $data['office_id'] ?? $travelOrder->office_id,
-            ]);
+            $this->travelOrders->update($travelOrder, $this->contentPayload($data));
             $this->syncSelections($travelOrder, $data);
         });
 
@@ -270,11 +297,7 @@ class TravelOrderController extends Controller
 
         try {
             DB::transaction(function () use ($data, $travelOrder, $request, $remarks): void {
-                $this->travelOrders->update($travelOrder, [
-                    ...$this->contentPayload($data),
-                    'employee_id' => $data['employee_id'] ?? $travelOrder->employee_id,
-                    'office_id' => $data['office_id'] ?? $travelOrder->office_id,
-                ]);
+                $this->travelOrders->update($travelOrder, $this->contentPayload($data));
                 $this->syncSelections($travelOrder, $data);
 
                 $this->resubmissions->resubmit(

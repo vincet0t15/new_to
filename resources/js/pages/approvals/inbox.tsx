@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Eye } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
+import { StatCard } from '@/components/stat-card';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,15 +14,17 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { formatDate } from '@/lib/date-format';
+import type { ProcessingDashboardStats } from '@/types';
 import type { PaginatedDataResponse } from '@/types/pagination';
 import type { ApprovalInboxItem } from '@/types/travel-order';
 
 type Props = {
     deliveries: PaginatedDataResponse<ApprovalInboxItem>;
+    stats: ProcessingDashboardStats;
     portal: string;
 };
 
-export default function ApprovalInbox({ deliveries, portal }: Props) {
+export default function ApprovalInbox({ deliveries, stats, portal }: Props) {
     const title =
         portal === 'department-head'
             ? 'Department Head Inbox'
@@ -35,6 +38,28 @@ export default function ApprovalInbox({ deliveries, portal }: Props) {
                     title={title}
                     description="Travel orders currently waiting for your action."
                 />
+
+                <section aria-label="Processing summary">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <StatCard
+                            label="Pending"
+                            value={stats.pending}
+                            description="Waiting for your action"
+                            tone="warning"
+                        />
+                        <StatCard
+                            label="Processed"
+                            value={stats.processed}
+                            description="Orders you acted on"
+                            tone="success"
+                        />
+                        <StatCard
+                            label="Returned"
+                            value={stats.returned}
+                            description="Orders you sent back for revision"
+                        />
+                    </div>
+                </section>
 
                 <div className="w-full overflow-hidden rounded-sm border shadow-sm">
                     <Table>

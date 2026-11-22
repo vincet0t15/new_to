@@ -14,15 +14,15 @@ It started as the Laravel React starter kit and was extended into this workflow 
 
 ### 1.1 Stack
 
-| Concern | Choice | Evidence |
-|---|---|---|
-| Backend | Laravel `^13.17`, PHP `^8.3` | `composer.json:12,16` |
-| Inertia | `inertiajs/inertia-laravel ^3`, `@inertiajs/react ^3`, `@inertiajs/vite ^3` | `composer.json:13`; `package.json:14-15` |
-| Frontend | React 19.2, TypeScript 5.7, Tailwind v4, shadcn/ui "new-york", Radix, lucide | `package.json:30-43`; `components.json:3-20` |
-| Build | Vite Plus 1.4.0 (`vp`), React Compiler, Bunny Fonts | `package.json:45,52,63-65`; `vite.config.ts:10-30` |
-| Routing to client | Laravel Wayfinder (generated `actions/**`, `routes/**`, `wayfinder/`) | `composer.json:18`; `package.json:48`; `vite.config.ts:2,27-29` |
-| Auth | Laravel Fortify (username-based) + Spatie `laravel-permission 8.3` | `composer.json:15,19` |
-| Tests / QA | Pest 5, PHPUnit, Larastan level 7, Pint, Laravel Boost | `composer.json:23-32`; `phpstan.neon:13`; `boost.json` |
+| Concern           | Choice                                                                       | Evidence                                                        |
+| ----------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Backend           | Laravel `^13.17`, PHP `^8.3`                                                 | `composer.json:12,16`                                           |
+| Inertia           | `inertiajs/inertia-laravel ^3`, `@inertiajs/react ^3`, `@inertiajs/vite ^3`  | `composer.json:13`; `package.json:14-15`                        |
+| Frontend          | React 19.2, TypeScript 5.7, Tailwind v4, shadcn/ui "new-york", Radix, lucide | `package.json:30-43`; `components.json:3-20`                    |
+| Build             | Vite Plus 1.4.0 (`vp`), React Compiler, Bunny Fonts                          | `package.json:45,52,63-65`; `vite.config.ts:10-30`              |
+| Routing to client | Laravel Wayfinder (generated `actions/**`, `routes/**`, `wayfinder/`)        | `composer.json:18`; `package.json:48`; `vite.config.ts:2,27-29` |
+| Auth              | Laravel Fortify (username-based) + Spatie `laravel-permission 8.3`           | `composer.json:15,19`                                           |
+| Tests / QA        | Pest 5, PHPUnit, Larastan level 7, Pint, Laravel Boost                       | `composer.json:23-32`; `phpstan.neon:13`; `boost.json`          |
 
 ---
 
@@ -67,28 +67,28 @@ Layers are **not** enforced by namespace rules; authorization is deliberately sp
 
 ### 4.1 Organization & configuration
 
-| Table / model | Role |
-|---|---|
-| `users` (`User`) | Auth identity; nullable unique `employee_id`; role/permission helpers (`User.php:55-131`) |
-| `employees` (`Employee`) | HR record (office, position, employment type); inverse `user()` (`Employee.php:138-149`) |
-| `offices` (`Office`) | Filing office; optional `workflow_id` override + `signatory_group_id` + `itinerary_signatory_group_id` (`Office.php:21-36`) |
-| `employment_types`, `positions` | Employee reference data |
-| `workflows` (`Workflow`) | Named approval chain; `is_default`, `is_active`; ordered `steps()` by `sort_order,id` (`Workflow.php:46-49`) |
-| `workflow_step_types` (`WorkflowStepType`) | Reusable step meaning; `is_signatory` decides approve vs acknowledge (`WorkflowStepType.php:72-75`) |
-| `workflow_steps` (`WorkflowStep`) | One leg; optional `office_id` (null = filing office), `sort_order`, `auto_skip_creator`, `reviewed_fields` |
-| `office_designations` (`OfficeDesignation`) | `(office, step type) → employee`, `is_deputy`, effective dates, `is_active` (`OfficeDesignation.php:24-46`) |
+| Table / model                               | Role                                                                                                                        |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `users` (`User`)                            | Auth identity; nullable unique `employee_id`; role/permission helpers (`User.php:55-131`)                                   |
+| `employees` (`Employee`)                    | HR record (office, position, employment type); inverse `user()` (`Employee.php:138-149`)                                    |
+| `offices` (`Office`)                        | Filing office; optional `workflow_id` override + `signatory_group_id` + `itinerary_signatory_group_id` (`Office.php:21-36`) |
+| `employment_types`, `positions`             | Employee reference data                                                                                                     |
+| `workflows` (`Workflow`)                    | Named approval chain; `is_default`, `is_active`; ordered `steps()` by `sort_order,id` (`Workflow.php:46-49`)                |
+| `workflow_step_types` (`WorkflowStepType`)  | Reusable step meaning; `is_signatory` decides approve vs acknowledge (`WorkflowStepType.php:72-75`)                         |
+| `workflow_steps` (`WorkflowStep`)           | One leg; optional `office_id` (null = filing office), `sort_order`, `auto_skip_creator`, `reviewed_fields`                  |
+| `office_designations` (`OfficeDesignation`) | `(office, step type) → employee`, `is_deputy`, effective dates, `is_active` (`OfficeDesignation.php:24-46`)                 |
 
 ### 4.2 Travel order & runtime
 
-| Table / model | Role |
-|---|---|
+| Table / model                   | Role                                                                                                                                                                                                                   |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `travel_orders` (`TravelOrder`) | The aggregate root. Header/lookup fields, status, **frozen route** (`routed_steps`, `routed_step_review_fields`, `signatories`), `current_step_index`, `recipient_user_id`, revision fields (`TravelOrder.php:18-114`) |
-| `travel_order_deliveries` | One row per holder per step; `step_index`, `step_type_id`, status `pending/received/acted/closed` |
-| `travel_order_actions` | Append-only audit trail of `WorkflowEvent`s with actor/remarks/meta |
-| `travel_order_revisions` | One row per return/resubmit round: change type, changed/previous/new data |
-| `notifications` | Standard Laravel notifications |
-| `travel_order_itineraries` | Place-to-place legs with fare/per diem/registration and `*_is_auto` flags |
-| `trip_tickets` | Vehicle/fuel/odometer data, ticket no, status `issued/completed/cancelled` |
+| `travel_order_deliveries`       | One row per holder per step; `step_index`, `step_type_id`, status `pending/received/acted/closed`                                                                                                                      |
+| `travel_order_actions`          | Append-only audit trail of `WorkflowEvent`s with actor/remarks/meta                                                                                                                                                    |
+| `travel_order_revisions`        | One row per return/resubmit round: change type, changed/previous/new data                                                                                                                                              |
+| `notifications`                 | Standard Laravel notifications                                                                                                                                                                                         |
+| `travel_order_itineraries`      | Place-to-place legs with fare/per diem/registration and `*_is_auto` flags                                                                                                                                              |
+| `trip_tickets`                  | Vehicle/fuel/odometer data, ticket no, status `issued/completed/cancelled`                                                                                                                                             |
 
 ### 4.3 Travel setup & printing
 
@@ -112,9 +112,11 @@ Statuses: `draft`, `submitted`, `approved`, `returned`, `cancelled`, `completed`
 > **Important:** the terminal state actually written is **`Approved`**, not `Completed` — `TravelOrderApprovalService::complete()` (`:534-545`). `Completed`, `Cancelled`, `Rejected`, `PulledBack`, and `WorkflowEvent::Cancelled` are declared/presented but have no producer (§14).
 
 ### 5.1 Draft creation
+
 `TravelOrderController::store()` validates via `StoreTravelOrderRequest`, creates a Draft, syncs pivots, and optionally submits in the same transaction (`TravelOrderController.php:110-155`). Header validation requires classification, destination, purpose, and valid dates; bounded mode/expense arrays; `Others` expense requires `other_expenses` (`StoreTravelOrderRequest.php:28-95`). Edits are owner + draft/returned only (`:157-229`); deletion is owner + draft only (`:404-422`). Header writes are centralized in `contentPayload()` which also maintains legacy text mirrors (`:502-540`); pivots are synced only when the request includes them (`:543-560`).
 
 ### 5.2 Submission freeze
+
 `TravelOrderSubmissionService::submit()` (`:36-109`) is the **single freeze point**, inside `DB::transaction` + `lockForUpdate()`:
 
 1. Owner + Draft + office + workflow + non-empty steps checks (`:41-65`).
@@ -122,9 +124,10 @@ Statuses: `draft`, `submitted`, `approved`, `returned`, `cancelled`, `completed`
 3. Freeze `workflow_id`, `routed_steps` (step IDs), `routed_step_review_fields` (parallel array), `signatories`, `status=submitted`, `submitted_at`; clear step/recipient pointers (`:69-94`).
 4. Audit `Submitted` (`:96`) and call `approvals->advance($order, 0, $actor)` (`:98-103`).
 
-**Core principle:** the route *shape* is frozen; holder *identity* is resolved live at each step. Later admin edits to workflow config cannot move a filed order.
+**Core principle:** the route _shape_ is frozen; holder _identity_ is resolved live at each step. Later admin edits to workflow config cannot move a filed order.
 
 ### 5.3 The delivery walk
+
 `TravelOrderApprovalService::advance()` (`:307-387`) walks the frozen step IDs from a start index:
 
 - Loads each step; missing steps → `StepSkipped`.
@@ -134,19 +137,21 @@ Statuses: `draft`, `submitted`, `approved`, `returned`, `cancelled`, `completed`
 - Loop exhausted → `complete()`: close deliveries, set `Approved`, audit `Completed`.
 
 ### 5.4 Approval actions
+
 All mutating actions run in `DB::transaction` with `lockForUpdate()` (`:565-571`), call `ensureSubmitted()` (`:547-552`), and require an active delivery at the current step.
 
-| Action | Rule | Result |
-|---|---|---|
-| `receive()` | Has active delivery | Claims pending copy, closes siblings, audits `Received` |
-| `approve()` | Step type `is_signatory = true` | Acts, audits `Approved`, `advance(index+1)` |
-| `acknowledge()` | Step type `is_signatory = false` | Acts, audits `Acknowledged`, `advance(index+1)` |
-| `forward()` | Target must be a co-holder of the current step | Acts as forward, resets target delivery at **same** index, notifies |
-| `returnTo()` | Requires remarks | Snapshots content, opens revision, status `Returned`, notifies creator |
+| Action          | Rule                                           | Result                                                                 |
+| --------------- | ---------------------------------------------- | ---------------------------------------------------------------------- |
+| `receive()`     | Has active delivery                            | Claims pending copy, closes siblings, audits `Received`                |
+| `approve()`     | Step type `is_signatory = true`                | Acts, audits `Approved`, `advance(index+1)`                            |
+| `acknowledge()` | Step type `is_signatory = false`               | Acts, audits `Acknowledged`, `advance(index+1)`                        |
+| `forward()`     | Target must be a co-holder of the current step | Acts as forward, resets target delivery at **same** index, notifies    |
+| `returnTo()`    | Requires remarks                               | Snapshots content, opens revision, status `Returned`, notifies creator |
 
 Delivery states are `pending|received|acted|closed`; "open" = pending or received. Multiple holders can hold copies; **first to act claims the step** and siblings are closed.
 
 ### 5.5 Return → resubmit → re-route
+
 - `returnTo()` snapshots tracked fields **before** the creator can edit (`TravelOrderApprovalService.php:256-265`).
 - `TravelOrderChangeDetector` normalizes the snapshot (sorted pivot IDs, `Y-m-d` dates, integer FKs), diffs it, and classifies **Material** if any changed field intersects `material_fields` (`config/travel-orders.php:23-36`); `submission_notes` is tracked but not material.
 - `resumeIndex()` (`:114-137`): minor → the returning step. Material with default policy `restart_from_first_affected` → `min(returning_index, earliest frozen step whose reviewed_fields contain a changed field)`. Can only move **earlier**, never later. Malformed/frozen-map mismatch/no reviewer → 0.
@@ -157,14 +162,17 @@ Delivery states are `pending|received|acted|closed`; "open" = pending or receive
 ## 6. Workflow configuration engine (how a route is chosen)
 
 ### 6.1 Selection
+
 `WorkflowRouteResolver::workflowFor()` (`:34-49`): office's `workflow_id` if active, else `Workflow::active()->default()->orderBy('id')->first()`. Only one default is guaranteed by repository logic, not a DB constraint.
 
 ### 6.2 Target office and recipients
+
 - `targetOfficeFor()` = `$step->office ?? $filingOffice` (`:79-82`) — one "Department Head" step serves every department.
 - `designationsFor()` filters `current()` effectivity (inclusive end date), eager-loads user, orders primaries before deputies (`:93-105`).
 - `recipientsFor()` maps to users, dedupes, and **withholds the filer only when `auto_skip_creator` is true** (`:116-131`).
 
 ### 6.3 Seeded topology
+
 Default: `Department Head (filing office) → Budget (MBO) → Mayor (MO) → HRMO (HRMO)`. Legislative override: `→ Vice Mayor →` instead of Mayor (`WorkflowSeeder.php:35-73`). HRMO is seeded as a **signature** step; receipt steps (`acknowledge`) are supported and tested but not used in seeded config.
 
 ### 6.4 Service call graph
@@ -206,15 +214,18 @@ There is **no superadmin bypass** in routing/approval — every action needs a l
 ## 7. Itineraries, per diem, trip tickets, print
 
 ### 7.1 Itineraries
+
 Nested under the order with scoped bindings (`routes/travel-orders.php:23-33`); owner + draft/returned only (`TravelOrderItineraryController.php:178-190`). Validation requires `date_to >= date_from`, `H:i` times, valid locations, activity, bounded amounts (`SaveTravelOrderItineraryRequest.php:11-37`).
 
 At save time, server-side computation occurs **only when the auto flags are true**:
-- Per diem: return leg detected as `to_location_id === origin`; the rate location for a return leg is where it *leaves* (`:103-117`).
+
+- Per diem: return leg detected as `to_location_id === origin`; the rate location for a return leg is where it _leaves_ (`:103-117`).
 - Fare: government transport → `0.00`; otherwise configured mode/location fare or the mode's fixed cost (`:158-176`).
 - Any mode used is added to the order's mode pivot via `syncWithoutDetaching()` (`:148-153`).
 - `lineTotal()` = fare + per diem + registration fee (`TravelOrderItinerary.php:107-115`). There is no global recalculation job when setup data changes.
 
 ### 7.2 Per diem computation
+
 `PerDiemComputationService::entryAmount()` (`:28-70`):
 
 ```
@@ -229,6 +240,7 @@ result = number_format(amount, 2, '.', '')
 - Worked example: daily rate 400 (80+120+150+50), 3 days, depart 08:30 (breakfast 80 @07:00 deducted) → `400*3 - 80 = 1,120.00`. Return leg arriving 16:00 (dinner 150 @18:00 deducted) → `400*1 - 150 = 250.00`. Intra-trip leg → `400.00`.
 
 ### 7.3 Trip tickets
+
 Only for an `Approved` order (`TripTicketService.php:185-192`). Statuses `issued|completed|cancelled`; only `issued` is editable.
 
 - Create: trims plate, rejects duplicate non-cancelled plate on the same order, sets `ticket_no = TT-{YEAR}-{5-digit id}` (`:28-67`).
@@ -236,12 +248,14 @@ Only for an `Approved` order (`TripTicketService.php:185-192`). Statuses `issued
 - Complete: requires `issued`, validates odometer ordering, can derive distance from readings (`:98-138`). Cancel: requires `issued` + reason (`:140-155`). Delete: only after cancellation (`TravelOrderTripTicketController.php:156-174`). All screens are owner-only.
 
 ### 7.4 Printing
+
 - `printOrder()` / `printItinerary()` load relations and pass letterhead (`config/travel-orders.php:82-89`) + signatories: **frozen JSON for filed orders, live for drafts** (`TravelOrderController.php:367-402`; `SignatoryResolver.php:27-39`).
 - Viewers: owner or anyone ever delivered to (`:666-678`), plus `travel-orders.print` permission on the route.
 - Shared print primitives in `components/travel-orders/print/document.tsx` (screen toolbar hidden with `print:hidden`, letterhead images `/LGU.png` and `/Bagong Pilipinas logo.png`); `print/totals.ts` coerces decimal strings to finite numbers.
 - `travel-orders/print-order` and `print-itinerary` render **inside AppLayout** and hide chrome via print CSS; only `trip-tickets/print` is layout-free (`app.tsx:17-18`).
 
 ### 7.5 Notifications & audit
+
 `TravelOrderNotification` always writes a DB row; mail only for a `User` with an email (`TravelOrderNotification.php:12-40`). Only two events notify: `returned()` to the creator and `routed()` to each recipient (`TravelOrderNotifier.php:20-69`). No notification for approval/acknowledge/completion/trip-ticket events.
 
 `TravelOrderAudit::record()` appends every workflow event (`:19-43`). `TravelOrderRoutePresenter` turns state into UI arrays: `route()`, `timeline()`, `revisions()` (`:29-166`). Admin surfaces: searchable register (`TravelOrderRegisterController.php:11-41`), reports + CSV (`ReportsController.php:17-131`), audit log (`AuditLogController.php:11-49`).
@@ -262,19 +276,21 @@ Only for an `Approved` order (`TripTicketService.php:185-192`). Statuses `issued
 ## 9. Roles, permissions, portals
 
 ### 9.1 Roles & permissions (Spatie)
+
 Seven stable slugs (`SystemRole.php:12-20`): `employee`, `department_head`, `budget_officer`, `mayor`, `hrmo`, `admin`, `super_admin`. 84 permissions are seeded (`RolesAndPermissionsSeeder.php:23-111`); `super_admin` gets all, `admin` gets all except `accounts.manage-admins` (`:113-123`). Behavior keys off **slug** because administrators can rename display names (`User.php:84-102`).
 
 Additional safety rules: Super Admin permissions can't be edited; built-in roles can't be renamed/deleted; users can't change their own roles; granting/revoking admin roles requires `accounts.manage-admins`; the last admin can't be removed (`RoleController.php:95-155`; `UserAccountController.php:131-274`).
 
 ### 9.2 Portals
+
 A portal is a **route-prefix UX workspace**, not a separate app or guard (`Portal.php:5-11`):
 
-| Portal | Prefix | Landing | Grants |
-|---|---|---|---|
-| Employee | `employee` | `employee.dashboard` | everyone signed in (baseline) |
-| Department Head | `department-head` | `department-head.dashboard` | `department_head` |
-| Approvals | `approvals` | `approvals.inbox` | `budget_officer`, `mayor`, `hrmo` |
-| Admin | `admin` | `admin.dashboard` | `admin`, `super_admin` |
+| Portal          | Prefix            | Landing                     | Grants                            |
+| --------------- | ----------------- | --------------------------- | --------------------------------- |
+| Employee        | `employee`        | `employee.dashboard`        | everyone signed in (baseline)     |
+| Department Head | `department-head` | `department-head.dashboard` | `department_head`                 |
+| Approvals       | `approvals`       | `approvals.inbox`           | `budget_officer`, `mayor`, `hrmo` |
+| Admin           | `admin`           | `admin.dashboard`           | `admin`, `super_admin`            |
 
 - The active portal is **derived from the URL**, never persisted (`PortalResolver.php:75-97`; `HandleInertiaRequests.php:46-54`).
 - `EnsurePortalAccess` fails closed: 401 for guests, accepts if any `portal:` argument is enterable, else 403 (`:29-44`).
@@ -293,15 +309,15 @@ React `Can` / `useCan` / `NavMain` checks are **UI-only** (`can.tsx:4-20`; `use-
 
 Capability summary (still subject to state/ownership/holder checks):
 
-| Area | Employee/filer | Approver roles | Admin |
-|---|---|---|---|
-| Create/edit/delete own draft | yes | no | no special route |
-| Submit/resubmit own order | yes | no | no |
-| Manage itinerary | own draft/returned | no | no |
-| Prepare/complete/cancel/print trip ticket | approved order only | no | no |
-| Receive/approve/acknowledge/return/forward | no | only with active delivery + correct step type | only if designated |
-| Print TO / Appendix A | owner or delivered recipient + print permission | delivered recipient + print permission | print permission alone insufficient |
-| View all orders / reports / audit | no | no | yes with admin permissions |
+| Area                                       | Employee/filer                                  | Approver roles                                | Admin                               |
+| ------------------------------------------ | ----------------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| Create/edit/delete own draft               | yes                                             | no                                            | no special route                    |
+| Submit/resubmit own order                  | yes                                             | no                                            | no                                  |
+| Manage itinerary                           | own draft/returned                              | no                                            | no                                  |
+| Prepare/complete/cancel/print trip ticket  | approved order only                             | no                                            | no                                  |
+| Receive/approve/acknowledge/return/forward | no                                              | only with active delivery + correct step type | only if designated                  |
+| Print TO / Appendix A                      | owner or delivered recipient + print permission | delivered recipient + print permission        | print permission alone insufficient |
+| View all orders / reports / audit          | no                                              | no                                            | yes with admin permissions          |
 
 ---
 
@@ -310,6 +326,7 @@ Capability summary (still subject to state/ownership/holder checks):
 16 contract→Eloquent bindings in `RepositoryServiceProvider.php:39-62` (Office, Employee, Position, EmploymentType, TravelOrder, workflows, travel setup, signatory groups, etc.). Controllers depend on the contract, not Eloquent.
 
 The **Office slice** is the canonical pattern:
+
 - Route group `auth, verified, portal:admin, permission:administration.view`, prefix `admin/offices`, with per-verb permissions (`routes/offices.php:6-22`).
 - `OfficeController`: `index()` paginates via repository and renders `offices/index`; writes use `validated()` data, flash a toast, and `back()`; `destroy()` blocks deletion when employees/steps/designations reference the office (`:26-94`).
 - `StoreOfficeRequest` / `UpdateOfficeRequest` validate only `office_name`/`office_code` — note that `workflow_id` submitted from the UI is ignored (tests assert this).
@@ -323,7 +340,9 @@ Most resources follow this shape: migration → model → contract + Eloquent re
 ## 12. Frontend architecture
 
 ### 12.1 Wayfinder codegen
+
 `vite.config.ts:2,27-29` enables `wayfinder({ formVariants: true })`. Generated (and **gitignored**, `:10-12`) trees:
+
 - `resources/js/actions/**` — controller-keyed TS modules mirroring PHP namespaces.
 - `resources/js/routes/**` — URL-keyed modules; pages import the **default export** of a URL-keyed module.
 - `resources/js/wayfinder/index.ts` — runtime types and query-param helpers (booleans → 1/0, arrays → `key[]`, nested bracket notation, URL defaults).
@@ -331,9 +350,11 @@ Most resources follow this shape: migration → model → contract + Eloquent re
 `SomeRoute().url` is the client-side equivalent of Laravel's `route()` (`pages/travel-orders/index.tsx:19,49`). `formVariants: true` emits `.form()` helpers with hidden `_method` for PUT/DELETE. The approval flow instead receives server-computed `urls` props (`approvals/show.tsx:39-70`). A fresh checkout must run `dev`/`build` (or `composer setup`) before these imports resolve.
 
 ### 12.2 UI system
+
 shadcn/ui `new-york` + Radix + Tailwind v4 tokens in `resources/css/app.css:8-143` (semantic `oklch` variables, `.dark` overrides). Theme state is an external store backed by localStorage **and** a cookie read server-side by `HandleAppearance.php:19`, preventing a flash. Forms use Inertia `useForm`, `InputError`, and Sonner toasts driven by `Inertia::flash('toast', …)` → `useFlashToast()` → global `<Toaster />` (`use-flash-toast.ts:6-19`; `types/ui.ts:19-22`).
 
 ### 12.3 Types
+
 No generated data-type bridge. `resources/js/types/**` is hand-maintained, mirroring PHP enums (as string unions), entity shapes (snake_case, decimal money as `string | null`), the generic `PaginatedDataResponse<T>`, and shared props via `global.d.ts`. Guards are `npm run types:check` (`tsc --noEmit`) and `composer types:check` (PHPStan).
 
 ---
@@ -355,9 +376,9 @@ These are observations from the source analysis, not changes:
 
 1. **Unwired states/events.** `Completed`, `Cancelled`, `Rejected` statuses and `PulledBack`, `Cancelled` events are declared/presented but never written; `travel-orders.cancel` and `.earmark` permissions are seeded but unused. Presentation maps `Rejected`/`Cancelled` as "cancelled".
 2. **No superadmin routing bypass.** All approval actions still require a live delivery; `/approvals` explicitly excludes admin roles.
-3. **`SignatoryResolver::routedTypes()` key mismatch** — `array_flip(routed_steps)` builds step-ID→index, but step *types* are sorted by `$positions[$type->id]` (step-type ID), so route ordering of signature lines isn't actually guaranteed (`SignatoryResolver.php:198-216`).
+3. ~~**`SignatoryResolver::routedTypes()` key mismatch** — `array_flip(routed_steps)` builds step-ID→index, but step _types_ are sorted by `$positions[$type->id]` (step-type ID), so route ordering of signature lines isn't actually guaranteed.~~ **Fixed 2026-11-21:** steps are now sorted by their own position in `routed_steps` before their types are plucked; a regression test in `TravelOrderPrintTest.php` pins the order.
 4. **`forward()` closes open deliveries globally**, not scoped to the current step — safe under the current assumption that only the current step has open copies (`TravelOrderApprovalService.php:178,554-560`).
-5. **Readiness check is global** — submission requires designations on *every* step but only *some* deliverable step after excluding the filer; displayed routes may have fewer actual stops.
+5. **Readiness check is global** — submission requires designations on _every_ step but only _some_ deliverable step after excluding the filer; displayed routes may have fewer actual stops.
 6. **`returnTo()` stores `change_type='minor'` initially**; the real classification is computed only on resubmit.
 7. **Resume-policy fallback mismatch** — config default is `restart_from_first_affected` (`config/travel-orders.php:16-17`) while the detector's string fallback is `resume` (`:127-136`); config wins in normal use.
 8. **`verified` middleware is inert** (User is not `MustVerifyEmail`); 2FA is dormant.
@@ -372,16 +393,16 @@ These are observations from the source analysis, not changes:
 
 ## 15. "Where do I go to…" quick reference
 
-| Task | Start here |
-|---|---|
-| Add a master-data resource | Copy the Office slice (§11): migration, model, repo contract+impl, provider binding, FormRequests, controller, route file + `require`, seeder permissions, TS types, pages, nav, tests |
-| Change approval routing rules | `WorkflowRouteResolver`, `TravelOrderSubmissionService`, `TravelOrderApprovalService`, `config/travel-orders.php` |
-| Add an approval action | `routes/portals.php`, permission in `RolesAndPermissionsSeeder`, `TravelOrderActionController`, a service method, ability flags in `ApprovalInboxController::show()`, button in `pages/approvals/show.tsx` |
-| Change per-diem math | `PerDiemComputationService`, `TravelOrderItineraryController::persist()` |
-| Change print output | `components/travel-orders/print/*`, `pages/travel-orders/print-*.tsx`, `SignatoryResolver`, `config/travel-orders.php:82-89` |
-| Change what a portal can see | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx` |
-| Change shared client props | `HandleInertiaRequests::share()`, `types/global.d.ts` |
-| Debug a stuck approval | Delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()` |
-| Run all checks | `composer test` and `npm run check && npm run types:check` |
+| Task                          | Start here                                                                                                                                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add a master-data resource    | Copy the Office slice (§11): migration, model, repo contract+impl, provider binding, FormRequests, controller, route file + `require`, seeder permissions, TS types, pages, nav, tests                     |
+| Change approval routing rules | `WorkflowRouteResolver`, `TravelOrderSubmissionService`, `TravelOrderApprovalService`, `config/travel-orders.php`                                                                                          |
+| Add an approval action        | `routes/portals.php`, permission in `RolesAndPermissionsSeeder`, `TravelOrderActionController`, a service method, ability flags in `ApprovalInboxController::show()`, button in `pages/approvals/show.tsx` |
+| Change per-diem math          | `PerDiemComputationService`, `TravelOrderItineraryController::persist()`                                                                                                                                   |
+| Change print output           | `components/travel-orders/print/*`, `pages/travel-orders/print-*.tsx`, `SignatoryResolver`, `config/travel-orders.php:82-89`                                                                               |
+| Change what a portal can see  | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx`                                                                                                                             |
+| Change shared client props    | `HandleInertiaRequests::share()`, `types/global.d.ts`                                                                                                                                                      |
+| Debug a stuck approval        | Delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                                                                               |
+| Run all checks                | `composer test` and `npm run check && npm run types:check`                                                                                                                                                 |
 
 Detailed, citation-heavy source reports live in `%TEMP%\opencode\newto-analysis\` (`01-workflow-approval.md`, `02-travel-order-domain.md`, `03-auth-portals-crud.md`, `04-frontend-tooling.md`) if you need line-level depth beyond this guide.

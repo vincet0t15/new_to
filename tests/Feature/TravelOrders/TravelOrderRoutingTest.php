@@ -134,7 +134,7 @@ test('submission fails when every step would be withheld from the filer', functi
     $draft = routingDraft($chain);
 
     expect(fn () => app(TravelOrderSubmissionService::class)->submit($draft, $chain['filer']))
-        ->toThrow(TravelOrderRoutingException::class, 'Every step would be skipped');
+        ->toThrow(TravelOrderRoutingException::class, 'No eligible recipient is available');
 
     expect($draft->refresh()->status)->toBe(TravelOrderStatus::Draft);
 });
@@ -153,6 +153,16 @@ test('the first holder to act claims the step and closes the deputy copy', funct
     $order = routingSubmit($chain);
 
     expect($order->deliveries()->where('step_index', 0)->count())->toBe(2);
+
+    $order = app(TravelOrderApprovalService::class)
+        ->receive($order, $deputy);
+
+    $deputySeen = $order->deliveries()->where('user_id', $deputy->id)->sole();
+    $headDelivery = $order->deliveries()->where('user_id', $chain['headUser']->id)->sole();
+
+    expect($deputySeen->status)->toBe(TravelOrderDeliveryStatus::Received)
+        ->and($headDelivery->status)->toBe(TravelOrderDeliveryStatus::Pending)
+        ->and($order->current_step_index)->toBe(0);
 
     $order = app(TravelOrderApprovalService::class)
         ->approve($order, $chain['headUser'], 'Cleared by the head.');
@@ -258,8 +268,8 @@ test('forwarding hands the step to another designated holder', function () {
 
     $order = $service->forward($order, $chain['headUser'], $deputy, 'I am on leave.');
 
-    $headDelivery = $order->deliveries()->where('user_id', $chain['headUser']->id)->sole();
-    $deputyDelivery = $order->deliveries()->where('user_id', $deputy->id)->sole();
+    $headDelivery = $order->deliveries()->where('user_id', $chain['headUser']->id)->latest('id')->firstOrFail();
+    $deputyDelivery = $order->deliveries()->where('user_id', $deputy->id)->latest('id')->firstOrFail();
 
     expect($headDelivery->status)->toBe(TravelOrderDeliveryStatus::Acted)
         ->and($headDelivery->acted_via)->toBe('forward')

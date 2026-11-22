@@ -126,19 +126,26 @@ class PortalResolver
     }
 
     /**
-     * The portal options shared with the frontend switcher.
+     * The portal options shared with the frontend switcher and workspace tabs.
      *
-     * @return array<int, array{key: string, label: string, url: string, isCurrent: bool}>
+     * @return array<int, array{key: string, label: string, url: string, inboxUrl: string|null, isCurrent: bool}>
      */
     public function optionsFor(User $user, ?Portal $current = null): array
     {
         return array_map(
-            fn (Portal $portal): array => [
-                'key' => $portal->value,
-                'label' => $portal->label(),
-                'url' => $this->dashboardUrl($portal),
-                'isCurrent' => $portal === $current,
-            ],
+            function (Portal $portal) use ($current): array {
+                $inboxRoute = $portal->inboxRouteName();
+
+                return [
+                    'key' => $portal->value,
+                    'label' => $portal->label(),
+                    'url' => $this->dashboardUrl($portal),
+                    'inboxUrl' => $inboxRoute !== null
+                        ? route($inboxRoute, absolute: false)
+                        : null,
+                    'isCurrent' => $portal === $current,
+                ];
+            },
             $this->availableFor($user),
         );
     }

@@ -52,6 +52,22 @@ enum Portal: string
     }
 
     /**
+     * The processing queue that belongs to this portal, if it has one.
+     *
+     * Used by the workspace switcher to link a person straight to the work
+     * queue instead of the portal's landing page. The employee and admin
+     * portals have no processing inbox of their own.
+     */
+    public function inboxRouteName(): ?string
+    {
+        return match ($this) {
+            self::DepartmentHead => 'department-head.inbox',
+            self::Approvals => 'approvals.inbox',
+            self::Employee, self::Admin => null,
+        };
+    }
+
+    /**
      * The roles that grant entry to the portal.
      *
      * The employee portal is the baseline workspace for every signed-in

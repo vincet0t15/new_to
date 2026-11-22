@@ -3,9 +3,12 @@
 use App\Enums\SystemRole;
 use App\Models\Employee;
 use App\Models\ItinerarySignatoryGroup;
+use App\Models\OfficeDesignation;
 use App\Models\Role;
 use App\Models\SignatoryGroup;
 use App\Models\User;
+use App\Models\WorkflowStep;
+use App\Models\WorkflowStepType;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -149,6 +152,64 @@ test('a filed order keeps the signatories frozen when it was submitted', functio
         ->assertInertia(fn (Assert $page) => $page
             ->where('signatories.mayor_approval.name', 'Liza Navarro')
             ->where('signatories.mayor_approval.title_override', 'Acting Municipal Mayor')
+        );
+});
+
+test('the approved signatory follows the frozen route order, not the step type ids', function () {
+    $chain = routingChain();
+
+    // One padding type makes the approval type IDs fall after the step IDs.
+    // The old sorter looked up step positions with type IDs and only appeared
+    // correct while those two sequences happened to line up.
+    WorkflowStepType::factory()->create();
+    $mayorType = WorkflowStepType::factory()->create([
+        'name' => 'Mayor Approval',
+        'signature_label' => 'Approved',
+        'signature_title' => 'Municipal Mayor',
+        'sort_order' => 10,
+    ]);
+    $viceType = WorkflowStepType::factory()->create([
+        'name' => 'Vice Mayor Approval',
+        'signature_label' => 'Approved',
+        'signature_title' => 'Vice Mayor',
+        'sort_order' => 11,
+    ]);
+
+    // The steps are created in the opposite order to the route frozen below.
+    $mayorStep = WorkflowStep::factory()->create([
+        'workflow_id' => $chain['workflow']->id,
+        'workflow_step_type_id' => $mayorType->id,
+        'sort_order' => 10,
+    ]);
+    $viceStep = WorkflowStep::factory()->create([
+        'workflow_id' => $chain['workflow']->id,
+        'workflow_step_type_id' => $viceType->id,
+        'sort_order' => 11,
+    ]);
+
+    $mayor = printEmployee('Martin', 'Mayor');
+    $vice = printEmployee('Vera', 'Vice');
+    OfficeDesignation::factory()->create([
+        'office_id' => $chain['office']->id,
+        'workflow_step_type_id' => $mayorType->id,
+        'employee_id' => $mayor->id,
+    ]);
+    OfficeDesignation::factory()->create([
+        'office_id' => $chain['office']->id,
+        'workflow_step_type_id' => $viceType->id,
+        'employee_id' => $vice->id,
+    ]);
+
+    $order = routingDraft($chain);
+    $order->forceFill([
+        'routed_steps' => [$viceStep->id, $mayorStep->id],
+    ])->save();
+
+    $this->actingAs($chain['filer'])
+        ->get(route('travel-orders.print.order', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('signatories.mayor_approval.name', 'Martin Mayor')
         );
 });
 

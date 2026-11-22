@@ -6,6 +6,7 @@ use App\Enums\SystemRole;
 use App\Models\TravelOrder;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -16,7 +17,7 @@ use Illuminate\Notifications\Notification;
  * account actually has an address, so an account without one does not make
  * the mail channel fail the whole notification.
  */
-final class TravelOrderNotification extends Notification
+final class TravelOrderNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

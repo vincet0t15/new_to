@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Contracts;
 
+use App\Enums\TravelOrderStatus;
 use App\Models\TravelOrder;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -11,7 +12,7 @@ interface TravelOrderRepository
     /**
      * @return LengthAwarePaginator<int, TravelOrder>
      */
-    public function paginateForCreator(User $user, ?string $search = null, int $perPage = 15): LengthAwarePaginator;
+    public function paginateForCreator(User $user, ?string $search = null, int $perPage = 15, ?TravelOrderStatus $status = null): LengthAwarePaginator;
 
     public function findForCreator(User $user, int $id): ?TravelOrder;
 
@@ -37,6 +38,24 @@ interface TravelOrderRepository
      * @return LengthAwarePaginator<int, TravelOrder>
      */
     public function paginateHistory(User $user, int $perPage = 15): LengthAwarePaginator;
+
+    /**
+     * Counts of the account's own travel orders, keyed by lifecycle status.
+     * Only the statuses a dashboard displays are returned.
+     *
+     * @return array{draft: int, submitted: int, returned: int, approved: int}
+     */
+    public function countStatusesForCreator(User $user): array;
+
+    /**
+     * Counts for a processing workspace: the live queue, distinct orders this
+     * account acted on, and distinct orders it sent back for revision. A person
+     * can hold more than one step of an order, so copies and actions are not
+     * the same thing as orders here.
+     *
+     * @return array{pending: int, processed: int, returned: int}
+     */
+    public function processingCounts(User $user): array;
 
     /**
      * @param  array<string, mixed>  $data

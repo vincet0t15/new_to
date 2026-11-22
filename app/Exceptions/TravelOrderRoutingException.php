@@ -35,7 +35,17 @@ final class TravelOrderRoutingException extends RuntimeException
 
     public static function noRecipientLeft(): self
     {
-        return new self('Every step would be skipped because you hold the designation, so this travel order cannot be submitted.');
+        return new self('No eligible recipient is available for this travel order at its current approval step.');
+    }
+
+    public static function stepUndeliverable(string $label, string $reason): self
+    {
+        return new self("The \"{$label}\" step cannot receive this travel order right now: {$reason}");
+    }
+
+    public static function routeStepMissing(int $stepNumber): self
+    {
+        return new self("Approval step {$stepNumber} in this travel order's frozen route no longer exists. An administrator needs to review the workflow configuration.");
     }
 
     public static function notDraft(): self

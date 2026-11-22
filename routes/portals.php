@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\TravelOrderRegisterController;
 use App\Http\Controllers\Approvals\ApprovalInboxController;
 use App\Http\Controllers\Approvals\TravelOrderActionController;
+use App\Http\Controllers\Portals\PortalDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -23,7 +24,7 @@ Route::middleware(['auth', 'verified', 'portal:employee'])
     ->prefix('employee')
     ->name('employee.')
     ->group(function () {
-        Route::inertia('dashboard', 'portals/employee/dashboard')
+        Route::get('dashboard', [PortalDashboardController::class, 'employee'])
             ->name('dashboard');
     });
 
@@ -31,7 +32,7 @@ Route::middleware(['auth', 'verified', 'portal:department-head'])
     ->prefix('department-head')
     ->name('department-head.')
     ->group(function () {
-        Route::inertia('dashboard', 'portals/department-head/dashboard')
+        Route::get('dashboard', [PortalDashboardController::class, 'departmentHead'])
             ->name('dashboard');
 
         Route::middleware('permission:travel-orders.view')->group(function () {

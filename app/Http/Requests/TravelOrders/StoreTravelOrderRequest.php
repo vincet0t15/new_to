@@ -28,8 +28,6 @@ class StoreTravelOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'employee_id' => ['nullable', 'integer', Rule::exists('employees', 'id')],
-            'office_id' => ['nullable', 'integer', Rule::exists('offices', 'id')],
             'travel_classification_id' => ['required', 'integer', Rule::exists('travel_classifications', 'id')],
             'fund_source_id' => ['nullable', 'integer', Rule::exists('fund_sources', 'id')],
             'origin_id' => ['nullable', 'integer', Rule::exists('locations', 'id')],

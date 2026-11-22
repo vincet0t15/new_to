@@ -1,6 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
-// no state needed
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
@@ -24,8 +23,18 @@ import type { KeyboardEvent } from 'react';
 
 type Props = {
     travelOrders: PaginatedDataResponse<TravelOrder>;
-    filters: { search?: string };
+    filters: { search?: string; status?: string };
+    statuses: { value: string; label: string }[];
 };
+
+type RegisterFilters = { search: string; status: string };
+
+function queryFor({ search, status }: RegisterFilters) {
+    return {
+        ...(search !== '' ? { search } : {}),
+        ...(status !== '' ? { status } : {}),
+    };
+}
 
 function formatDateRange(from: string | null, to: string | null): string {
     if (!from && !to) {
@@ -39,17 +48,27 @@ function formatDateRange(from: string | null, to: string | null): string {
     return `${formatDate(from)} → ${formatDate(to)}`;
 }
 
-export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
-    const { data, setData } = useForm({ search: filters.search ?? '' });
+export default function TravelOrdersIndex({
+    travelOrders,
+    filters,
+    statuses,
+}: Props) {
+    const { data, setData } = useForm<RegisterFilters>({
+        search: filters.search ?? '',
+        status: filters.status ?? '',
+    });
+
+    const applyFilters = (next: RegisterFilters) => {
+        router.get(travelOrdersRoutes.index().url, queryFor(next), {
+            preserveState: true,
+            preserveScroll: true,
+        });
+    };
 
     const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key !== 'Enter') return;
         event.preventDefault();
-        router.get(
-            travelOrdersRoutes.index().url,
-            data.search ? { search: data.search } : undefined,
-            { preserveState: true, preserveScroll: true },
-        );
+        applyFilters(data);
     };
 
     return (
@@ -73,21 +92,49 @@ export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
                         </Button>
                     </Can>
 
-                    <div className="relative w-full sm:w-[250px]">
-                        <Label htmlFor="search" className="sr-only">
-                            Search
-                        </Label>
-                        <Input
-                            id="search"
-                            placeholder="Search travel orders..."
-                            className="w-full pl-8"
-                            value={data.search}
-                            onChange={(event) =>
-                                setData('search', event.target.value)
-                            }
-                            onKeyDown={handleSearchKeyDown}
-                        />
-                        <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+                    <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                        <div className="w-full sm:w-[160px]">
+                            <Label htmlFor="status" className="sr-only">
+                                Filter by status
+                            </Label>
+                            <select
+                                id="status"
+                                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                value={data.status}
+                                onChange={(event) => {
+                                    const status = event.target.value;
+                                    setData('status', status);
+                                    applyFilters({ ...data, status });
+                                }}
+                            >
+                                <option value="">All statuses</option>
+                                {statuses.map((status) => (
+                                    <option
+                                        key={status.value}
+                                        value={status.value}
+                                    >
+                                        {status.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="relative w-full sm:w-[250px]">
+                            <Label htmlFor="search" className="sr-only">
+                                Search
+                            </Label>
+                            <Input
+                                id="search"
+                                placeholder="Search travel orders..."
+                                className="w-full pl-8"
+                                value={data.search}
+                                onChange={(event) =>
+                                    setData('search', event.target.value)
+                                }
+                                onKeyDown={handleSearchKeyDown}
+                            />
+                            <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+                        </div>
                     </div>
                 </div>
 
@@ -200,8 +247,10 @@ export default function TravelOrdersIndex({ travelOrders, filters }: Props) {
                                         colSpan={6}
                                         className="h-24 text-center text-muted-foreground"
                                     >
-                                        No travel orders yet. Create your first
-                                        one.
+                                        {data.search !== '' ||
+                                        data.status !== ''
+                                            ? 'No travel orders match these filters.'
+                                            : 'No travel orders yet. Create your first one.'}
                                     </TableCell>
                                 </TableRow>
                             )}
