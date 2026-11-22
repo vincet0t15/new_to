@@ -94,9 +94,18 @@ export default function SignatoryGroupsIndex({
             return <span className="text-muted-foreground">—</span>;
         }
 
+        const names = groupOffices.map((office) => office.office_name);
+        const preview = names.slice(0, 2).join(', ');
+        const remaining = names.length - 2;
+        const label =
+            remaining > 0 ? `${preview}, +${remaining} more` : names.join(', ');
+
         return (
-            <div className="max-w-[220px]">
-                {groupOffices.map((office) => office.office_name).join(', ')}
+            <div
+                className="max-w-[260px] truncate text-sm"
+                title={names.join(', ')}
+            >
+                {label}
             </div>
         );
     };
@@ -155,19 +164,25 @@ export default function SignatoryGroupsIndex({
                     </div>
                 </div>
 
-                <div className="w-full overflow-hidden rounded-sm border shadow-sm">
-                    <Table>
+                <div className="w-full overflow-x-auto rounded-sm border shadow-sm">
+                    <Table className="min-w-[1100px] table-fixed">
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Offices</TableHead>
-                                <TableHead>
+                                <TableHead className="w-[170px]">
+                                    Name
+                                </TableHead>
+                                <TableHead className="w-[260px]">
+                                    Covered offices
+                                </TableHead>
+                                <TableHead className="w-[220px]">
                                     Certified as to Availability of
                                     Appropriation
                                 </TableHead>
-                                <TableHead>Approved</TableHead>
-                                <TableHead>OIC</TableHead>
-                                <TableHead className="text-right">
+                                <TableHead className="w-[170px]">
+                                    Approved
+                                </TableHead>
+                                <TableHead className="w-[170px]">OIC</TableHead>
+                                <TableHead className="w-[96px] text-right">
                                     Actions
                                 </TableHead>
                             </TableRow>
@@ -176,7 +191,7 @@ export default function SignatoryGroupsIndex({
                             {signatoryGroups.data.length > 0 ? (
                                 signatoryGroups.data.map((signatoryGroup) => (
                                     <TableRow key={signatoryGroup.id}>
-                                        <TableCell className="align-top font-medium">
+                                        <TableCell className="align-top font-medium break-words whitespace-normal">
                                             {signatoryGroup.name}
                                         </TableCell>
                                         <TableCell className="align-top">
@@ -184,55 +199,57 @@ export default function SignatoryGroupsIndex({
                                                 signatoryGroup.offices,
                                             )}
                                         </TableCell>
-                                        <TableCell className="align-top">
+                                        <TableCell className="align-top break-words whitespace-normal">
                                             {renderSigner(
                                                 signatoryGroup.certified_signatory,
                                                 signatoryGroup.certified_signatory_title,
                                             )}
                                         </TableCell>
-                                        <TableCell className="align-top">
+                                        <TableCell className="align-top break-words whitespace-normal">
                                             {renderSigner(
                                                 signatoryGroup.approved_signatory,
                                                 signatoryGroup.approved_signatory_title,
                                             )}
                                         </TableCell>
-                                        <TableCell className="align-top">
+                                        <TableCell className="align-top break-words whitespace-normal">
                                             {renderSigner(
                                                 signatoryGroup.oic_signatory,
                                                 signatoryGroup.oic_signatory_title,
                                             )}
                                         </TableCell>
-                                        <TableCell className="flex items-start justify-end gap-2">
-                                            <Can permission="signatory-groups.update">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
-                                                    onClick={() =>
-                                                        handleEdit(
-                                                            signatoryGroup,
-                                                        )
-                                                    }
-                                                    title="Edit signatory group"
-                                                >
-                                                    <Pencil />
-                                                </Button>
-                                            </Can>
-                                            <Can permission="signatory-groups.delete">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
-                                                    onClick={() =>
-                                                        handleDelete(
-                                                            signatoryGroup,
-                                                        )
-                                                    }
-                                                    title="Delete signatory group"
-                                                >
-                                                    <Trash2 />
-                                                </Button>
-                                            </Can>
+                                        <TableCell className="align-top">
+                                            <div className="flex items-start justify-end gap-2">
+                                                <Can permission="signatory-groups.update">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-green-600 hover:bg-green-50 hover:text-green-700"
+                                                        onClick={() =>
+                                                            handleEdit(
+                                                                signatoryGroup,
+                                                            )
+                                                        }
+                                                        title="Edit signatory group"
+                                                    >
+                                                        <Pencil />
+                                                    </Button>
+                                                </Can>
+                                                <Can permission="signatory-groups.delete">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                                        onClick={() =>
+                                                            handleDelete(
+                                                                signatoryGroup,
+                                                            )
+                                                        }
+                                                        title="Delete signatory group"
+                                                    >
+                                                        <Trash2 />
+                                                    </Button>
+                                                </Can>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))

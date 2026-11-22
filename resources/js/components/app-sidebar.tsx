@@ -191,12 +191,6 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
             label: 'Travel Orders',
             items: [
                 {
-                    title: 'New Travel Order',
-                    href: travelOrders.create().url,
-                    icon: Plus,
-                    permission: 'travel-orders.create',
-                },
-                {
                     title: 'Travel Order Register',
                     href: admin.travelOrders.index().url,
                     icon: ClipboardList,
@@ -243,6 +237,24 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
             label: 'Travel Setup',
             items: [
                 {
+                    title: 'Travel Classifications',
+                    href: travelClassifications.index().url,
+                    icon: Tag,
+                    permission: 'travel-classifications.view',
+                },
+                {
+                    title: 'Fund Sources',
+                    href: fundSources.index().url,
+                    icon: Landmark,
+                    permission: 'fund-sources.view',
+                },
+                {
+                    title: 'Locations',
+                    href: locations.index().url,
+                    icon: MapPin,
+                    permission: 'locations.view',
+                },
+                {
                     title: 'Transportation Modes',
                     href: transportationModes.index().url,
                     icon: Car,
@@ -255,29 +267,16 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     permission: 'expense-types.view',
                 },
                 {
-                    title: 'Fund Sources',
-                    href: fundSources.index().url,
-                    icon: Landmark,
-                    permission: 'fund-sources.view',
-                },
-                {
-                    title: 'Travel Classifications',
-                    href: travelClassifications.index().url,
-                    icon: Tag,
-                    permission: 'travel-classifications.view',
-                },
-                {
                     title: 'Per Diem Configurations',
                     href: perDiemConfigurations.index().url,
                     icon: Layers,
                     permission: 'per-diem-configurations.view',
                 },
-                {
-                    title: 'Locations',
-                    href: locations.index().url,
-                    icon: MapPin,
-                    permission: 'locations.view',
-                },
+            ],
+        },
+        {
+            label: 'Signatories',
+            items: [
                 {
                     title: 'Travel Order Signatories',
                     href: signatoryGroups.index().url,
@@ -302,6 +301,12 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     permission: 'offices.view',
                 },
                 {
+                    title: 'Employees',
+                    href: employees.index().url,
+                    icon: Users,
+                    permission: 'employees.view',
+                },
+                {
                     title: 'Positions',
                     href: positions.index().url,
                     icon: UserCog,
@@ -312,12 +317,6 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: employmentTypes.index().url,
                     icon: Briefcase,
                     permission: 'employment-types.view',
-                },
-                {
-                    title: 'Employees',
-                    href: employees.index().url,
-                    icon: Users,
-                    permission: 'employees.view',
                 },
             ],
         },
