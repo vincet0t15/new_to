@@ -1,5 +1,5 @@
 import { Head, Link, router } from '@inertiajs/react';
-import { Bell, CheckCheck } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
@@ -69,27 +69,10 @@ export default function NotificationsIndex({
         <>
             <Head title="Inbox" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <Heading
-                        title="Inbox"
-                        description="Travel order updates addressed to your account."
-                    />
-                    {counts.unread > 0 && (
-                        <Button
-                            variant="outline"
-                            onClick={() =>
-                                router.post(
-                                    notifications.readAll().url,
-                                    {},
-                                    { preserveScroll: true },
-                                )
-                            }
-                        >
-                            <CheckCheck />
-                            Mark all read
-                        </Button>
-                    )}
-                </div>
+                <Heading
+                    title="Inbox"
+                    description="Travel order updates addressed to your account."
+                />
 
                 <div className="flex flex-wrap items-center gap-2">
                     {FILTERS.map((filter) => (
@@ -137,27 +120,8 @@ export default function NotificationsIndex({
                                 <li key={item.id}>
                                     <Link
                                         href={notifications.open(item.id).url}
-                                        className={cn(
-                                            'flex gap-3 px-4 py-4 transition-colors hover:bg-muted/50',
-                                            item.read_at === null &&
-                                                'bg-primary/5',
-                                        )}
+                                        className="flex gap-3 px-4 py-4 transition-colors hover:bg-muted/50"
                                     >
-                                        <span className="mt-1 flex size-2 shrink-0 items-center justify-center">
-                                            <span
-                                                className={cn(
-                                                    'size-2 rounded-full',
-                                                    item.read_at === null
-                                                        ? 'bg-primary'
-                                                        : 'bg-muted-foreground/30',
-                                                )}
-                                            />
-                                            <span className="sr-only">
-                                                {item.read_at === null
-                                                    ? 'Unread'
-                                                    : 'Read'}
-                                            </span>
-                                        </span>
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex flex-wrap items-center gap-2">
                                                 <p

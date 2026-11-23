@@ -1,4 +1,4 @@
-import { Link, router, usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import { Bell, Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -59,25 +59,7 @@ export function AppSidebarHeader({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-80">
-                            <DropdownMenuLabel className="flex items-center justify-between">
-                                <span>Notifications</span>
-                                {unreadNotificationsCount > 0 && (
-                                    <button
-                                        type="button"
-                                        className="text-xs font-normal text-primary hover:underline"
-                                        onClick={() =>
-                                            router.post(
-                                                notificationRoutes.readAll()
-                                                    .url,
-                                                {},
-                                                { preserveScroll: true },
-                                            )
-                                        }
-                                    >
-                                        Mark all read
-                                    </button>
-                                )}
-                            </DropdownMenuLabel>
+                            <DropdownMenuLabel>Notifications</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {notifications.length > 0 ? (
                                 <div className="max-h-80 overflow-y-auto">
@@ -92,7 +74,7 @@ export function AppSidebarHeader({
                                             className={`block px-4 py-3 text-sm hover:bg-muted/50 ${
                                                 notification.read_at
                                                     ? ''
-                                                    : 'bg-primary/5 font-medium'
+                                                    : 'font-semibold'
                                             }`}
                                         >
                                             <p>{notification.title}</p>
