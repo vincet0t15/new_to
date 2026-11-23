@@ -7,11 +7,9 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 /**
- * The first two locations an install needs before a travel order can be filed.
+ * Default locations seeded for fresh installs/local setup.
  *
- * They mirror the reference application's sample trip: the municipal hall is
- * the usual origin and official station, and the provincial capitol is the
- * usual destination. An administrator adds the rest through Travel Setup.
+ * Keeps baseline municipal locations and adds common LGU travel destinations.
  */
 class LocationSeeder extends Seeder
 {
@@ -21,8 +19,8 @@ class LocationSeeder extends Seeder
      * @var array<int, string>
      */
     private const LOCATIONS = [
-        'Municipal Hall',
-        'Provincial Capitol',
+        'San Vicente, Palawan',
+        'Puerto Princesa City, Palawan',
     ];
 
     public function run(): void

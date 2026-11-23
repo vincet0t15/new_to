@@ -62,7 +62,7 @@ Route::middleware(['auth', 'verified', 'portal:department-head'])
                 ->middleware('permission:travel-orders.earmark')
                 ->name('travel-orders.earmark');
             Route::post('travel-orders/{travelOrder}/record', [TravelOrderActionController::class, 'record'])
-                ->middleware('permission:inbox.receive')
+                ->middleware('permission:travel-orders.record')
                 ->name('travel-orders.record');
         });
     });
@@ -98,7 +98,7 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
                 ->middleware('permission:travel-orders.earmark')
                 ->name('travel-orders.earmark');
             Route::post('travel-orders/{travelOrder}/record', [TravelOrderActionController::class, 'record'])
-                ->middleware('permission:inbox.receive')
+                ->middleware('permission:travel-orders.record')
                 ->name('travel-orders.record');
         });
     });

@@ -71,8 +71,7 @@ export default function ShowApproval({
     const act = (url: string) => {
         post(url, {
             preserveScroll: true,
-            onSuccess: () =>
-                reset('remarks', 'to_user_id', 'distributed'),
+            onSuccess: () => reset('remarks', 'to_user_id', 'distributed'),
         });
     };
 
@@ -180,10 +179,24 @@ export default function ShowApproval({
                                         />
                                         <InputError message={errors.remarks} />
                                     </div>
-                                    {(travelOrder.earmarked_at || travelOrder.recorded_at) && (
-                                        <div className="rounded-lg border p-3 text-xs text-muted-foreground space-y-1">
-                                            {travelOrder.earmarked_at && <p>Earmarked: {travelOrder.earmarked_at}</p>}
-                                            {travelOrder.recorded_at && <p>Recorded: {travelOrder.recorded_at}{travelOrder.distributed_at ? ' · Distributed' : ''}</p>}
+                                    {(travelOrder.earmarked_at ||
+                                        travelOrder.recorded_at) && (
+                                        <div className="space-y-1 rounded-lg border p-3 text-xs text-muted-foreground">
+                                            {travelOrder.earmarked_at && (
+                                                <p>
+                                                    Earmarked:{' '}
+                                                    {travelOrder.earmarked_at}
+                                                </p>
+                                            )}
+                                            {travelOrder.recorded_at && (
+                                                <p>
+                                                    Recorded:{' '}
+                                                    {travelOrder.recorded_at}
+                                                    {travelOrder.distributed_at
+                                                        ? ' · Distributed'
+                                                        : ''}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
 
@@ -254,37 +267,67 @@ export default function ShowApproval({
 
                                     {can.record && (
                                         <div className="space-y-2 border-t pt-3">
-                                            <p className="text-sm font-medium">HRMO recording</p>
+                                            <p className="text-sm font-medium">
+                                                HRMO recording
+                                            </p>
                                             <div className="space-y-2">
-                                                <Label htmlFor="to_number">Series/TO No.</Label>
+                                                <Label htmlFor="to_number">
+                                                    Series/TO No.
+                                                </Label>
                                                 <input
                                                     id="to_number"
                                                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                                                     value={data.to_number}
-                                                    onChange={(e) => setData('to_number', e.target.value)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'to_number',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
-                                                <InputError message={errors.to_number} />
+                                                <InputError
+                                                    message={errors.to_number}
+                                                />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label htmlFor="control_no">Control No.</Label>
+                                                <Label htmlFor="control_no">
+                                                    Control No.
+                                                </Label>
                                                 <input
                                                     id="control_no"
                                                     className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                                                     value={data.control_no}
-                                                    onChange={(e) => setData('control_no', e.target.value)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'control_no',
+                                                            e.target.value,
+                                                        )
+                                                    }
                                                 />
-                                                <InputError message={errors.control_no} />
+                                                <InputError
+                                                    message={errors.control_no}
+                                                />
                                             </div>
                                             <label className="flex items-center gap-2 text-sm">
                                                 <input
                                                     type="checkbox"
                                                     checked={data.distributed}
-                                                    onChange={(e) => setData('distributed', e.target.checked)}
+                                                    onChange={(e) =>
+                                                        setData(
+                                                            'distributed',
+                                                            e.target.checked,
+                                                        )
+                                                    }
                                                 />
                                                 Mark as distributed/released
                                             </label>
-                                            <Button variant="secondary" disabled={processing} onClick={() => act(urls.record)}>
-                                                <Check className="size-4" /> Record &amp; Release
+                                            <Button
+                                                variant="secondary"
+                                                disabled={processing}
+                                                onClick={() => act(urls.record)}
+                                            >
+                                                <Check className="size-4" />{' '}
+                                                Record &amp; Release
                                             </Button>
                                         </div>
                                     )}

@@ -112,6 +112,24 @@ export function TravelOrderDetails({
                     <Value>{lookupName(travelOrder.fund_source)}</Value>
                 </div>
                 <div>
+                    <dt className="text-muted-foreground">Earmarked</dt>
+                    <Value>
+                        {travelOrder.earmarked_at
+                            ? `${formatDate(travelOrder.earmarked_at)}${travelOrder.earmark_remarks ? ` — ${travelOrder.earmark_remarks}` : ''}`
+                            : null}
+                    </Value>
+                </div>
+                <div>
+                    <dt className="text-muted-foreground">
+                        Recorded / Distributed
+                    </dt>
+                    <Value>
+                        {travelOrder.recorded_at
+                            ? `${formatDate(travelOrder.recorded_at)}${travelOrder.distributed_at ? ' · Distributed' : ''}${travelOrder.recording_remarks ? ` — ${travelOrder.recording_remarks}` : ''}`
+                            : null}
+                    </Value>
+                </div>
+                <div>
                     <dt className="text-muted-foreground">
                         Transportation modes
                     </dt>

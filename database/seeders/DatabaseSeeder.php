@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             WorkflowSeeder::class,
             TravelOptionsSeeder::class,
             LocationSeeder::class,
+            PerDiemConfigurationSeeder::class,
         ]);
     }
 }
