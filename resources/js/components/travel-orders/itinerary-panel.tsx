@@ -671,7 +671,7 @@ export function TravelOrderItineraryPanel({
                             Cancel
                         </Button>
                         <Button onClick={submit} disabled={form.processing}>
-                            {editing ? 'Save changes' : 'Add entry'}
+                            {editing ? 'Save changes' : 'Save'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

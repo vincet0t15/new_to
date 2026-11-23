@@ -313,7 +313,7 @@ export function TripTicketForm({
                         ) : (
                             <Save className="size-4" />
                         )}
-                        {tripTicket ? 'Save changes' : 'Prepare trip ticket'}
+                        {tripTicket ? 'Save changes' : 'Save'}
                     </Button>
                     <Button asChild variant="outline">
                         <Link href={cancelUrl}>
