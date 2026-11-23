@@ -396,7 +396,7 @@ class TravelOrderController extends Controller
                 'resubmit' => $travelOrder->status === TravelOrderStatus::Returned,
                 'delete' => $travelOrder->status === TravelOrderStatus::Draft,
                 'manageItinerary' => $editable,
-                'createTripTicket' => $travelOrder->usesGovernmentVehicle(),
+                'createTripTicket' => $editable && $travelOrder->usesGovernmentVehicle(),
             ],
             'urls' => [
                 'index' => route('travel-orders.index'),

@@ -325,7 +325,7 @@ it('lists the tickets on the travel order page', function () {
         route('travel-orders.show', $context['order']),
     )->assertInertia(fn (Assert $page): Assert => $page
         ->component('travel-orders/show')
-        ->where('can.createTripTicket', true)
+        ->where('can.createTripTicket', false)
         ->has('travelOrder.trip_tickets', 1)
     );
 });
