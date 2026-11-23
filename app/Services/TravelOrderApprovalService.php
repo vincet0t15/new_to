@@ -7,6 +7,7 @@ use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
 use App\Enums\WorkflowEvent;
 use App\Exceptions\TravelOrderRoutingException;
+use App\Models\FundSource;
 use App\Models\OfficeDesignation;
 use App\Models\TravelOrder;
 use App\Models\TravelOrderDelivery;
@@ -81,10 +82,12 @@ final class TravelOrderApprovalService
 
     /**
      * Record Budget office earmark/fund allocation details.
+     *
+     * @param  array{earmark_number?: string|null, remarks?: string|null}  $data
      */
-    public function earmark(TravelOrder $order, User $actor, ?string $remarks = null): TravelOrder
+    public function earmark(TravelOrder $order, User $actor, array $data = []): TravelOrder
     {
-        return DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
+        return DB::transaction(function () use ($order, $actor, $data): TravelOrder {
             $order = $this->lock($order);
             $this->ensureSubmitted($order);
             $step = $this->currentStep($order);
@@ -93,12 +96,16 @@ final class TravelOrderApprovalService
                 throw TravelOrderRoutingException::staleAction();
             }
 
+            $this->ensureBudgetStepAction($actor, $step, 'travel-orders.earmark');
+
             $index = (int) $order->current_step_index;
-            $remarks = $this->nullableRemarks($remarks);
+            $remarks = $this->nullableRemarks($data['remarks'] ?? null);
+            $earmarkNumber = $this->nullableRemarks($data['earmark_number'] ?? null);
 
             $order->forceFill([
                 'earmarked_by_user_id' => $actor->id,
                 'earmarked_at' => now(),
+                'earmark_number' => $earmarkNumber ?? $order->earmark_number,
                 'earmark_remarks' => $remarks,
             ])->save();
 
@@ -109,6 +116,63 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
+                [
+                    'earmark_number' => $order->earmark_number,
+                ],
+            );
+
+            return $order->refresh();
+        });
+    }
+
+    /**
+     * Assign the fund source for a submitted travel order.
+     *
+     * Budget owns fund-source selection; this is an auditable holder action and
+     * does not advance the workflow.
+     */
+    public function assignFundSource(TravelOrder $order, User $actor, ?int $fundSourceId, ?string $remarks = null): TravelOrder
+    {
+        return DB::transaction(function () use ($order, $actor, $fundSourceId, $remarks): TravelOrder {
+            $order = $this->lock($order);
+            $this->ensureSubmitted($order);
+            $step = $this->currentStep($order);
+
+            if ($step === null || $order->activeDeliveryFor($actor) === null) {
+                throw TravelOrderRoutingException::staleAction();
+            }
+
+            $this->ensureBudgetStepAction($actor, $step, 'travel-orders.assign-fund-source');
+
+            $fundSource = $fundSourceId === null
+                ? null
+                : FundSource::query()->find($fundSourceId);
+
+            if ($fundSourceId !== null && $fundSource === null) {
+                throw new \InvalidArgumentException('Selected fund source was not found.');
+            }
+
+            $index = (int) $order->current_step_index;
+            $remarks = $this->nullableRemarks($remarks);
+
+            $order->forceFill([
+                'fund_source_id' => $fundSource?->id,
+                'fund_source' => $fundSource?->name,
+                'fund_source_assigned_by_user_id' => $actor->id,
+                'fund_source_assigned_at' => now(),
+            ])->save();
+
+            $this->audit->record(
+                $order,
+                WorkflowEvent::FundSourceAssigned,
+                $actor,
+                $step,
+                $index,
+                $remarks,
+                [
+                    'fund_source_id' => $order->fund_source_id,
+                    'fund_source' => $order->fund_source,
+                ],
             );
 
             return $order->refresh();
@@ -657,6 +721,16 @@ final class TravelOrderApprovalService
     {
         if ($order->status !== TravelOrderStatus::Submitted) {
             throw TravelOrderRoutingException::staleAction();
+        }
+    }
+
+    private function ensureBudgetStepAction(User $actor, WorkflowStep $step, string $permission): void
+    {
+        $name = $step->stepType->name;
+        $isBudgetStep = in_array($name, ['Budget Review', 'Budget'], true);
+
+        if (! $isBudgetStep || ! $actor->can($permission)) {
+            throw TravelOrderRoutingException::budgetActionNotAllowed();
         }
     }
 

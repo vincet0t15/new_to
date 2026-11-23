@@ -29,7 +29,6 @@ class StoreTravelOrderRequest extends FormRequest
     {
         return [
             'travel_classification_id' => ['required', 'integer', Rule::exists('travel_classifications', 'id')],
-            'fund_source_id' => ['nullable', 'integer', Rule::exists('fund_sources', 'id')],
             'origin_id' => ['nullable', 'integer', Rule::exists('locations', 'id')],
             'destination_id' => ['required', 'integer', Rule::exists('locations', 'id')],
             'official_station_id' => ['nullable', 'integer', Rule::exists('locations', 'id')],

@@ -115,7 +115,7 @@ export function TravelOrderDetails({
                     <dt className="text-muted-foreground">Earmarked</dt>
                     <Value>
                         {travelOrder.earmarked_at
-                            ? `${formatDate(travelOrder.earmarked_at)}${travelOrder.earmark_remarks ? ` — ${travelOrder.earmark_remarks}` : ''}`
+                            ? `${formatDate(travelOrder.earmarked_at)}${travelOrder.earmark_number ? ` · No. ${travelOrder.earmark_number}` : ''}${travelOrder.earmark_remarks ? ` — ${travelOrder.earmark_remarks}` : ''}`
                             : null}
                     </Value>
                 </div>

@@ -35,6 +35,7 @@ type Props = {
     } | null;
     myDeliveryStatus: TravelOrderDeliveryStatus | null;
     forwardCandidates: { id: number; name: string }[];
+    fundSources: { id: number; name: string }[];
     can: ApprovalAbilities;
     urls: {
         inbox: string;
@@ -44,17 +45,20 @@ type Props = {
         return: string;
         forward: string;
         earmark: string;
+        assignFundSource: string;
         record: string;
     };
 };
 
 export default function ShowApproval({
     travelOrder,
+    route,
     timeline,
     revisions,
     currentStep,
     myDeliveryStatus,
     forwardCandidates,
+    fundSources,
     can,
     urls,
 }: Props) {
@@ -64,6 +68,8 @@ export default function ShowApproval({
         control_no: travelOrder.control_no ?? '',
         to_number: travelOrder.to_number ?? '',
         distributed: travelOrder.distributed_at !== null,
+        fund_source_id: travelOrder.fund_source_id?.toString() ?? '',
+        earmark_number: travelOrder.earmark_number ?? '',
     });
 
     const actionError = (errors as Record<string, string | undefined>).action;
@@ -82,6 +88,7 @@ export default function ShowApproval({
         can.return ||
         can.forward ||
         can.earmark ||
+        can.assignFundSource ||
         can.record;
 
     return (
@@ -180,12 +187,22 @@ export default function ShowApproval({
                                         <InputError message={errors.remarks} />
                                     </div>
                                     {(travelOrder.earmarked_at ||
-                                        travelOrder.recorded_at) && (
+                                        travelOrder.recorded_at ||
+                                        travelOrder.fund_source_assigned_at) && (
                                         <div className="space-y-1 rounded-lg border p-3 text-xs text-muted-foreground">
+                                            {travelOrder.fund_source_assigned_at && (
+                                                <p>
+                                                    Fund source assigned:{' '}
+                                                    {travelOrder.fund_source_assigned_at}
+                                                </p>
+                                            )}
                                             {travelOrder.earmarked_at && (
                                                 <p>
                                                     Earmarked:{' '}
                                                     {travelOrder.earmarked_at}
+                                                    {travelOrder.earmark_number
+                                                        ? ` · No. ${travelOrder.earmark_number}`
+                                                        : ''}
                                                 </p>
                                             )}
                                             {travelOrder.recorded_at && (
@@ -220,16 +237,39 @@ export default function ShowApproval({
                                             </Button>
                                         )}
                                         {can.earmark && (
-                                            <Button
-                                                variant="secondary"
-                                                disabled={processing}
-                                                onClick={() =>
-                                                    act(urls.earmark)
-                                                }
-                                            >
-                                                <Check className="size-4" />
-                                                Record Earmark
-                                            </Button>
+                                            <div className="w-full space-y-2 rounded-md border p-3">
+                                                <p className="text-sm font-medium">
+                                                    Budget earmark
+                                                </p>
+                                                <Label htmlFor="earmark_number">
+                                                    Earmark number
+                                                </Label>
+                                                <input
+                                                    id="earmark_number"
+                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                    value={data.earmark_number}
+                                                    onChange={(event) =>
+                                                        setData(
+                                                            'earmark_number',
+                                                            event.target.value,
+                                                        )
+                                                    }
+                                                    placeholder="Enter earmark number"
+                                                />
+                                                <InputError
+                                                    message={errors.earmark_number}
+                                                />
+                                                <Button
+                                                    variant="secondary"
+                                                    disabled={processing}
+                                                    onClick={() =>
+                                                        act(urls.earmark)
+                                                    }
+                                                >
+                                                    <Check className="size-4" />
+                                                    Record Earmark
+                                                </Button>
+                                            </div>
                                         )}
                                         {can.approve && (
                                             <Button
@@ -264,6 +304,53 @@ export default function ShowApproval({
                                             </Button>
                                         )}
                                     </div>
+
+                                    {can.assignFundSource && (
+                                        <div className="space-y-2 border-t pt-3">
+                                            <p className="text-sm font-medium">
+                                                Fund source
+                                            </p>
+                                            <Label htmlFor="fund_source_id">
+                                                Assign fund source
+                                            </Label>
+                                            <select
+                                                id="fund_source_id"
+                                                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                value={data.fund_source_id}
+                                                onChange={(event) =>
+                                                    setData(
+                                                        'fund_source_id',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            >
+                                                <option value="">
+                                                    Select fund source
+                                                </option>
+                                                {fundSources.map((fundSource) => (
+                                                    <option
+                                                        key={fundSource.id}
+                                                        value={fundSource.id}
+                                                    >
+                                                        {fundSource.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <InputError
+                                                message={errors.fund_source_id}
+                                            />
+                                            <Button
+                                                variant="secondary"
+                                                disabled={processing}
+                                                onClick={() =>
+                                                    act(urls.assignFundSource)
+                                                }
+                                            >
+                                                <Check className="size-4" />
+                                                Assign Fund Source
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     {can.record && (
                                         <div className="space-y-2 border-t pt-3">

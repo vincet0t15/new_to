@@ -132,6 +132,8 @@ export type TravelOrder = {
     date_to: string | null;
     travel_classification_id: number | null;
     fund_source_id: number | null;
+    fund_source_assigned_by_user_id: number | null;
+    fund_source_assigned_at: string | null;
     origin_id: number | null;
     destination_id: number | null;
     official_station_id: number | null;
@@ -139,6 +141,7 @@ export type TravelOrder = {
     travel_classification: string | TravelOrderLookupOption | null;
     earmarked_by_user_id: number | null;
     earmarked_at: string | null;
+    earmark_number: string | null;
     earmark_remarks: string | null;
     recorded_by_user_id: number | null;
     recorded_at: string | null;
@@ -272,6 +275,7 @@ export type ApprovalAbilities = {
     return: boolean;
     forward: boolean;
     earmark: boolean;
+    assignFundSource: boolean;
     record: boolean;
 };
 
@@ -360,7 +364,6 @@ export type TravelOrderShowOptions = {
 
 export type TravelOrderCreateRequest = {
     travel_classification_id: string;
-    fund_source_id: string;
     origin_id: string;
     destination_id: string;
     official_station_id: string;

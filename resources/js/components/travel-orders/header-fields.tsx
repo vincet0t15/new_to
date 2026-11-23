@@ -13,7 +13,6 @@ import type { TravelOrderFormOptions, TravelOrderLookupOption } from '@/types';
  */
 export type TravelOrderHeaderValues = {
     travel_classification_id: string;
-    fund_source_id: string;
     origin_id: string;
     destination_id: string;
     official_station_id: string;
@@ -109,24 +108,6 @@ export function TravelOrderHeaderFields({
                             emptyMessage="No classifications found. Add one in Travel Setup."
                         />
                         <InputError message={errors.travel_classification_id} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="fund_source_id">Fund source</Label>
-                        <Combobox
-                            id="fund_source_id"
-                            value={data.fund_source_id}
-                            onValueChange={(value) =>
-                                onChange('fund_source_id', value)
-                            }
-                            options={lookupChoices(
-                                options.fundSources,
-                                data.fund_source_id,
-                            )}
-                            placeholder="Select fund source"
-                            searchPlaceholder="Search fund source..."
-                            emptyMessage="No fund sources found. Add one in Travel Setup."
-                        />
-                        <InputError message={errors.fund_source_id} />
                     </div>
                 </div>
 

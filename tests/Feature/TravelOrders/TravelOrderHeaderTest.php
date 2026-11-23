@@ -52,7 +52,7 @@ test('the create form offers the configured header lookups', function () {
             ->component('travel-orders/create')
             ->where('options.classifications.0.id', $classification->id)
             ->where('options.classifications.0.name', 'Official Business')
-            ->where('options.fundSources.0.name', $fundSource->name)
+            ->where('options.fundSources', [])
             ->where('options.locations.0.name', $location->name)
             ->where('options.expenseTypes.0.name', $expenseType->name)
             ->where('options.transportationModes.0.name', $mode->name)
@@ -73,7 +73,6 @@ test('storing a draft persists the header lookups mirrors and pivots', function 
     $this->actingAs($chain['filer'])
         ->post(route('travel-orders.store'), [
             'travel_classification_id' => $classification->id,
-            'fund_source_id' => $fundSource->id,
             'origin_id' => $origin->id,
             'destination_id' => $destination->id,
             'official_station_id' => $station->id,
@@ -91,8 +90,8 @@ test('storing a draft persists the header lookups mirrors and pivots', function 
 
     expect($order->travel_classification_id)->toBe($classification->id)
         ->and($order->travel_classification)->toBe($classification->name)
-        ->and($order->fund_source_id)->toBe($fundSource->id)
-        ->and($order->fund_source)->toBe($fundSource->name)
+        ->and($order->fund_source_id)->toBeNull()
+        ->and($order->fund_source)->toBeNull()
         ->and($order->origin_id)->toBe($origin->id)
         ->and($order->destination_id)->toBe($destination->id)
         ->and($order->destination)->toBe($destination->name)

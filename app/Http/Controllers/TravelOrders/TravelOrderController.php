@@ -10,7 +10,6 @@ use App\Http\Requests\TravelOrders\StoreTravelOrderRequest;
 use App\Http\Requests\TravelOrders\UpdateTravelOrderRequest;
 use App\Models\Employee;
 use App\Models\ExpenseType;
-use App\Models\FundSource;
 use App\Models\Location;
 use App\Models\Office;
 use App\Models\TransportationMode;
@@ -110,7 +109,6 @@ class TravelOrderController extends Controller
             'options' => $this->formOptions(),
             'initial' => [
                 'travel_classification_id' => '',
-                'fund_source_id' => '',
                 'origin_id' => '',
                 'destination_id' => '',
                 'official_station_id' => '',
@@ -205,6 +203,9 @@ class TravelOrderController extends Controller
             'office',
             'employee',
             'returnedBy',
+            'earmarkedBy',
+            'fundSourceAssignedBy',
+            'recordedBy',
             'travelClassification',
             'fundSource',
             'origin',
@@ -483,16 +484,7 @@ class TravelOrderController extends Controller
                 ])
                 ->values()
                 ->all(),
-            'fundSources' => FundSource::query()
-                ->orderBy('name')
-                ->get(['id', 'name', 'is_active'])
-                ->map(fn (FundSource $fundSource): array => [
-                    'id' => $fundSource->id,
-                    'name' => $fundSource->name,
-                    'is_active' => $fundSource->is_active,
-                ])
-                ->values()
-                ->all(),
+            'fundSources' => [],
             'locations' => Location::query()
                 ->orderBy('name')
                 ->get(['id', 'name', 'is_active'])
@@ -535,15 +527,11 @@ class TravelOrderController extends Controller
     private function contentPayload(array $data): array
     {
         $classificationId = $this->intOrNull($data['travel_classification_id'] ?? null);
-        $fundSourceId = $this->intOrNull($data['fund_source_id'] ?? null);
         $destinationId = $this->intOrNull($data['destination_id'] ?? null);
 
         $classification = $classificationId === null
             ? null
             : TravelClassification::query()->find($classificationId);
-        $fundSource = $fundSourceId === null
-            ? null
-            : FundSource::query()->find($fundSourceId);
         $destination = $destinationId === null
             ? null
             : Location::query()->find($destinationId);
@@ -551,8 +539,6 @@ class TravelOrderController extends Controller
         return [
             'travel_classification_id' => $classification?->id,
             'travel_classification' => $classification?->name,
-            'fund_source_id' => $fundSource?->id,
-            'fund_source' => $fundSource?->name,
             'origin_id' => $this->intOrNull($data['origin_id'] ?? null),
             'destination_id' => $destination?->id,
             'destination' => $destination->name ?? null,

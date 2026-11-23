@@ -63,11 +63,32 @@ class TravelOrderActionController extends Controller
     public function earmark(Request $request, TravelOrder $travelOrder): RedirectResponse
     {
         $actor = $this->actor($request);
-        $remarks = $this->remarks($request);
+
+        $validated = $request->validate([
+            'earmark_number' => ['nullable', 'string', 'max:100'],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
 
         return $this->run(
-            fn () => $this->approvals->earmark($travelOrder, $actor, $remarks),
+            fn () => $this->approvals->earmark($travelOrder, $actor, $validated),
             __('Fund earmark recorded.'),
+        );
+    }
+
+    public function assignFundSource(Request $request, TravelOrder $travelOrder): RedirectResponse
+    {
+        $actor = $this->actor($request);
+
+        $validated = $request->validate([
+            'fund_source_id' => ['nullable', 'integer', Rule::exists('fund_sources', 'id')],
+            'remarks' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $fundSourceId = isset($validated['fund_source_id']) ? (int) $validated['fund_source_id'] : null;
+
+        return $this->run(
+            fn () => $this->approvals->assignFundSource($travelOrder, $actor, $fundSourceId, $validated['remarks'] ?? null),
+            __('Fund source assigned.'),
         );
     }
 

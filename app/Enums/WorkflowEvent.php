@@ -59,6 +59,9 @@ enum WorkflowEvent: string
     /** Budget office recorded fund earmark/allocation details. */
     case Earmarked = 'earmarked';
 
+    /** Budget office assigned the fund source. */
+    case FundSourceAssigned = 'fund_source_assigned';
+
     /** HRMO recorded series/control number and release details. */
     case Recorded = 'recorded';
 
@@ -79,6 +82,7 @@ enum WorkflowEvent: string
             self::Cancelled => 'Cancelled',
             self::Resubmitted => 'Resubmitted',
             self::Earmarked => 'Earmarked',
+            self::FundSourceAssigned => 'Fund Source Assigned',
             self::Recorded => 'Recorded',
         };
     }

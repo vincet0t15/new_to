@@ -42,9 +42,12 @@ use Illuminate\Support\Carbon;
  * @property int|null $destination_id
  * @property int|null $official_station_id
  * @property string|null $fund_source
+ * @property int|null $fund_source_assigned_by_user_id
+ * @property Carbon|null $fund_source_assigned_at
  * @property string|null $travel_classification
  * @property int|null $earmarked_by_user_id
  * @property Carbon|null $earmarked_at
+ * @property string|null $earmark_number
  * @property string|null $earmark_remarks
  * @property TravelOrderStatus $status
  * @property int $revision_number
@@ -107,9 +110,12 @@ use Illuminate\Support\Carbon;
     'destination_id',
     'official_station_id',
     'fund_source',
+    'fund_source_assigned_by_user_id',
+    'fund_source_assigned_at',
     'travel_classification',
     'earmarked_by_user_id',
     'earmarked_at',
+    'earmark_number',
     'earmark_remarks',
     'status',
     'revision_number',
@@ -250,6 +256,14 @@ class TravelOrder extends Model
     public function earmarkedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'earmarked_by_user_id');
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function fundSourceAssignedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'fund_source_assigned_by_user_id');
     }
 
     /**
@@ -401,6 +415,7 @@ class TravelOrder extends Model
             'returned_from_step_index' => 'integer',
             'travel_classification_id' => 'integer',
             'fund_source_id' => 'integer',
+            'fund_source_assigned_by_user_id' => 'integer',
             'origin_id' => 'integer',
             'destination_id' => 'integer',
             'official_station_id' => 'integer',
@@ -414,6 +429,7 @@ class TravelOrder extends Model
             'current_step_index' => 'integer',
             'submitted_at' => 'datetime',
             'signatories' => 'array',
+            'fund_source_assigned_at' => 'datetime',
             'earmarked_at' => 'datetime',
             'returned_at' => 'datetime',
             'last_resubmitted_at' => 'datetime',

@@ -2,6 +2,7 @@
 
 use App\Enums\TravelOrderStatus;
 use App\Enums\WorkflowEvent;
+use App\Models\FundSource;
 use App\Models\TravelOrder;
 use App\Services\TravelOrderApprovalService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -20,10 +21,14 @@ test('budget holder can record earmark on budget review step', function () {
 
     expect($order->current_step_index)->toBe(1);
 
-    $order = $service->earmark($order, $chain['budgetUser'], 'Funds allocated under GAA.');
+    $order = $service->earmark($order, $chain['budgetUser'], [
+        'earmark_number' => 'EN-2026-001',
+        'remarks' => 'Funds allocated under GAA.',
+    ]);
 
     expect($order->earmarked_by_user_id)->toBe($chain['budgetUser']->id)
         ->and($order->earmarked_at)->not->toBeNull()
+        ->and($order->earmark_number)->toBe('EN-2026-001')
         ->and($order->earmark_remarks)->toBe('Funds allocated under GAA.')
         ->and($order->current_step_index)->toBe(1)
         ->and($order->status)->toBe(TravelOrderStatus::Submitted);
@@ -31,7 +36,8 @@ test('budget holder can record earmark on budget review step', function () {
     $event = $order->actions()->where('event', WorkflowEvent::Earmarked->value)->sole();
     expect($event->actor_user_id)->toBe($chain['budgetUser']->id)
         ->and($event->step_index)->toBe(1)
-        ->and($event->remarks)->toBe('Funds allocated under GAA.');
+        ->and($event->remarks)->toBe('Funds allocated under GAA.')
+        ->and($event->meta)->toMatchArray(['earmark_number' => 'EN-2026-001']);
 });
 
 test('earmark action requires active holder and submitted order', function () {
@@ -118,6 +124,7 @@ test('approval show exposes earmark and record abilities by step and permission'
         ->assertInertia(fn (Assert $page) => $page
             ->component('approvals/show')
             ->where('can.earmark', true)
+            ->where('can.assignFundSource', true)
             ->where('can.record', false)
             ->where('can.approve', true)
         );
@@ -130,6 +137,7 @@ test('approval show exposes earmark and record abilities by step and permission'
         ->assertInertia(fn (Assert $page) => $page
             ->component('approvals/show')
             ->where('can.earmark', false)
+            ->where('can.assignFundSource', false)
             ->where('can.record', true)
             ->where('can.acknowledge', true)
         );
@@ -152,4 +160,28 @@ test('record action requires active hrmo holder', function () {
 
     expect($order->refresh()->to_number)->toBeNull()
         ->and($order->recorded_at)->toBeNull();
+});
+
+test('budget holder can assign fund source on budget review step', function () {
+    $chain = routingChain();
+    $service = app(TravelOrderApprovalService::class);
+    $fundSource = FundSource::factory()->create(['name' => 'Special Fund']);
+
+    $order = routingSubmit($chain);
+    $order = $service->approve($order, $chain['headUser']);
+
+    $order = $service->assignFundSource($order, $chain['budgetUser'], $fundSource->id, 'Assigned by budget.');
+
+    expect($order->fund_source_id)->toBe($fundSource->id)
+        ->and($order->fund_source)->toBe('Special Fund')
+        ->and($order->fund_source_assigned_by_user_id)->toBe($chain['budgetUser']->id)
+        ->and($order->fund_source_assigned_at)->not->toBeNull()
+        ->and($order->current_step_index)->toBe(1);
+
+    $event = $order->actions()->where('event', WorkflowEvent::FundSourceAssigned->value)->sole();
+    expect($event->actor_user_id)->toBe($chain['budgetUser']->id)
+        ->and($event->meta)->toMatchArray([
+            'fund_source_id' => $fundSource->id,
+            'fund_source' => 'Special Fund',
+        ]);
 });

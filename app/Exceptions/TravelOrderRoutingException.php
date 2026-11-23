@@ -99,4 +99,9 @@ final class TravelOrderRoutingException extends RuntimeException
     {
         return new self('The selected person does not answer this step.');
     }
+
+    public static function budgetActionNotAllowed(): self
+    {
+        return new self('Only the active Budget holder can perform this fund action.');
+    }
 }

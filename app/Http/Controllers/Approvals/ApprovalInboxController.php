@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Approvals;
 use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\FundSource;
 use App\Models\TravelOrder;
 use App\Models\TravelOrderAction;
 use App\Models\TravelOrderDelivery;
@@ -235,6 +236,16 @@ class ApprovalInboxController extends Controller
                 ])
                 ->values()
                 ->all(),
+            'fundSources' => FundSource::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (FundSource $fundSource): array => [
+                    'id' => $fundSource->id,
+                    'name' => $fundSource->name,
+                ])
+                ->values()
+                ->all(),
             'can' => [
                 'receive' => $isSubmitted && $isHolder && $delivery->status === TravelOrderDeliveryStatus::Pending,
                 'approve' => $isSubmitted && $isHolder && $step?->stepType->is_signatory === true,
@@ -242,6 +253,7 @@ class ApprovalInboxController extends Controller
                 'return' => $isSubmitted && $isHolder,
                 'forward' => $isSubmitted && $isHolder && $candidates->isNotEmpty(),
                 'earmark' => $isSubmitted && $isHolder && $isBudgetStep && $user->can('travel-orders.earmark'),
+                'assignFundSource' => $isSubmitted && $isHolder && $isBudgetStep && $user->can('travel-orders.assign-fund-source'),
                 'record' => $isSubmitted && $isHolder && $isHrmoStep && $user->can('travel-orders.record'),
             ],
             'urls' => [
@@ -252,6 +264,7 @@ class ApprovalInboxController extends Controller
                 'return' => route("{$prefix}.travel-orders.return", $travelOrder),
                 'forward' => route("{$prefix}.travel-orders.forward", $travelOrder),
                 'earmark' => route("{$prefix}.travel-orders.earmark", $travelOrder),
+                'assignFundSource' => route("{$prefix}.travel-orders.assign-fund-source", $travelOrder),
                 'record' => route("{$prefix}.travel-orders.record", $travelOrder),
             ],
         ]);

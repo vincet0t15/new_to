@@ -50,7 +50,6 @@ export default function EditTravelOrder({
         travel_classification_id: toIdInput(
             travelOrder.travel_classification_id,
         ),
-        fund_source_id: toIdInput(travelOrder.fund_source_id),
         origin_id: toIdInput(travelOrder.origin_id),
         destination_id: toIdInput(travelOrder.destination_id),
         official_station_id: toIdInput(travelOrder.official_station_id),
