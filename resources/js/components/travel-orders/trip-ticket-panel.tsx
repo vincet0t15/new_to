@@ -155,7 +155,7 @@ export function TravelOrderTripTicketPanel({ travelOrder, canCreate }: Props) {
                                         <Ticket className="size-6 text-muted-foreground/50" />
                                         {canCreate
                                             ? 'No trip ticket has been prepared yet.'
-                                            : 'No trip ticket yet. The order must be approved first.'}
+                                            : 'No trip ticket yet. Trip tickets are available when a government vehicle will be used.'}
                                     </div>
                                 </TableCell>
                             </TableRow>

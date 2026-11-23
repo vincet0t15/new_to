@@ -216,6 +216,21 @@ class TravelOrder extends Model
             ->orderBy('name');
     }
 
+    public function usesGovernmentVehicle(): bool
+    {
+        if ($this->relationLoaded('transportationModes')) {
+            if ($this->transportationModes->contains('is_government', true)) {
+                return true;
+            }
+        } elseif ($this->transportationModes()->where('is_government', true)->exists()) {
+            return true;
+        }
+
+        return $this->itineraries()
+            ->whereHas('transportationMode', fn (Builder $query): Builder => $query->where('is_government', true))
+            ->exists();
+    }
+
     /**
      * @return BelongsTo<User, $this>
      */

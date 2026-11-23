@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\TravelOrderStatus;
 use App\Enums\TripTicketStatus;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
@@ -14,11 +13,11 @@ use Illuminate\Validation\ValidationException;
 /**
  * The trip ticket lifecycle.
  *
- * A ticket is prepared only for an approved travel order. It is issued with a
- * permanent number as soon as it is saved, corrected while it is still issued,
- * completed after the trip, and cancelled instead when the trip will not push
- * through. A completed ticket is paper the driver carried, so it is never
- * changed again.
+ * A ticket is prepared when the travel order will use a government vehicle. It
+ * is issued with a permanent number as soon as it is saved, corrected while it
+ * is still issued, completed after the trip, and cancelled instead when the
+ * trip will not push through. A completed ticket is paper the driver carried,
+ * so it is never changed again.
  */
 class TripTicketService
 {
@@ -184,9 +183,9 @@ class TripTicketService
 
     private function ensureOrderAllowsTicket(TravelOrder $order): void
     {
-        if ($order->status !== TravelOrderStatus::Approved) {
+        if (! $order->usesGovernmentVehicle()) {
             throw ValidationException::withMessages([
-                'travel_order_id' => 'A trip ticket can only be prepared for an approved travel order.',
+                'travel_order_id' => 'A trip ticket can only be prepared when a government vehicle will be used.',
             ]);
         }
     }

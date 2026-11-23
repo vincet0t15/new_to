@@ -24,6 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import travelOrders from '@/routes/travel-orders';
 import { formatDate } from '@/lib/date-format';
 import type {
@@ -516,8 +517,9 @@ export function TravelOrderItineraryPanel({
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                             <Label htmlFor="activity">Activity *</Label>
-                            <Input
+                            <Textarea
                                 id="activity"
+                                rows={3}
                                 value={form.data.activity}
                                 onChange={(event) =>
                                     form.setData('activity', event.target.value)
@@ -528,8 +530,9 @@ export function TravelOrderItineraryPanel({
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                             <Label htmlFor="reason">Reason</Label>
-                            <Input
+                            <Textarea
                                 id="reason"
+                                rows={3}
                                 value={form.data.reason}
                                 onChange={(event) =>
                                     form.setData('reason', event.target.value)

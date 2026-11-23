@@ -3,6 +3,7 @@
 use App\Enums\SystemRole;
 use App\Enums\TravelOrderStatus;
 use App\Models\Office;
+use App\Models\TransportationMode;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
@@ -19,8 +20,10 @@ beforeEach(function () {
  *
  * @return array{order: TravelOrder, user: User}
  */
-function tripTicketOrder(TravelOrderStatus $status = TravelOrderStatus::Approved): array
-{
+function tripTicketOrder(
+    TravelOrderStatus $status = TravelOrderStatus::Approved,
+    bool $governmentVehicle = true,
+): array {
     $office = Office::factory()->create();
     $employee = routingEmployee($office);
     $user = routingUser(SystemRole::Employee, $employee);
@@ -34,6 +37,13 @@ function tripTicketOrder(TravelOrderStatus $status = TravelOrderStatus::Approved
         'date_from' => '2026-12-01',
         'date_to' => '2026-12-03',
     ]);
+
+    $mode = TransportationMode::factory()->create([
+        'name' => $governmentVehicle ? 'Government Vehicle' : 'Private Vehicle',
+        'is_government' => $governmentVehicle,
+        'is_active' => true,
+    ]);
+    $order->transportationModes()->attach($mode->id);
 
     return compact('order', 'user');
 }
@@ -56,8 +66,8 @@ function tripTicketPayload(array $overrides = []): array
     ], $overrides);
 }
 
-it('prepares a numbered trip ticket for an approved order', function () {
-    $context = tripTicketOrder();
+it('prepares a numbered trip ticket when a government vehicle is used', function (TravelOrderStatus $status) {
+    $context = tripTicketOrder($status);
 
     $this->actingAs($context['user'])->post(
         route('travel-orders.trip-tickets.store', $context['order']),
@@ -70,7 +80,11 @@ it('prepares a numbered trip ticket for an approved order', function () {
     expect($ticket->status->value)->toBe('issued');
     expect($ticket->liters)->toBe('24.00');
     expect($ticket->round_trip)->toBeTrue();
-});
+})->with([
+    'draft' => TravelOrderStatus::Draft,
+    'submitted' => TravelOrderStatus::Submitted,
+    'approved' => TravelOrderStatus::Approved,
+]);
 
 it('renders the trip ticket create page for the order creator', function () {
     $context = tripTicketOrder();
@@ -84,16 +98,16 @@ it('renders the trip ticket create page for the order creator', function () {
     );
 });
 
-it('sends the creator back to the order when it is not approved', function () {
-    $context = tripTicketOrder(TravelOrderStatus::Submitted);
+it('sends the creator back to the order when no government vehicle is used', function () {
+    $context = tripTicketOrder(TravelOrderStatus::Approved, false);
 
     $this->actingAs($context['user'])->get(
         route('travel-orders.trip-tickets.create', $context['order']),
     )->assertRedirect(route('travel-orders.show', $context['order']));
 });
 
-it('refuses a ticket when the order is not approved', function () {
-    $context = tripTicketOrder(TravelOrderStatus::Submitted);
+it('refuses a ticket when no government vehicle is used', function () {
+    $context = tripTicketOrder(TravelOrderStatus::Approved, false);
 
     $this->actingAs($context['user'])->post(
         route('travel-orders.trip-tickets.store', $context['order']),
@@ -300,7 +314,7 @@ it('renders the trip ticket and print pages', function () {
 });
 
 it('lists the tickets on the travel order page', function () {
-    $context = tripTicketOrder();
+    $context = tripTicketOrder(TravelOrderStatus::Submitted);
     app(TripTicketService::class)->create(
         $context['order'],
         tripTicketPayload(),

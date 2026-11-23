@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, FileText, Loader2, Route, Save, Send } from 'lucide-react';
+import { ArrowLeft, FileText, Loader2, Route, Save } from 'lucide-react';
 import { Can } from '@/components/can';
 import InputError from '@/components/input-error';
 import {
@@ -51,8 +51,8 @@ export default function CreateTravelOrder({
         setData(field, value as never);
     };
 
-    const submit = (status: 'draft' | 'submitted') => {
-        transform((current) => ({ ...current, status }));
+    const submit = () => {
+        transform((current) => ({ ...current, status: 'draft' }));
         post(travelOrdersRoutes.store().url, {
             preserveScroll: true,
         });
@@ -206,29 +206,16 @@ export default function CreateTravelOrder({
                             <CardHeader>
                                 <CardTitle className="text-base">Actions</CardTitle>
                                 <CardDescription>
-                                    Save your progress or submit when ready.
+                                    Save this travel order as a draft first. You can
+                                    review details, add itinerary, and submit for
+                                    approval from the details page.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
-                                <Can permission="travel-orders.send">
-                                    <Button
-                                        className="w-full"
-                                        onClick={() => submit('submitted')}
-                                        disabled={processing}
-                                    >
-                                        {processing ? (
-                                            <Loader2 className="size-4 animate-spin" />
-                                        ) : (
-                                            <Send className="size-4" />
-                                        )}
-                                        Submit for approval
-                                    </Button>
-                                </Can>
                                 <Can permission="travel-orders.create">
                                     <Button
-                                        variant="outline"
                                         className="w-full"
-                                        onClick={() => submit('draft')}
+                                        onClick={submit}
                                         disabled={processing}
                                     >
                                         {processing ? (

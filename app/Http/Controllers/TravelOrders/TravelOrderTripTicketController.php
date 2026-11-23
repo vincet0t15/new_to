@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\TravelOrders;
 
-use App\Enums\TravelOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\TripTickets\CancelTripTicketRequest;
 use App\Http\Requests\TripTickets\CompleteTripTicketRequest;
@@ -37,10 +36,12 @@ class TravelOrderTripTicketController extends Controller
     {
         $this->authorizeOwner($request->user(), $travelOrder);
 
-        if ($travelOrder->status !== TravelOrderStatus::Approved) {
+        $travelOrder->loadMissing('transportationModes');
+
+        if (! $travelOrder->usesGovernmentVehicle()) {
             Inertia::flash('toast', [
                 'type' => 'error',
-                'message' => __('A trip ticket can only be prepared for an approved travel order.'),
+                'message' => __('A trip ticket can only be prepared when a government vehicle will be used.'),
             ]);
 
             return to_route('travel-orders.show', $travelOrder);
