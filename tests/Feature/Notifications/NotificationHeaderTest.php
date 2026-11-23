@@ -31,7 +31,7 @@ test('opening a notification marks it read and redirects to its screen', functio
     $notice = headerNotice($user);
 
     $this->actingAs($user)
-        ->get(route('notifications.open', $notice->id))
+        ->get(route('inbox.open', $notice->id))
         ->assertRedirect('/employee/travel-orders/1');
 
     expect($notice->fresh()->read_at)->not->toBeNull();
@@ -43,7 +43,7 @@ test('an account cannot open another account notification', function () {
     $notice = headerNotice($owner);
 
     $this->actingAs($other)
-        ->get(route('notifications.open', $notice->id))
+        ->get(route('inbox.open', $notice->id))
         ->assertNotFound();
 
     expect($notice->fresh()->read_at)->toBeNull();
@@ -55,7 +55,7 @@ test('mark all read clears every unread notification of the account', function (
     headerNotice($user);
 
     $this->actingAs($user)
-        ->post(route('notifications.read-all'))
+        ->post(route('inbox.read-all'))
         ->assertRedirect();
 
     expect($user->unreadNotifications()->count())->toBe(0);

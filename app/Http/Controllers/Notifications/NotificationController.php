@@ -28,28 +28,13 @@ final class NotificationController extends Controller
         $user = $request->user();
         abort_unless($user instanceof User, 401);
 
-        $requested = $request->query('status');
-        $status = is_string($requested)
-            && in_array($requested, ['all', 'unread', 'read'], true)
-                ? $requested
-                : 'all';
-
         $notificationItems = $user->notifications()
-            ->when($status === 'unread', fn ($query) => $query->whereNull('read_at'))
-            ->when($status === 'read', fn ($query) => $query->whereNotNull('read_at'))
             ->latest()
             ->paginate(20)
-            ->withQueryString()
             ->through(fn (DatabaseNotification $notification): array => $this->present($notification));
 
         return Inertia::render('notifications/index', [
             'notificationItems' => $notificationItems,
-            'filters' => ['status' => $status],
-            'counts' => [
-                'all' => $user->notifications()->count(),
-                'unread' => $user->unreadNotifications()->count(),
-                'read' => $user->notifications()->whereNotNull('read_at')->count(),
-            ],
         ]);
     }
 

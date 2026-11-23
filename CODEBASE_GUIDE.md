@@ -54,7 +54,7 @@ Layers are **not** enforced by namespace rules; authorization is deliberately sp
 ## 3. Request lifecycle / boot sequence
 
 1. **Application bootstrap** — `bootstrap/app.php:15-41` configures routing (`routes/web.php`), console, health `/up`, encrypts cookies except `appearance` and `sidebar_state` (`:22`), appends `HandleAppearance`, `HandleInertiaRequests`, `AddLinkHeadersForPreloadedAssets` to the web group (`:24-28`), and registers aliases `role`, `permission`, `role_or_permission`, `portal` (`:30-35`).
-2. **Route registry** — `routes/web.php:7-18` defines welcome/dashboard/notifications, then `:20-39` requires 20 feature route files (portals, settings, offices, workflows, travel-orders, setup tables, roles, accounts).
+2. **Route registry** — `routes/web.php:7-18` defines welcome/dashboard/inbox, then `:20-39` requires 20 feature route files (portals, settings, offices, workflows, travel-orders, setup tables, roles, accounts).
 3. **Root view** — `HandleInertiaRequests.php:25` sets root view `app`. `resources/views/app.blade.php` applies the `dark` class before hydration (`:2`, `:8-20`), emits `@fonts` (`:37`), and `@vite([css, app.tsx, "pages/{$page['component']}.tsx"])` (`:39-40`) so the active page is in the initial document.
 4. **Client boot** — `resources/js/app.tsx:11-39`: title suffix (`:12`), layout by page name (`:13-26` — `welcome` and `trip-tickets/print` get none, `auth/*` → AuthLayout, `settings/*` → [AppLayout, SettingsLayout], everything else → AppLayout), global `TooltipProvider` + `Toaster` (`:28-35`), `initializeTheme()` (`:42`).
 5. **Shared Inertia props** — `HandleInertiaRequests.php:56-71`: `name`, `auth.user`/`roles`/`permissions`, `portals`, `currentPortal`, `sidebarOpen`, `notifications` (latest 8), `unreadNotificationsCount`. Typed on the client in `types/global.d.ts:11-23`.
@@ -313,7 +313,7 @@ A portal is a **route-prefix UX workspace**, not a separate app or guard (`Porta
 | Approvals       | `approvals`       | `approvals.inbox`           | `budget_officer`, `mayor`, `hrmo` |
 | Admin           | `admin`           | `admin.dashboard`           | `admin`, `super_admin`            |
 
-- The active portal is **derived from the URL**, never persisted (`PortalResolver.php:75-97`; `HandleInertiaRequests.php:46-54`).
+- The active portal is **derived from the URL**, never persisted (`PortalResolver.php:75-97`; `HandleInertiaRequests.php:46-54`). The personal `/inbox` route is explicitly resolved to the baseline Employee portal so privileged accounts get the employee shell instead of their default workspace (`PortalResolver.php:87-95`).
 - `EnsurePortalAccess` fails closed: 401 for guests, accepts if any `portal:` argument is enterable, else 403 (`:29-44`).
 - `PortalSwitcher` appears in the user dropdown only when ≥2 portals are available (`portal-switcher.tsx:25-58`); the sidebar builds a different nav group set per portal (`app-sidebar.tsx:350-388`).
 - Portal dashboards are role-focused operational views (see §12.2): the employee dashboard shows personal order counts plus recent orders; the department-head dashboard shows the approval queue plus pending items; the admin dashboard shows pipeline counts, fuel position, recent organization orders and fuel alerts. The shared `/approvals` inbox remains the Approvals portal landing page.

@@ -16,7 +16,7 @@ import { UserMenuContent } from '@/components/user-menu-content';
 import { WorkspaceTabs } from '@/components/workspace-tabs';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useInitials } from '@/hooks/use-initials';
-import notificationRoutes from '@/routes/notifications';
+import inboxRoutes from '@/routes/inbox';
 import type { BreadcrumbItem as BreadcrumbItemType } from '@/types';
 
 export function AppSidebarHeader({
@@ -67,7 +67,7 @@ export function AppSidebarHeader({
                                         <Link
                                             key={notification.id}
                                             href={
-                                                notificationRoutes.open(
+                                                inboxRoutes.open(
                                                     notification.id,
                                                 ).url
                                             }
@@ -91,7 +91,7 @@ export function AppSidebarHeader({
                             )}
                             <DropdownMenuSeparator />
                             <Link
-                                href={notificationRoutes.index().url}
+                                href={inboxRoutes.index().url}
                                 className="block px-4 py-2 text-center text-sm font-medium text-primary hover:bg-muted/50"
                             >
                                 Open inbox

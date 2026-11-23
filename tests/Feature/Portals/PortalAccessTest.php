@@ -94,6 +94,23 @@ test('administrators can enter the admin portal', function (SystemRole $role) {
     'super admin' => [SystemRole::SuperAdmin],
 ]);
 
+test('the personal inbox uses the employee portal shell for privileged accounts', function (SystemRole $role) {
+    $user = portalUser([$role]);
+
+    $this->actingAs($user)
+        ->get(route('inbox.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('notifications/index')
+            ->where('currentPortal', Portal::Employee->value)
+        );
+})->with([
+    'admin' => [SystemRole::Admin],
+    'super admin' => [SystemRole::SuperAdmin],
+    'approver' => [SystemRole::BudgetOfficer],
+    'department head' => [SystemRole::DepartmentHead],
+]);
+
 test('accounts cannot enter a portal their roles do not grant', function (string $url) {
     $user = User::factory()->create();
 

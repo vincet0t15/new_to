@@ -1,27 +1,16 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { Bell } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import notifications from '@/routes/notifications';
+import inbox from '@/routes/inbox';
 import type { NotificationInboxItem } from '@/types/notification';
 import type { PaginatedDataResponse } from '@/types/pagination';
 
-type Status = 'all' | 'unread' | 'read';
-
 type Props = {
     notificationItems: PaginatedDataResponse<NotificationInboxItem>;
-    filters: { status: Status };
-    counts: { all: number; unread: number; read: number };
 };
-
-const FILTERS: { key: Status; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'unread', label: 'Unread' },
-    { key: 'read', label: 'Read' },
-];
 
 function formatDateTime(value: string | null): string {
     if (!value) {
@@ -60,11 +49,7 @@ function kindVariant(
     return 'outline';
 }
 
-export default function NotificationsIndex({
-    notificationItems,
-    filters,
-    counts,
-}: Props) {
+export default function NotificationsIndex({ notificationItems }: Props) {
     return (
         <>
             <Head title="Inbox" />
@@ -74,52 +59,13 @@ export default function NotificationsIndex({
                     description="Travel order updates addressed to your account."
                 />
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {FILTERS.map((filter) => (
-                        <Button
-                            key={filter.key}
-                            size="sm"
-                            variant={
-                                filters.status === filter.key
-                                    ? 'default'
-                                    : 'outline'
-                            }
-                            aria-pressed={filters.status === filter.key}
-                            onClick={() =>
-                                router.get(
-                                    notifications.index().url,
-                                    filter.key === 'all'
-                                        ? {}
-                                        : { status: filter.key },
-                                    {
-                                        preserveState: true,
-                                        preserveScroll: true,
-                                    },
-                                )
-                            }
-                        >
-                            {filter.label}
-                            <span
-                                className={cn(
-                                    'rounded-full px-1.5 text-xs',
-                                    filters.status === filter.key
-                                        ? 'bg-primary-foreground/20'
-                                        : 'bg-muted',
-                                )}
-                            >
-                                {counts[filter.key]}
-                            </span>
-                        </Button>
-                    ))}
-                </div>
-
                 <div className="overflow-hidden rounded-sm border shadow-sm">
                     {notificationItems.data.length > 0 ? (
                         <ul className="divide-y">
                             {notificationItems.data.map((item) => (
                                 <li key={item.id}>
                                     <Link
-                                        href={notifications.open(item.id).url}
+                                        href={inbox.open(item.id).url}
                                         className="flex gap-3 px-4 py-4 transition-colors hover:bg-muted/50"
                                     >
                                         <div className="min-w-0 flex-1 space-y-1">
@@ -163,11 +109,7 @@ export default function NotificationsIndex({
                         <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
                             <Bell className="size-8 text-muted-foreground/50" />
                             <p className="text-sm text-muted-foreground">
-                                {filters.status === 'unread'
-                                    ? "You're all caught up — no unread notifications."
-                                    : filters.status === 'read'
-                                      ? 'No read notifications yet.'
-                                      : 'No notifications yet.'}
+                                No notifications yet.
                             </p>
                         </div>
                     )}
@@ -180,5 +122,5 @@ export default function NotificationsIndex({
 }
 
 NotificationsIndex.layout = {
-    breadcrumbs: [{ title: 'Inbox', href: notifications.index().url }],
+    breadcrumbs: [{ title: 'Inbox', href: inbox.index().url }],
 };

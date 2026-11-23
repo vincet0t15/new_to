@@ -52,7 +52,7 @@ import fuelTypes from '@/routes/fuel-types';
 import fundSources from '@/routes/fund-sources';
 import itinerarySignatoryGroups from '@/routes/itinerary-signatory-groups';
 import locations from '@/routes/locations';
-import notifications from '@/routes/notifications';
+import inbox from '@/routes/inbox';
 import offices from '@/routes/offices';
 import perDiemConfigurations from '@/routes/per-diem-configurations';
 import positions from '@/routes/positions';
@@ -97,7 +97,7 @@ function employeeGroups(dashboardUrl: string, unreadCount: number): NavGroup[] {
                 },
                 {
                     title: 'Inbox',
-                    href: notifications.index().url,
+                    href: inbox.index().url,
                     icon: Inbox,
                     badge: unreadCount,
                 },

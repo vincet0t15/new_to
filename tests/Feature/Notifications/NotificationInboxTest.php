@@ -52,21 +52,17 @@ test('the inbox lists the account notifications newest first', function () {
     inboxNotice($other);
 
     $this->actingAs($user)
-        ->get(route('notifications.index'))
+        ->get(route('inbox.index'))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('notifications/index')
             ->has('notificationItems.data', 2)
             ->where('notificationItems.data.0.title', 'Newer notice')
             ->where('notificationItems.data.1.title', 'Older notice')
-            ->where('filters.status', 'all')
-            ->where('counts.all', 2)
-            ->where('counts.unread', 2)
-            ->where('counts.read', 0)
         );
 });
 
-test('the inbox filters by unread and read', function () {
+test('the inbox ignores status filters and lists every notice', function () {
     $user = User::factory()->create();
 
     inboxNotice($user, [
@@ -88,40 +84,16 @@ test('the inbox filters by unread and read', function () {
     ]);
 
     $this->actingAs($user)
-        ->get(route('notifications.index', ['status' => 'unread']))
+        ->get(route('inbox.index', ['status' => 'unread']))
         ->assertInertia(fn (Assert $page) => $page
-            ->has('notificationItems.data', 1)
+            ->has('notificationItems.data', 2)
             ->where('notificationItems.data.0.title', 'Unread notice')
-            ->where('filters.status', 'unread')
-            ->where('counts.all', 2)
-            ->where('counts.unread', 1)
-            ->where('counts.read', 1)
-        );
-
-    $this->actingAs($user)
-        ->get(route('notifications.index', ['status' => 'read']))
-        ->assertInertia(fn (Assert $page) => $page
-            ->has('notificationItems.data', 1)
-            ->where('notificationItems.data.0.title', 'Read notice')
-            ->where('filters.status', 'read')
-            ->where('counts.all', 2)
-            ->where('counts.unread', 1)
-            ->where('counts.read', 1)
-        );
-});
-
-test('an unknown filter falls back to all', function () {
-    $user = User::factory()->create();
-    inboxNotice($user);
-
-    $this->actingAs($user)
-        ->get(route('notifications.index', ['status' => 'bogus']))
-        ->assertInertia(fn (Assert $page) => $page
-            ->where('filters.status', 'all')
-            ->has('notificationItems.data', 1)
+            ->where('notificationItems.data.1.title', 'Read notice')
+            ->missing('filters')
+            ->missing('counts')
         );
 });
 
 test('guests are redirected from the inbox', function () {
-    $this->get(route('notifications.index'))->assertRedirect(route('login'));
+    $this->get(route('inbox.index'))->assertRedirect(route('login'));
 });

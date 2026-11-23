@@ -88,6 +88,13 @@ class PortalResolver
     {
         $path = trim($path, '/');
 
+        // The personal notification inbox is a baseline employee utility, not
+        // an admin screen. It lives outside every portal prefix, so resolve it
+        // explicitly instead of falling back to the account's default portal.
+        if ($path === 'inbox' || str_starts_with($path, 'inbox/')) {
+            return Portal::Employee;
+        }
+
         foreach (Portal::cases() as $portal) {
             if ($path === $portal->prefix() || str_starts_with($path, $portal->prefix().'/')) {
                 return $portal;
