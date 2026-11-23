@@ -180,6 +180,30 @@ export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
                             value={liters(tripTicket.liters)}
                         />
                         <Field
+                            label="Fuel price / liter"
+                            value={
+                                tripTicket.fuel_price_per_liter
+                                    ? `PHP ${Number(tripTicket.fuel_price_per_liter).toFixed(2)}`
+                                    : '—'
+                            }
+                        />
+                        <Field
+                            label="Fuel cost"
+                            value={
+                                tripTicket.fuel_cost
+                                    ? `PHP ${Number(tripTicket.fuel_cost).toFixed(2)}`
+                                    : '—'
+                            }
+                        />
+                        <Field
+                            label="Fuel station"
+                            value={tripTicket.fuel_station ?? '—'}
+                        />
+                        <Field
+                            label="Receipt / invoice no."
+                            value={tripTicket.fuel_receipt_no ?? '—'}
+                        />
+                        <Field
                             label="Odometer at departure"
                             value={tripTicket.odometer_start ?? '—'}
                         />

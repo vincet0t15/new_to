@@ -122,12 +122,24 @@ class TripTicketService
             $distance = round($end - $start, 2);
         }
 
+        $fuelConsumed = $this->decimal($data['fuel_consumed'] ?? null) ?? $this->decimal($ticket->fuel_consumed);
+        $fuelPrice = $this->decimal($data['fuel_price_per_liter'] ?? null) ?? $this->decimal($ticket->fuel_price_per_liter);
+        $fuelCost = $this->decimal($data['fuel_cost'] ?? null) ?? $this->decimal($ticket->fuel_cost);
+
+        if ($fuelCost === null && $fuelConsumed !== null && $fuelPrice !== null) {
+            $fuelCost = round($fuelConsumed * $fuelPrice, 2);
+        }
+
         $ticket->forceFill([
             'status' => TripTicketStatus::Completed,
             'odometer_start' => $start,
             'odometer_end' => $end,
             'distance_km' => $distance ?? $ticket->distance_km,
-            'fuel_consumed' => $this->decimal($data['fuel_consumed'] ?? null) ?? $ticket->liters,
+            'fuel_consumed' => $fuelConsumed,
+            'fuel_price_per_liter' => $fuelPrice,
+            'fuel_cost' => $fuelCost,
+            'fuel_station' => $this->text($data['fuel_station'] ?? $ticket->fuel_station),
+            'fuel_receipt_no' => $this->text($data['fuel_receipt_no'] ?? $ticket->fuel_receipt_no),
             'remarks' => $this->text($data['remarks'] ?? $ticket->remarks),
             'completed_by' => $user->id,
             'completed_at' => Carbon::now(),
@@ -169,6 +181,13 @@ class TripTicketService
             ? round(($distance * ($roundTrip ? 2 : 1)) / $efficiency, 2)
             : 0.0;
 
+        $fuelPrice = $this->decimal($data['fuel_price_per_liter'] ?? null);
+        $fuelCost = $this->decimal($data['fuel_cost'] ?? null);
+
+        if ($fuelCost === null && $fuelPrice !== null && $liters > 0) {
+            $fuelCost = round($fuelPrice * $liters, 2);
+        }
+
         return [
             'vehicle_type' => $this->text($data['vehicle_type'] ?? null),
             'driver_id' => $data['driver_id'] ?? null,
@@ -178,6 +197,10 @@ class TripTicketService
             'round_trip' => $roundTrip,
             'odometer_start' => $this->decimal($data['odometer_start'] ?? null),
             'liters' => $liters,
+            'fuel_price_per_liter' => $fuelPrice,
+            'fuel_cost' => $fuelCost,
+            'fuel_station' => $this->text($data['fuel_station'] ?? null),
+            'fuel_receipt_no' => $this->text($data['fuel_receipt_no'] ?? null),
         ];
     }
 

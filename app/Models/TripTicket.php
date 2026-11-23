@@ -32,6 +32,10 @@ use Illuminate\Support\Carbon;
  * @property string|null $odometer_start
  * @property string|null $odometer_end
  * @property string $liters
+ * @property string|null $fuel_price_per_liter
+ * @property string|null $fuel_cost
+ * @property string|null $fuel_station
+ * @property string|null $fuel_receipt_no
  * @property string|null $fuel_consumed
  * @property string|null $remarks
  * @property string|null $ticket_no
@@ -60,6 +64,10 @@ use Illuminate\Support\Carbon;
     'odometer_start',
     'odometer_end',
     'liters',
+    'fuel_price_per_liter',
+    'fuel_cost',
+    'fuel_station',
+    'fuel_receipt_no',
     'fuel_consumed',
     'remarks',
     'ticket_no',
@@ -84,6 +92,8 @@ class TripTicket extends Model
             'odometer_start' => 'decimal:2',
             'odometer_end' => 'decimal:2',
             'liters' => 'decimal:2',
+            'fuel_price_per_liter' => 'decimal:2',
+            'fuel_cost' => 'decimal:2',
             'fuel_consumed' => 'decimal:2',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',

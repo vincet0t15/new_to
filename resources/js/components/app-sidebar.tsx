@@ -8,6 +8,7 @@ import {
     ClipboardList,
     FileText,
     FileSignature,
+    Fuel,
     GitBranch,
     History,
     Inbox,
@@ -174,6 +175,12 @@ function approvalsGroups(inboxUrl: string): NavGroup[] {
                     icon: History,
                     permission: 'travel-orders.view',
                 },
+                {
+                    title: 'Fuel Monitoring',
+                    href: approvals.fuelMonitoring.index().url,
+                    icon: Fuel,
+                    permission: 'travel-orders.view',
+                },
             ],
         },
     ];
@@ -200,6 +207,12 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     title: 'Reports',
                     href: admin.reports.index().url,
                     icon: ChartColumn,
+                    permission: 'travel-orders.view-all',
+                },
+                {
+                    title: 'Fuel Monitoring',
+                    href: admin.fuelMonitoring.index().url,
+                    icon: Fuel,
                     permission: 'travel-orders.view-all',
                 },
             ],

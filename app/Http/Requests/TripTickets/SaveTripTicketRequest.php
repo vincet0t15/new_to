@@ -22,6 +22,10 @@ class SaveTripTicketRequest extends FormRequest
             'distance_km' => ['required', 'numeric', 'min:0', 'max:999999'],
             'round_trip' => ['boolean'],
             'odometer_start' => ['nullable', 'numeric', 'min:0', 'max:99999999'],
+            'fuel_price_per_liter' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'fuel_cost' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
+            'fuel_station' => ['nullable', 'string', 'max:150'],
+            'fuel_receipt_no' => ['nullable', 'string', 'max:100'],
         ];
     }
 }

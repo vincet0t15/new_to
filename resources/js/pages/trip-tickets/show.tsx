@@ -62,6 +62,10 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
     const completeForm = useForm({
         odometer_end: tripTicket.odometer_end ?? '',
         fuel_consumed: tripTicket.fuel_consumed ?? '',
+        fuel_price_per_liter: tripTicket.fuel_price_per_liter ?? '',
+        fuel_cost: tripTicket.fuel_cost ?? '',
+        fuel_station: tripTicket.fuel_station ?? '',
+        fuel_receipt_no: tripTicket.fuel_receipt_no ?? '',
         remarks: tripTicket.remarks ?? '',
     });
 
@@ -234,8 +238,32 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                     value={money(tripTicket.liters)}
                                 />
                                 <Detail
+                                    label="Fuel price / liter"
+                                    value={
+                                        tripTicket.fuel_price_per_liter
+                                            ? `PHP ${Number(tripTicket.fuel_price_per_liter).toFixed(2)}`
+                                            : '—'
+                                    }
+                                />
+                                <Detail
+                                    label="Fuel cost"
+                                    value={
+                                        tripTicket.fuel_cost
+                                            ? `PHP ${Number(tripTicket.fuel_cost).toFixed(2)}`
+                                            : '—'
+                                    }
+                                />
+                                <Detail
                                     label="Fuel consumed"
                                     value={money(tripTicket.fuel_consumed)}
+                                />
+                                <Detail
+                                    label="Fuel station"
+                                    value={tripTicket.fuel_station ?? '—'}
+                                />
+                                <Detail
+                                    label="Receipt / invoice no."
+                                    value={tripTicket.fuel_receipt_no ?? '—'}
                                 />
                                 <Detail
                                     label="Odometer at departure"
@@ -371,26 +399,102 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 message={completeForm.errors.odometer_end}
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="fuel_consumed">
-                                Fuel consumed (L)
-                            </Label>
-                            <Input
-                                id="fuel_consumed"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={completeForm.data.fuel_consumed}
-                                onChange={(event) =>
-                                    completeForm.setData(
-                                        'fuel_consumed',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <InputError
-                                message={completeForm.errors.fuel_consumed}
-                            />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="fuel_consumed">
+                                    Fuel consumed (L)
+                                </Label>
+                                <Input
+                                    id="fuel_consumed"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={completeForm.data.fuel_consumed}
+                                    onChange={(event) =>
+                                        completeForm.setData(
+                                            'fuel_consumed',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_consumed}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fuel_price_per_liter">
+                                    Fuel price / liter
+                                </Label>
+                                <Input
+                                    id="fuel_price_per_liter"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={completeForm.data.fuel_price_per_liter}
+                                    onChange={(event) =>
+                                        completeForm.setData(
+                                            'fuel_price_per_liter',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_price_per_liter}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fuel_cost">Fuel cost</Label>
+                                <Input
+                                    id="fuel_cost"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={completeForm.data.fuel_cost}
+                                    onChange={(event) =>
+                                        completeForm.setData(
+                                            'fuel_cost',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_cost}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fuel_station">Fuel station</Label>
+                                <Input
+                                    id="fuel_station"
+                                    value={completeForm.data.fuel_station}
+                                    onChange={(event) =>
+                                        completeForm.setData(
+                                            'fuel_station',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_station}
+                                />
+                            </div>
+                            <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor="fuel_receipt_no">
+                                    Receipt / invoice no.
+                                </Label>
+                                <Input
+                                    id="fuel_receipt_no"
+                                    value={completeForm.data.fuel_receipt_no}
+                                    onChange={(event) =>
+                                        completeForm.setData(
+                                            'fuel_receipt_no',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_receipt_no}
+                                />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="remarks">Remarks</Label>

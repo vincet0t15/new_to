@@ -30,6 +30,10 @@ type TripTicketFormData = {
     distance_km: string;
     round_trip: boolean;
     odometer_start: string;
+    fuel_price_per_liter: string;
+    fuel_cost: string;
+    fuel_station: string;
+    fuel_receipt_no: string;
 };
 
 function formatDateRange(from: string | null, to: string | null): string {
@@ -60,6 +64,10 @@ export function TripTicketForm({
         distance_km: tripTicket?.distance_km ?? '',
         round_trip: tripTicket?.round_trip ?? true,
         odometer_start: tripTicket?.odometer_start ?? '',
+        fuel_price_per_liter: tripTicket?.fuel_price_per_liter ?? '',
+        fuel_cost: tripTicket?.fuel_cost ?? '',
+        fuel_station: tripTicket?.fuel_station ?? '',
+        fuel_receipt_no: tripTicket?.fuel_receipt_no ?? '',
     });
 
     const driverChoices = drivers.map((driver) => ({
@@ -73,6 +81,13 @@ export function TripTicketForm({
         efficiency > 0 && distance > 0
             ? (distance * (form.data.round_trip ? 2 : 1)) / efficiency
             : 0;
+    const fuelPrice = Number(form.data.fuel_price_per_liter || 0);
+    const estimatedCost =
+        form.data.fuel_cost !== ''
+            ? Number(form.data.fuel_cost || 0)
+            : fuelPrice > 0 && estimated > 0
+              ? fuelPrice * estimated
+              : 0;
 
     const submit = () => {
         if (action.method === 'put') {
@@ -250,6 +265,81 @@ export function TripTicketForm({
                                 Round trip (distance is travelled twice)
                             </Label>
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fuel_price_per_liter">
+                                Fuel price per liter
+                            </Label>
+                            <Input
+                                id="fuel_price_per_liter"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.data.fuel_price_per_liter}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'fuel_price_per_liter',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="e.g., 65.00"
+                            />
+                            <InputError
+                                message={form.errors.fuel_price_per_liter}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fuel_cost">Fuel cost</Label>
+                            <Input
+                                id="fuel_cost"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={form.data.fuel_cost}
+                                onChange={(event) =>
+                                    form.setData('fuel_cost', event.target.value)
+                                }
+                                placeholder={
+                                    estimatedCost > 0
+                                        ? estimatedCost.toFixed(2)
+                                        : 'e.g., 1560.00'
+                                }
+                            />
+                            <InputError message={form.errors.fuel_cost} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fuel_station">Fuel station</Label>
+                            <Input
+                                id="fuel_station"
+                                value={form.data.fuel_station}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'fuel_station',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="e.g., Petron San Vicente"
+                            />
+                            <InputError message={form.errors.fuel_station} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="fuel_receipt_no">
+                                Receipt / invoice no.
+                            </Label>
+                            <Input
+                                id="fuel_receipt_no"
+                                value={form.data.fuel_receipt_no}
+                                onChange={(event) =>
+                                    form.setData(
+                                        'fuel_receipt_no',
+                                        event.target.value,
+                                    )
+                                }
+                                placeholder="Optional receipt or invoice number"
+                            />
+                            <InputError
+                                message={form.errors.fuel_receipt_no}
+                            />
+                        </div>
                     </div>
 
                     <div className="rounded-md border bg-muted/40 p-3">
@@ -272,6 +362,11 @@ export function TripTicketForm({
                                   }`
                                 : 'Enter the distance and the fuel efficiency to compute the requirement.'}
                         </p>
+                        {estimatedCost > 0 && (
+                            <p className="mt-2 text-sm font-medium text-foreground">
+                                Estimated fuel cost: PHP {estimatedCost.toFixed(2)}
+                            </p>
+                        )}
                     </div>
                 </section>
             </div>

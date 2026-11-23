@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\TravelOrderRegisterController;
 use App\Http\Controllers\Approvals\ApprovalInboxController;
+use App\Http\Controllers\Approvals\FuelMonitoringController;
 use App\Http\Controllers\Approvals\TravelOrderActionController;
 use App\Http\Controllers\Portals\PortalDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -79,6 +80,10 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
                 ->name('inbox');
             Route::get('history', [ApprovalInboxController::class, 'history'])
                 ->name('history');
+            Route::get('fuel-monitoring', [FuelMonitoringController::class, 'index'])
+                ->name('fuel-monitoring.index');
+            Route::get('fuel-monitoring/export', [FuelMonitoringController::class, 'export'])
+                ->name('fuel-monitoring.export');
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
                 ->name('travel-orders.show');
 
@@ -123,6 +128,10 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
                 ->name('reports.index');
             Route::get('reports/export', [ReportsController::class, 'export'])
                 ->name('reports.export');
+            Route::get('fuel-monitoring', [FuelMonitoringController::class, 'index'])
+                ->name('fuel-monitoring.index');
+            Route::get('fuel-monitoring/export', [FuelMonitoringController::class, 'export'])
+                ->name('fuel-monitoring.export');
         });
 
         Route::middleware('permission:audit.view')->group(function () {

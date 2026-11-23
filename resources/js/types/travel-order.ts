@@ -101,6 +101,10 @@ export type TripTicket = {
     odometer_start: string | null;
     odometer_end: string | null;
     liters: string;
+    fuel_price_per_liter: string | null;
+    fuel_cost: string | null;
+    fuel_station: string | null;
+    fuel_receipt_no: string | null;
     fuel_consumed: string | null;
     remarks: string | null;
     ticket_no: string | null;
