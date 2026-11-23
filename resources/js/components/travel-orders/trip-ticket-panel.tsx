@@ -1,6 +1,8 @@
 import { router } from '@inertiajs/react';
 import { Eye, Plus, Printer, Ticket } from 'lucide-react';
+import { useState } from 'react';
 import { TripTicketStatusBadge } from '@/components/travel-orders/status-badge';
+import { TripTicketDialog } from '@/components/travel-orders/trip-ticket-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Table,
@@ -11,11 +13,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import travelOrders from '@/routes/travel-orders';
-import type { TravelOrder } from '@/types';
+import type { TravelOrder, TripTicketDriver } from '@/types';
 
 type Props = {
     travelOrder: TravelOrder;
     canCreate: boolean;
+    drivers: TripTicketDriver[];
 };
 
 function formatDistance(value: string, roundTrip: boolean): string {
@@ -28,12 +31,13 @@ function formatDistance(value: string, roundTrip: boolean): string {
     return `${distance.toFixed(2)} km${roundTrip ? ' (round trip)' : ''}`;
 }
 
-export function TravelOrderTripTicketPanel({ travelOrder, canCreate }: Props) {
+export function TravelOrderTripTicketPanel({
+    travelOrder,
+    canCreate,
+    drivers,
+}: Props) {
+    const [createOpen, setCreateOpen] = useState(false);
     const tickets = travelOrder.trip_tickets ?? [];
-
-    const createTicket = () => {
-        router.visit(travelOrders.tripTickets.create(travelOrder.id).url);
-    };
 
     return (
         <section className="space-y-4 rounded-xl border p-4">
@@ -41,11 +45,11 @@ export function TravelOrderTripTicketPanel({ travelOrder, canCreate }: Props) {
                 <div>
                     <h3 className="text-base font-semibold">Trip tickets</h3>
                     <p className="text-sm text-muted-foreground">
-                        The vehicle paper issued for this approved trip.
+                        The vehicle paper issued for this trip.
                     </p>
                 </div>
                 {canCreate && (
-                    <Button size="sm" onClick={createTicket}>
+                    <Button size="sm" onClick={() => setCreateOpen(true)}>
                         <Plus className="size-4" />
                         Create trip ticket
                     </Button>
@@ -163,6 +167,13 @@ export function TravelOrderTripTicketPanel({ travelOrder, canCreate }: Props) {
                     </TableBody>
                 </Table>
             </div>
+
+            <TripTicketDialog
+                travelOrder={travelOrder}
+                drivers={drivers}
+                open={createOpen}
+                onOpenChange={setCreateOpen}
+            />
         </section>
     );
 }

@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { CustomComboBox } from '@/components/CustomComboBox';
 import {
     Table,
     TableBody,
@@ -57,6 +51,10 @@ type Props = {
         estimated_liters: number;
         actual_liters: number;
         fuel_cost: number;
+        allocated_liters: number;
+        allocated_amount: number;
+        remaining_liters: number;
+        remaining_amount: number;
     };
     byOffice: Array<{
         office_name: string;
@@ -64,6 +62,10 @@ type Props = {
         estimated_liters: string | number;
         actual_liters: string | number;
         fuel_cost: string | number;
+        allocated_liters: string | number;
+        allocated_amount: string | number;
+        remaining_liters: string | number;
+        remaining_amount: string | number;
     }>;
     tickets: PaginatedDataResponse<FuelTicket>;
     offices: OfficeOption[];
@@ -151,30 +153,10 @@ export default function FuelMonitoringIndex({
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Total trip tickets</CardDescription>
-                            <CardTitle className="text-2xl">{summary.total_tickets}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Estimated fuel</CardDescription>
-                            <CardTitle className="text-2xl">{liters(summary.estimated_liters)}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Actual fuel consumed</CardDescription>
-                            <CardTitle className="text-2xl">{liters(summary.actual_liters)}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader className="pb-2">
-                            <CardDescription>Total fuel cost</CardDescription>
-                            <CardTitle className="text-2xl">{money(summary.fuel_cost)}</CardTitle>
-                        </CardHeader>
-                    </Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Allocated fuel</CardDescription><CardTitle className="text-2xl">{liters(summary.allocated_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.allocated_amount)}</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Actual consumed</CardDescription><CardTitle className="text-2xl">{liters(summary.actual_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.fuel_cost)}</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Remaining balance</CardDescription><CardTitle className={`text-2xl ${summary.remaining_liters < 0 || summary.remaining_amount < 0 ? 'text-destructive' : ''}`}>{liters(summary.remaining_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.remaining_amount)}</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Trip tickets / Estimated</CardDescription><CardTitle className="text-2xl">{summary.total_tickets}</CardTitle><p className="text-muted-foreground text-xs">Est. {liters(summary.estimated_liters)}</p></CardHeader></Card>
                 </div>
 
                 <Card>
@@ -198,29 +180,26 @@ export default function FuelMonitoringIndex({
                             </div>
                             <div className="space-y-2">
                                 <Label>Office</Label>
-                                <Select value={officeId || 'all'} onValueChange={(value) => setOfficeId(value === 'all' ? '' : value)}>
-                                    <SelectTrigger><SelectValue placeholder="All offices" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All offices</SelectItem>
-                                        {offices.map((office) => (
-                                            <SelectItem key={office.id} value={String(office.id)}>
-                                                {office.office_name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <CustomComboBox
+                                    items={[{ value: '', label: 'All offices' }, ...offices.map((office) => ({ value: String(office.id), label: office.office_name }))]}
+                                    value={officeId}
+                                    placeholder="All offices"
+                                    onSelect={(v) => setOfficeId(v ?? '')}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Status</Label>
-                                <Select value={status || 'all'} onValueChange={(value) => setStatus(value === 'all' ? '' : value)}>
-                                    <SelectTrigger><SelectValue placeholder="All statuses" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All statuses</SelectItem>
-                                        <SelectItem value="issued">Issued</SelectItem>
-                                        <SelectItem value="completed">Completed</SelectItem>
-                                        <SelectItem value="cancelled">Cancelled</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <CustomComboBox
+                                    items={[
+                                        { value: '', label: 'All statuses' },
+                                        { value: 'issued', label: 'Issued' },
+                                        { value: 'completed', label: 'Completed' },
+                                        { value: 'cancelled', label: 'Cancelled' },
+                                    ]}
+                                    value={status}
+                                    placeholder="All statuses"
+                                    onSelect={(v) => setStatus(v ?? '')}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="date_from">Date from</Label>
@@ -255,9 +234,11 @@ export default function FuelMonitoringIndex({
                                         <span className="text-muted-foreground text-xs">{row.total_tickets} ticket(s)</span>
                                     </div>
                                     <div className="text-muted-foreground mt-2 grid grid-cols-2 gap-2 text-xs">
-                                        <span>Est: {liters(row.estimated_liters)}</span>
+                                        <span>Allocated: {liters(row.allocated_liters)}</span>
                                         <span>Actual: {liters(row.actual_liters)}</span>
-                                        <span className="col-span-2 font-medium text-foreground">Cost: {money(row.fuel_cost)}</span>
+                                        <span>Allocated: {money(row.allocated_amount)}</span>
+                                        <span>Cost: {money(row.fuel_cost)}</span>
+                                        <span className={`col-span-2 font-medium ${Number(row.remaining_liters) < 0 || Number(row.remaining_amount) < 0 ? 'text-destructive' : 'text-foreground'}`}>Remaining: {liters(row.remaining_liters)} / {money(row.remaining_amount)}</span>
                                     </div>
                                 </div>
                             )) : (

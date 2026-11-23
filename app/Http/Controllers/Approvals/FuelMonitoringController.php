@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Approvals;
 
 use App\Http\Controllers\Controller;
+use App\Models\FuelAllocation;
 use App\Models\Office;
 use App\Models\TripTicket;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,17 +26,51 @@ class FuelMonitoringController extends Controller
             ->selectRaw('COALESCE(SUM(fuel_cost), 0) as fuel_cost')
             ->first();
 
-        $byOffice = (clone $base)
+        $usageByOffice = (clone $base)
             ->join('offices', 'offices.id', '=', 'travel_orders.office_id')
+            ->selectRaw('offices.id as office_id')
             ->selectRaw('offices.office_name')
             ->selectRaw('COUNT(trip_tickets.id) as total_tickets')
             ->selectRaw('COALESCE(SUM(trip_tickets.liters), 0) as estimated_liters')
             ->selectRaw('COALESCE(SUM(trip_tickets.fuel_consumed), 0) as actual_liters')
             ->selectRaw('COALESCE(SUM(trip_tickets.fuel_cost), 0) as fuel_cost')
-            ->groupBy('offices.office_name')
-            ->orderByDesc('fuel_cost')
-            ->orderByDesc('actual_liters')
-            ->get();
+            ->groupBy('offices.id', 'offices.office_name')
+            ->get()
+            ->keyBy('office_id');
+
+        $allocationsByOffice = FuelAllocation::query()
+            ->join('offices', 'offices.id', '=', 'fuel_allocations.office_id')
+            ->where('fuel_allocations.status', FuelAllocation::STATUS_ACTIVE)
+            ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->where('fuel_allocations.office_id', (int) $filters['office_id']))
+            ->selectRaw('offices.id as office_id')
+            ->selectRaw('offices.office_name')
+            ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_liters), 0) as allocated_liters')
+            ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_amount), 0) as allocated_amount')
+            ->groupBy('offices.id', 'offices.office_name')
+            ->get()
+            ->keyBy('office_id');
+
+        $officeIds = $usageByOffice->keys()->merge($allocationsByOffice->keys())->unique();
+        $byOffice = $officeIds->map(function ($officeId) use ($usageByOffice, $allocationsByOffice) {
+            $usage = $usageByOffice->get($officeId);
+            $allocation = $allocationsByOffice->get($officeId);
+            $allocatedLiters = (float) ($allocation?->allocated_liters ?? 0);
+            $allocatedAmount = (float) ($allocation?->allocated_amount ?? 0);
+            $actualLiters = (float) ($usage?->actual_liters ?? 0);
+            $actualCost = (float) ($usage?->fuel_cost ?? 0);
+
+            return [
+                'office_name' => $allocation?->office_name ?? $usage?->office_name,
+                'total_tickets' => (int) ($usage?->total_tickets ?? 0),
+                'estimated_liters' => (float) ($usage?->estimated_liters ?? 0),
+                'actual_liters' => $actualLiters,
+                'fuel_cost' => $actualCost,
+                'allocated_liters' => $allocatedLiters,
+                'allocated_amount' => $allocatedAmount,
+                'remaining_liters' => $allocatedLiters - $actualLiters,
+                'remaining_amount' => $allocatedAmount - $actualCost,
+            ];
+        })->sortByDesc('fuel_cost')->values();
 
         $tickets = (clone $base)
             ->select('trip_tickets.*')
@@ -50,12 +85,23 @@ class FuelMonitoringController extends Controller
 
         $prefix = $request->routeIs('admin.*') ? 'admin' : 'approvals';
 
+        $allocationSummary = FuelAllocation::query()
+            ->where('status', FuelAllocation::STATUS_ACTIVE)
+            ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->where('office_id', (int) $filters['office_id']))
+            ->selectRaw('COALESCE(SUM(allocated_liters), 0) as allocated_liters')
+            ->selectRaw('COALESCE(SUM(allocated_amount), 0) as allocated_amount')
+            ->first();
+
         return Inertia::render('approvals/fuel-monitoring/index', [
             'summary' => [
                 'total_tickets' => (int) ($summary?->total_tickets ?? 0),
                 'estimated_liters' => (float) ($summary?->estimated_liters ?? 0),
                 'actual_liters' => (float) ($summary?->actual_liters ?? 0),
                 'fuel_cost' => (float) ($summary?->fuel_cost ?? 0),
+                'allocated_liters' => (float) ($allocationSummary?->allocated_liters ?? 0),
+                'allocated_amount' => (float) ($allocationSummary?->allocated_amount ?? 0),
+                'remaining_liters' => (float) ($allocationSummary?->allocated_liters ?? 0) - (float) ($summary?->actual_liters ?? 0),
+                'remaining_amount' => (float) ($allocationSummary?->allocated_amount ?? 0) - (float) ($summary?->fuel_cost ?? 0),
             ],
             'byOffice' => $byOffice,
             'tickets' => $tickets,

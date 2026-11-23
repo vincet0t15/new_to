@@ -364,6 +364,7 @@ export type TripTicketDriver = {
 export type TravelOrderShowOptions = {
     locations: TravelOrderLookupOption[];
     transportationModes: TravelOrderLookupOption[];
+    drivers: TripTicketDriver[];
 };
 
 export type TravelOrderCreateRequest = {

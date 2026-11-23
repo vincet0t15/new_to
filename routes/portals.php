@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\FuelAllocationController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\TravelOrderRegisterController;
 use App\Http\Controllers\Approvals\ApprovalInboxController;
@@ -84,6 +85,19 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
                 ->name('fuel-monitoring.index');
             Route::get('fuel-monitoring/export', [FuelMonitoringController::class, 'export'])
                 ->name('fuel-monitoring.export');
+            Route::middleware('permission:fuel-allocations.view')->group(function () {
+                Route::get('fuel-allocations', [FuelAllocationController::class, 'index'])
+                    ->name('fuel-allocations.index');
+                Route::post('fuel-allocations', [FuelAllocationController::class, 'store'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.store');
+                Route::put('fuel-allocations/{fuelAllocation}', [FuelAllocationController::class, 'update'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.update');
+                Route::post('fuel-allocations/{fuelAllocation}/void', [FuelAllocationController::class, 'void'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.void');
+            });
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
                 ->name('travel-orders.show');
 
@@ -132,6 +146,19 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
                 ->name('fuel-monitoring.index');
             Route::get('fuel-monitoring/export', [FuelMonitoringController::class, 'export'])
                 ->name('fuel-monitoring.export');
+            Route::middleware('permission:fuel-allocations.view')->group(function () {
+                Route::get('fuel-allocations', [FuelAllocationController::class, 'index'])
+                    ->name('fuel-allocations.index');
+                Route::post('fuel-allocations', [FuelAllocationController::class, 'store'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.store');
+                Route::put('fuel-allocations/{fuelAllocation}', [FuelAllocationController::class, 'update'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.update');
+                Route::post('fuel-allocations/{fuelAllocation}/void', [FuelAllocationController::class, 'void'])
+                    ->middleware('permission:fuel-allocations.manage')
+                    ->name('fuel-allocations.void');
+            });
         });
 
         Route::middleware('permission:audit.view')->group(function () {

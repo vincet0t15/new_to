@@ -370,6 +370,17 @@ class TravelOrderController extends Controller
                     ->orderBy('name')
                     ->get(['id', 'name', 'is_active', 'is_government'])
                     ->toArray(),
+                'drivers' => Employee::query()
+                    ->where('is_active', true)
+                    ->orderBy('last_name')
+                    ->orderBy('first_name')
+                    ->get(['id', 'first_name', 'middle_name', 'last_name', 'suffix'])
+                    ->map(fn (Employee $employee): array => [
+                        'id' => $employee->id,
+                        'full_name' => $employee->full_name,
+                    ])
+                    ->values()
+                    ->all(),
             ],
             'can' => [
                 'submit' => $travelOrder->status === TravelOrderStatus::Draft,

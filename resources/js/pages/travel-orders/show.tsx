@@ -173,6 +173,7 @@ export default function ShowTravelOrder({
                     <TravelOrderTripTicketPanel
                         travelOrder={travelOrder}
                         canCreate={can.createTripTicket}
+                        drivers={options.drivers}
                     />
 
                     <section className="space-y-3 rounded-xl border p-4">

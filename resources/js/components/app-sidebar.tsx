@@ -181,6 +181,12 @@ function approvalsGroups(inboxUrl: string): NavGroup[] {
                     icon: Fuel,
                     permission: 'travel-orders.view',
                 },
+                {
+                    title: 'Fuel Allocations',
+                    href: approvals.fuelAllocations.index().url,
+                    icon: Landmark,
+                    permission: 'fuel-allocations.view',
+                },
             ],
         },
     ];
@@ -214,6 +220,12 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: admin.fuelMonitoring.index().url,
                     icon: Fuel,
                     permission: 'travel-orders.view-all',
+                },
+                {
+                    title: 'Fuel Allocations',
+                    href: admin.fuelAllocations.index().url,
+                    icon: Landmark,
+                    permission: 'fuel-allocations.view',
                 },
             ],
         },

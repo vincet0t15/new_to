@@ -106,6 +106,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'inbox.receive',
             'sent.view',
             'audit.view',
+            'fuel-allocations.view',
+            'fuel-allocations.manage',
         ];
 
         foreach ($permissions as $permission) {
@@ -208,6 +210,8 @@ class RolesAndPermissionsSeeder extends Seeder
                     'inbox.view',
                     'inbox.receive',
                     'sent.view',
+                    'fuel-allocations.view',
+                    'fuel-allocations.manage',
                 ],
             ],
             SystemRole::Mayor->value => [
