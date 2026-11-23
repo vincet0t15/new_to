@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * The trip ticket prepared for a travel order that uses a government vehicle.
@@ -37,6 +38,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $fuel_cost
  * @property string|null $fuel_station
  * @property string|null $fuel_receipt_no
+ * @property string|null $fuel_receipt_path
  * @property string|null $fuel_consumed
  * @property string|null $remarks
  * @property string|null $ticket_no
@@ -71,6 +73,7 @@ use Illuminate\Support\Carbon;
     'fuel_cost',
     'fuel_station',
     'fuel_receipt_no',
+    'fuel_receipt_path',
     'fuel_consumed',
     'remarks',
     'ticket_no',
@@ -84,6 +87,9 @@ class TripTicket extends Model
 {
     /** @use HasFactory<TripTicketFactory> */
     use HasFactory;
+
+    /** @var array<int, string> */
+    protected $appends = ['fuel_receipt_url'];
 
     protected function casts(): array
     {
@@ -164,5 +170,14 @@ class TripTicket extends Model
     public function isCancelled(): bool
     {
         return $this->status === TripTicketStatus::Cancelled;
+    }
+
+    public function getFuelReceiptUrlAttribute(): ?string
+    {
+        if (! $this->fuel_receipt_path) {
+            return null;
+        }
+
+        return Storage::disk('public')->url($this->fuel_receipt_path);
     }
 }

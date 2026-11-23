@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -123,6 +124,14 @@ class FuelAllocation extends Model
     public function updater(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * @return HasMany<FuelAllocationEvent, $this>
+     */
+    public function events(): HasMany
+    {
+        return $this->hasMany(FuelAllocationEvent::class)->latest();
     }
 
     public function isActive(): bool

@@ -7,8 +7,10 @@ use App\Models\FuelType;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -87,8 +89,11 @@ class TripTicketService
             ]);
         }
 
+        $attributes = $this->attributes($data);
+        $attributes['fuel_receipt_path'] = $this->resolveReceiptPath($ticket, $data);
+
         $ticket->update([
-            ...$this->attributes($data),
+            ...$attributes,
             'vehicle_plate_no' => $plate,
         ]);
 
@@ -141,6 +146,7 @@ class TripTicketService
             'fuel_cost' => $fuelCost,
             'fuel_station' => $this->text($data['fuel_station'] ?? $ticket->fuel_station),
             'fuel_receipt_no' => $this->text($data['fuel_receipt_no'] ?? $ticket->fuel_receipt_no),
+            'fuel_receipt_path' => $this->resolveReceiptPath($ticket, $data),
             'remarks' => $this->text($data['remarks'] ?? $ticket->remarks),
             'completed_by' => $user->id,
             'completed_at' => Carbon::now(),
@@ -210,6 +216,7 @@ class TripTicketService
             'fuel_cost' => $fuelCost,
             'fuel_station' => $this->text($data['fuel_station'] ?? null),
             'fuel_receipt_no' => $this->text($data['fuel_receipt_no'] ?? null),
+            'fuel_receipt_path' => $this->resolveReceiptPath(null, $data),
         ];
     }
 
@@ -249,5 +256,31 @@ class TripTicketService
         $value = trim((string) $value);
 
         return $value === '' ? null : $value;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveReceiptPath(?TripTicket $ticket, array $data): ?string
+    {
+        $existing = $ticket?->fuel_receipt_path;
+        $remove = (bool) ($data['remove_fuel_receipt'] ?? false);
+        $file = $data['fuel_receipt'] ?? null;
+
+        if ($file instanceof UploadedFile) {
+            if ($existing) {
+                Storage::disk('public')->delete($existing);
+            }
+
+            return $file->store('trip-ticket-receipts', 'public');
+        }
+
+        if ($remove && $existing) {
+            Storage::disk('public')->delete($existing);
+
+            return null;
+        }
+
+        return $existing;
     }
 }

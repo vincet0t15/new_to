@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\FuelAllocations\SaveFuelAllocationRequest;
 use App\Http\Requests\FuelAllocations\VoidFuelAllocationRequest;
 use App\Models\FuelAllocation;
+use App\Models\FuelAllocationEvent;
 use App\Models\FuelType;
 use App\Models\Office;
 use Illuminate\Http\RedirectResponse;
@@ -22,25 +23,27 @@ class FuelAllocationController extends Controller
         $filters = [
             'search' => $request->string('search')->toString(),
             'office_id' => $request->string('office_id')->toString(),
+            'fuel_type_id' => $request->string('fuel_type_id')->toString(),
             'status' => $request->string('status')->toString(),
             'date_from' => $request->string('date_from')->toString(),
             'date_to' => $request->string('date_to')->toString(),
         ];
 
         $allocations = FuelAllocation::query()
-            ->with(['office:id,office_name', 'sourceOffice:id,office_name', 'creator:id,name', 'fuelTypeRecord:id,name'])
+            ->with(['office:id,office_name', 'sourceOffice:id,office_name', 'creator:id,name', 'fuelTypeRecord:id,name', 'events.actor:id,name'])
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $search = '%'.$filters['search'].'%';
                 $query->where(function ($query) use ($search): void {
                     $query->where('reference_no', 'like', $search)
                         ->orWhere('remarks', 'like', $search)
                         ->orWhere('fuel_type', 'like', $search)
-                        ->orWhereHas('fuelType', fn ($q) => $q->where('name', 'like', $search))
+                        ->orWhereHas('fuelTypeRecord', fn ($q) => $q->where('name', 'like', $search))
                         ->orWhereHas('office', fn ($office) => $office->where('office_name', 'like', $search))
                         ->orWhereHas('sourceOffice', fn ($office) => $office->where('office_name', 'like', $search));
                 });
             })
             ->when($filters['office_id'] !== '', fn ($query) => $query->where('office_id', (int) $filters['office_id']))
+            ->when($filters['fuel_type_id'] !== '', fn ($query) => $query->where('fuel_type_id', (int) $filters['fuel_type_id']))
             ->when($filters['status'] !== '', fn ($query) => $query->where('status', $filters['status']))
             ->when($filters['date_from'] !== '', fn ($query) => $query->whereDate('allocation_date', '>=', $filters['date_from']))
             ->when($filters['date_to'] !== '', fn ($query) => $query->whereDate('allocation_date', '<=', $filters['date_to']))
@@ -49,12 +52,15 @@ class FuelAllocationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
+        $officeBalances = $this->officeBalances();
+
         $prefix = $request->routeIs('admin.*') ? 'admin' : 'approvals';
 
         return Inertia::render('admin/fuel-allocations/index', [
             'allocations' => $allocations,
             'offices' => Office::query()->orderBy('office_name')->get(['id', 'office_name']),
             'fuelTypes' => FuelType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'officeBalances' => $officeBalances,
             'filters' => $filters,
             'urls' => [
                 'index' => route($prefix.'.fuel-allocations.index'),
@@ -78,14 +84,23 @@ class FuelAllocationController extends Controller
         }
 
         if (($data['type'] ?? FuelAllocation::TYPE_ALLOCATION) === FuelAllocation::TYPE_TRANSFER) {
+            $warning = $this->transferWarning($data);
             $this->storeTransfer($data, $request);
 
-            return back()->with('success', 'Fuel transfer recorded.');
+            return back()->with([
+                'success' => 'Fuel transfer recorded.',
+                'warning' => $warning,
+            ]);
         }
 
         $data['source_office_id'] = null;
         $data['related_allocation_id'] = null;
-        FuelAllocation::query()->create($data);
+        $allocation = FuelAllocation::query()->create($data);
+        $this->logEvent($allocation, 'created', $request->user()?->id, null, [
+            'allocated_liters' => $allocation->allocated_liters,
+            'allocated_amount' => $allocation->allocated_amount,
+            'fuel_type' => $allocation->fuel_type,
+        ]);
 
         return back()->with('success', 'Fuel allocation added.');
     }
@@ -111,7 +126,12 @@ class FuelAllocationController extends Controller
         $data['source_office_id'] = null;
         $data['related_allocation_id'] = null;
 
+        $before = $fuelAllocation->only(['office_id', 'allocation_date', 'reference_no', 'fuel_type_id', 'fuel_type', 'allocated_liters', 'allocated_amount', 'remarks']);
         $fuelAllocation->update($data);
+        $this->logEvent($fuelAllocation, 'updated', $request->user()?->id, null, [
+            'before' => $before,
+            'after' => $fuelAllocation->only(array_keys($before)),
+        ]);
 
         return back()->with('success', 'Fuel allocation updated.');
     }
@@ -132,21 +152,118 @@ class FuelAllocationController extends Controller
             'voided_at' => $now,
             'updated_by' => $userId,
         ])->save();
+        $this->logEvent($fuelAllocation, 'voided', $userId, $reason);
 
         $related = $fuelAllocation->relatedAllocation;
         if (! $related instanceof FuelAllocation && $fuelAllocation->related_allocation_id) {
             $related = FuelAllocation::query()->find($fuelAllocation->related_allocation_id);
         }
         if ($related instanceof FuelAllocation && $related->isActive()) {
+            $relatedReason = 'Related transfer voided: '.$reason;
             $related->forceFill([
                 'status' => FuelAllocation::STATUS_VOIDED,
-                'void_reason' => 'Related transfer voided: '.$reason,
+                'void_reason' => $relatedReason,
                 'voided_at' => $now,
                 'updated_by' => $userId,
             ])->save();
+            $this->logEvent($related, 'voided', $userId, $relatedReason, ['related_to' => $fuelAllocation->id]);
         }
 
         return back()->with('success', $fuelAllocation->type === FuelAllocation::TYPE_TRANSFER ? 'Fuel transfer voided.' : 'Fuel allocation voided.');
+    }
+
+    /**
+     * @return array<int, array{office_id:int,fuel_type_id:int|null,remaining_liters:float,remaining_amount:float}>
+     */
+    private function officeBalances(): array
+    {
+        $allocated = FuelAllocation::query()
+            ->where('status', FuelAllocation::STATUS_ACTIVE)
+            ->selectRaw('office_id, fuel_type_id, COALESCE(SUM(allocated_liters),0) as liters, COALESCE(SUM(allocated_amount),0) as amount')
+            ->groupBy('office_id', 'fuel_type_id')
+            ->get()
+            ->map(fn ($r) => [
+                'office_id' => (int) $r->office_id,
+                'fuel_type_id' => $r->fuel_type_id ? (int) $r->fuel_type_id : null,
+                'liters' => (float) $r->liters,
+                'amount' => (float) $r->amount,
+            ]);
+
+        $consumed = DB::table('trip_tickets')
+            ->join('travel_orders', 'travel_orders.id', '=', 'trip_tickets.travel_order_id')
+            ->where('trip_tickets.status', 'completed')
+            ->selectRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) as office_id, trip_tickets.fuel_type_id, COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as liters, COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as amount')
+            ->groupByRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id), trip_tickets.fuel_type_id')
+            ->get()
+            ->keyBy(fn ($r) => $r->office_id.'|'.($r->fuel_type_id ?? 'null'));
+
+        return $allocated->map(function (array $row) use ($consumed): array {
+            $key = $row['office_id'].'|'.($row['fuel_type_id'] ?? 'null');
+            $c = $consumed->get($key);
+
+            return [
+                'office_id' => $row['office_id'],
+                'fuel_type_id' => $row['fuel_type_id'],
+                'remaining_liters' => $row['liters'] - (float) ($c?->liters ?? 0),
+                'remaining_amount' => $row['amount'] - (float) ($c?->amount ?? 0),
+            ];
+        })->values()->all();
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function logEvent(FuelAllocation $allocation, string $event, ?int $actorUserId, ?string $remarks = null, array $meta = []): void
+    {
+        FuelAllocationEvent::query()->create([
+            'fuel_allocation_id' => $allocation->id,
+            'actor_user_id' => $actorUserId,
+            'event' => $event,
+            'remarks' => $remarks,
+            'meta' => $meta ?: null,
+        ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function transferWarning(array $data): ?string
+    {
+        $sourceOfficeId = (int) ($data['source_office_id'] ?? 0);
+        $fuelTypeId = $data['fuel_type_id'] ?? null;
+        $liters = (float) ($data['allocated_liters'] ?? 0);
+        $amount = (float) ($data['allocated_amount'] ?? 0);
+
+        if ($sourceOfficeId <= 0 || ! $fuelTypeId) {
+            return null;
+        }
+
+        $allocated = FuelAllocation::query()
+            ->where('office_id', $sourceOfficeId)
+            ->where('status', FuelAllocation::STATUS_ACTIVE)
+            ->where('fuel_type_id', $fuelTypeId)
+            ->selectRaw('COALESCE(SUM(allocated_liters),0) as liters, COALESCE(SUM(allocated_amount),0) as amount')
+            ->first();
+        $consumed = DB::table('trip_tickets')
+            ->join('travel_orders', 'travel_orders.id', '=', 'trip_tickets.travel_order_id')
+            ->where('trip_tickets.status', 'completed')
+            ->where('trip_tickets.fuel_type_id', $fuelTypeId)
+            ->whereRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) = ?', [$sourceOfficeId])
+            ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as liters, COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as amount')
+            ->first();
+
+        $remainingLiters = (float) ($allocated?->liters ?? 0) - (float) ($consumed?->liters ?? 0);
+        $remainingAmount = (float) ($allocated?->amount ?? 0) - (float) ($consumed?->amount ?? 0);
+
+        if (($liters > 0 && $remainingLiters < $liters) || ($amount > 0 && $remainingAmount < $amount)) {
+            return sprintf(
+                'Warning: source office remaining balance for this fuel type may be insufficient (Remaining: %.2f L / PHP %.2f). Transfer was still recorded as requested.',
+                $remainingLiters,
+                $remainingAmount,
+            );
+        }
+
+        return null;
     }
 
     /**
@@ -199,6 +316,8 @@ class FuelAllocationController extends Controller
             ]);
 
             $debit->forceFill(['related_allocation_id' => $credit->id])->save();
+            $this->logEvent($debit, 'transfer_debit', $userId, null, ['related_allocation_id' => $credit->id, 'to_office_id' => $targetOfficeId, 'liters' => -$liters, 'amount' => -$amount]);
+            $this->logEvent($credit, 'transfer_credit', $userId, null, ['related_allocation_id' => $debit->id, 'from_office_id' => $sourceOfficeId, 'liters' => $liters, 'amount' => $amount]);
         });
     }
 }

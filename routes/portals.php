@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AuditLogController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FuelAllocationController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\TravelOrderRegisterController;
@@ -132,7 +133,7 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::inertia('dashboard', 'portals/admin/dashboard')
+        Route::get('dashboard', AdminDashboardController::class)
             ->name('dashboard');
 
         Route::middleware('permission:travel-orders.view-all')->group(function () {

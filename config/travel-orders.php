@@ -88,4 +88,9 @@ return [
         'station_line' => env('TRAVEL_ORDER_STATION_LINE'),
     ],
 
+    'fuel' => [
+        'low_balance_liters' => (float) env('FUEL_LOW_BALANCE_LITERS', 20),
+        'low_balance_amount' => (float) env('FUEL_LOW_BALANCE_AMOUNT', 1000),
+    ],
+
 ];

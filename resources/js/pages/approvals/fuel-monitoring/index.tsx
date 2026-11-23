@@ -20,6 +20,7 @@ import travelOrders from '@/routes/travel-orders';
 import type { PaginatedDataResponse } from '@/types';
 
 type OfficeOption = { id: number; office_name: string };
+type FuelTypeOption = { id: number; name: string };
 
 type FuelTicket = {
     id: number;
@@ -36,6 +37,7 @@ type FuelTicket = {
     fuel_cost: string | null;
     fuel_station: string | null;
     fuel_receipt_no: string | null;
+    fuel_receipt_url?: string | null;
     created_at: string | null;
     travel_order?: {
         id: number;
@@ -70,10 +72,37 @@ type Props = {
         allocated_amount: string | number;
         remaining_liters: string | number;
         remaining_amount: string | number;
+        fuel_types?: Array<{
+            office_id: number;
+            office_name: string;
+            fuel_type: string;
+            total_tickets: number;
+            estimated_liters: string | number;
+            actual_liters: string | number;
+            fuel_cost: string | number;
+            allocated_liters: string | number;
+            allocated_amount: string | number;
+            remaining_liters: string | number;
+            remaining_amount: string | number;
+        }>;
+    }>;
+    byOfficeFuelType: Array<{
+        office_id: number;
+        office_name: string;
+        fuel_type: string;
+        total_tickets: number;
+        estimated_liters: string | number;
+        actual_liters: string | number;
+        fuel_cost: string | number;
+        allocated_liters: string | number;
+        allocated_amount: string | number;
+        remaining_liters: string | number;
+        remaining_amount: string | number;
     }>;
     borrowedByOffice: Array<{
         borrower_office_name: string;
         source_office_name: string;
+        fuel_type: string;
         total_tickets: number;
         estimated_liters: string | number;
         actual_liters: string | number;
@@ -81,9 +110,12 @@ type Props = {
     }>;
     tickets: PaginatedDataResponse<FuelTicket>;
     offices: OfficeOption[];
+    fuelTypes: FuelTypeOption[];
     filters: {
         search: string;
         office_id: string;
+        fuel_type_id: string;
+        borrowed_only: string;
         date_from: string;
         date_to: string;
         status: string;
@@ -122,11 +154,14 @@ export default function FuelMonitoringIndex({
     borrowedByOffice,
     tickets,
     offices,
+    fuelTypes,
     filters,
     urls,
 }: Props) {
     const [search, setSearch] = useState(filters.search ?? '');
     const [officeId, setOfficeId] = useState(filters.office_id ?? '');
+    const [fuelTypeId, setFuelTypeId] = useState(filters.fuel_type_id ?? '');
+    const [borrowedOnly, setBorrowedOnly] = useState(filters.borrowed_only === '1');
     const [status, setStatus] = useState(filters.status ?? '');
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
@@ -134,6 +169,8 @@ export default function FuelMonitoringIndex({
     const query = {
         search: search || undefined,
         office_id: officeId || undefined,
+        fuel_type_id: fuelTypeId || undefined,
+        borrowed_only: borrowedOnly ? '1' : undefined,
         status: status || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
@@ -177,7 +214,7 @@ export default function FuelMonitoringIndex({
                         <CardTitle className="text-base">Filters</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                        <form onSubmit={submit} className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                             <div className="space-y-2 xl:col-span-2">
                                 <Label htmlFor="search">Search</Label>
                                 <div className="relative">
@@ -187,7 +224,7 @@ export default function FuelMonitoringIndex({
                                         className="pl-9"
                                         value={search}
                                         onChange={(event) => setSearch(event.target.value)}
-                                        placeholder="Ticket, plate, office purpose, receipt..."
+                                        placeholder="Ticket, plate, purpose, receipt, fuel type..."
                                     />
                                 </div>
                             </div>
@@ -198,6 +235,15 @@ export default function FuelMonitoringIndex({
                                     value={officeId}
                                     placeholder="All offices"
                                     onSelect={(v) => setOfficeId(v ?? '')}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fuel type</Label>
+                                <CustomComboBox
+                                    items={[{ value: '', label: 'All fuel types' }, ...fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))]}
+                                    value={fuelTypeId}
+                                    placeholder="All fuel types"
+                                    onSelect={(v) => setFuelTypeId(v ?? '')}
                                 />
                             </div>
                             <div className="space-y-2">
@@ -222,10 +268,14 @@ export default function FuelMonitoringIndex({
                                 <Label htmlFor="date_to">Date to</Label>
                                 <Input id="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
                             </div>
-                            <div className="flex items-end gap-2 xl:col-span-4">
+                            <div className="flex items-end gap-2 xl:col-span-6">
+                                <label className="flex items-center gap-2 text-sm mr-auto">
+                                    <input type="checkbox" checked={borrowedOnly} onChange={(e) => setBorrowedOnly(e.target.checked)} />
+                                    Borrowed fuel only
+                                </label>
                                 <Button type="submit">Apply filters</Button>
                                 <Button type="button" variant="outline" onClick={() => {
-                                    setSearch(''); setOfficeId(''); setStatus(''); setDateFrom(''); setDateTo('');
+                                    setSearch(''); setOfficeId(''); setFuelTypeId(''); setBorrowedOnly(false); setStatus(''); setDateFrom(''); setDateTo('');
                                     router.get(urls.index);
                                 }}>Reset</Button>
                             </div>
@@ -253,6 +303,18 @@ export default function FuelMonitoringIndex({
                                         <span>Cost: {money(row.fuel_cost)}</span>
                                         <span className={`col-span-2 font-medium ${Number(row.remaining_liters) < 0 || Number(row.remaining_amount) < 0 ? 'text-destructive' : 'text-foreground'}`}>Remaining: {liters(row.remaining_liters)} / {money(row.remaining_amount)}</span>
                                     </div>
+                                    {row.fuel_types && row.fuel_types.length > 0 && (
+                                        <div className="mt-3 space-y-1 border-t pt-2">
+                                            {row.fuel_types.map((ft) => (
+                                                <div key={`${row.office_id}-${ft.fuel_type}`} className="flex items-center justify-between gap-2 text-[11px]">
+                                                    <span className="text-muted-foreground">{ft.fuel_type}</span>
+                                                    <span className={Number(ft.remaining_liters) < 0 ? 'text-destructive' : 'text-muted-foreground'}>
+                                                        {liters(ft.remaining_liters)} left
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )) : (
                                 <p className="text-muted-foreground text-sm">No fuel records found.</p>
@@ -261,9 +323,9 @@ export default function FuelMonitoringIndex({
                             <div className="border-t pt-4">
                                 <p className="mb-2 text-sm font-medium">Borrowed fuel</p>
                                 {borrowedByOffice.length > 0 ? borrowedByOffice.map((row) => (
-                                    <div key={`${row.borrower_office_name}-${row.source_office_name}`} className="mb-2 rounded-md border p-2 text-xs last:mb-0">
+                                    <div key={`${row.borrower_office_name}-${row.source_office_name}-${row.fuel_type}`} className="mb-2 rounded-md border p-2 text-xs last:mb-0">
                                         <p className="font-medium">{row.borrower_office_name} borrowed from {row.source_office_name}</p>
-                                        <p className="text-muted-foreground mt-1">{row.total_tickets} ticket(s) · Est. {liters(row.estimated_liters)} · Actual {liters(row.actual_liters)} · {money(row.fuel_cost)}</p>
+                                        <p className="text-muted-foreground mt-1">{row.fuel_type} · {row.total_tickets} ticket(s) · Est. {liters(row.estimated_liters)} · Actual {liters(row.actual_liters)} · {money(row.fuel_cost)}</p>
                                     </div>
                                 )) : (
                                     <p className="text-muted-foreground text-xs">No borrowed fuel records in selected filters.</p>
@@ -333,6 +395,7 @@ export default function FuelMonitoringIndex({
                                                 <div className="space-y-1">
                                                     <p>{ticket.fuel_station ?? '—'}</p>
                                                     <p className="text-muted-foreground text-xs">{ticket.fuel_receipt_no ?? 'No receipt'}</p>
+                                                    {ticket.fuel_receipt_url && <a href={ticket.fuel_receipt_url} target="_blank" rel="noreferrer" className="text-primary text-xs underline-offset-2 hover:underline">View receipt</a>}
                                                     <p className="text-muted-foreground text-xs">{formatDateTime(ticket.created_at)}</p>
                                                 </div>
                                             </TableCell>

@@ -38,6 +38,8 @@ type TripTicketFormData = {
     fuel_cost: string;
     fuel_station: string;
     fuel_receipt_no: string;
+    fuel_receipt: File | null;
+    remove_fuel_receipt: boolean;
 };
 
 function formatDateRange(from: string | null, to: string | null): string {
@@ -82,6 +84,8 @@ export function TripTicketForm({
         fuel_cost: tripTicket?.fuel_cost ?? '',
         fuel_station: tripTicket?.fuel_station ?? '',
         fuel_receipt_no: tripTicket?.fuel_receipt_no ?? '',
+        fuel_receipt: null,
+        remove_fuel_receipt: false,
     });
 
     const driverChoices = drivers.map((driver) => ({
@@ -104,13 +108,14 @@ export function TripTicketForm({
               : 0;
 
     const submit = () => {
-        if (action.method === 'put') {
-            form.put(action.url, { preserveScroll: true });
-
-            return;
-        }
-
-        form.post(action.url);
+        form.transform((data) => ({
+            ...data,
+            _method: action.method,
+        }));
+        form.post(action.url, {
+            forceFormData: true,
+            preserveScroll: true,
+        });
     };
 
     return (
@@ -375,6 +380,25 @@ export function TripTicketForm({
                             <InputError
                                 message={form.errors.fuel_receipt_no}
                             />
+                        </div>
+                        <div className="space-y-2 sm:col-span-2">
+                            <Label htmlFor="fuel_receipt">Receipt attachment (JPG/PNG/PDF)</Label>
+                            <Input
+                                id="fuel_receipt"
+                                type="file"
+                                accept=".jpg,.jpeg,.png,.pdf"
+                                onChange={(e) => form.setData('fuel_receipt', e.target.files?.[0] ?? null)}
+                            />
+                            <InputError message={form.errors.fuel_receipt} />
+                            {tripTicket?.fuel_receipt_url && !form.data.remove_fuel_receipt && (
+                                <div className="flex items-center gap-2 text-xs">
+                                    <a href={tripTicket.fuel_receipt_url} target="_blank" rel="noreferrer" className="underline underline-offset-2">View current receipt</a>
+                                    <label className="flex items-center gap-1">
+                                        <Checkbox checked={form.data.remove_fuel_receipt} onCheckedChange={(c) => form.setData('remove_fuel_receipt', c === true)} />
+                                        Remove receipt
+                                    </label>
+                                </div>
+                            )}
                         </div>
                     </div>
 

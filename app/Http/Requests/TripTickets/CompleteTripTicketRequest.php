@@ -19,6 +19,8 @@ class CompleteTripTicketRequest extends FormRequest
             'fuel_cost' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'fuel_station' => ['nullable', 'string', 'max:150'],
             'fuel_receipt_no' => ['nullable', 'string', 'max:100'],
+            'fuel_receipt' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:5120'],
+            'remove_fuel_receipt' => ['boolean'],
             'remarks' => ['nullable', 'string', 'max:255'],
         ];
     }

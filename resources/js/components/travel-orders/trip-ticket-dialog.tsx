@@ -43,6 +43,7 @@ type TripTicketFormData = {
     fuel_cost: string;
     fuel_station: string;
     fuel_receipt_no: string;
+    fuel_receipt: File | null;
 };
 
 function formatDateRange(from: string | null, to: string | null): string {
@@ -80,6 +81,7 @@ export function TripTicketDialog({
         fuel_cost: '',
         fuel_station: '',
         fuel_receipt_no: '',
+        fuel_receipt: null,
     });
 
     useEffect(() => {
@@ -111,6 +113,7 @@ export function TripTicketDialog({
 
     const submit = () => {
         form.post(travelOrders.tripTickets.store(travelOrder.id).url, {
+            forceFormData: true,
             preserveScroll: true,
             onSuccess: () => onOpenChange(false),
         });
@@ -402,6 +405,11 @@ export function TripTicketDialog({
                                     <InputError
                                         message={form.errors.fuel_receipt_no}
                                     />
+                                </div>
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label htmlFor="tt_fuel_receipt">Receipt attachment (JPG/PNG/PDF)</Label>
+                                    <Input id="tt_fuel_receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => form.setData('fuel_receipt', e.target.files?.[0] ?? null)} />
+                                    <InputError message={form.errors.fuel_receipt} />
                                 </div>
                             </div>
 

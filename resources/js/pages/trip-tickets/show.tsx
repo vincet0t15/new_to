@@ -66,6 +66,8 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
         fuel_cost: tripTicket.fuel_cost ?? '',
         fuel_station: tripTicket.fuel_station ?? '',
         fuel_receipt_no: tripTicket.fuel_receipt_no ?? '',
+        fuel_receipt: null as File | null,
+        remove_fuel_receipt: false,
         remarks: tripTicket.remarks ?? '',
     });
 
@@ -75,9 +77,11 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
 
     const submitComplete = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        completeForm.transform((data) => ({ ...data, _method: 'post' }));
         completeForm.post(
             tripTickets.complete([travelOrder.id, tripTicket.id]).url,
             {
+                forceFormData: true,
                 preserveScroll: true,
                 onSuccess: () => setCompleteOpen(false),
             },
@@ -268,6 +272,10 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 <Detail
                                     label="Receipt / invoice no."
                                     value={tripTicket.fuel_receipt_no ?? '—'}
+                                />
+                                <Detail
+                                    label="Receipt attachment"
+                                    value={tripTicket.fuel_receipt_url ? <a href={tripTicket.fuel_receipt_url} target="_blank" rel="noreferrer" className="underline underline-offset-2">View receipt</a> : '—'}
                                 />
                                 <Detail
                                     label="Odometer at departure"
@@ -498,6 +506,14 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 <InputError
                                     message={completeForm.errors.fuel_receipt_no}
                                 />
+                            </div>
+                            <div className="space-y-2 sm:col-span-2">
+                                <Label htmlFor="complete_fuel_receipt">Receipt attachment</Label>
+                                <Input id="complete_fuel_receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => completeForm.setData('fuel_receipt', e.target.files?.[0] ?? null)} />
+                                <InputError message={completeForm.errors.fuel_receipt} />
+                                {tripTicket.fuel_receipt_url && !completeForm.data.remove_fuel_receipt && (
+                                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={completeForm.data.remove_fuel_receipt} onChange={(e) => completeForm.setData('remove_fuel_receipt', e.target.checked)} />Remove current receipt</label>
+                                )}
                             </div>
                         </div>
                         <div className="space-y-2">

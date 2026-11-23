@@ -204,6 +204,10 @@ export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
                             value={tripTicket.fuel_receipt_no ?? '—'}
                         />
                         <Field
+                            label="Receipt attachment"
+                            value={tripTicket.fuel_receipt_url ? 'Attached (see digital record)' : '—'}
+                        />
+                        <Field
                             label="Odometer at departure"
                             value={tripTicket.odometer_start ?? '—'}
                         />

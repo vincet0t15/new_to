@@ -18,6 +18,15 @@ import type { PaginatedDataResponse } from '@/types';
 
 type OfficeOption = { id: number; office_name: string };
 type FuelTypeOption = { id: number; name: string };
+type AllocationEvent = {
+    id: number;
+    event: string;
+    remarks: string | null;
+    meta: Record<string, unknown> | null;
+    created_at: string | null;
+    actor?: { id: number; name: string } | null;
+};
+
 type Allocation = {
     id: number;
     office_id: number;
@@ -36,13 +45,22 @@ type Allocation = {
     source_office?: OfficeOption | null;
     fuel_type_record?: FuelTypeOption | null;
     creator?: { id: number; name: string } | null;
+    events?: AllocationEvent[];
+};
+
+type OfficeBalance = {
+    office_id: number;
+    fuel_type_id: number | null;
+    remaining_liters: number;
+    remaining_amount: number;
 };
 
 type Props = {
     allocations: PaginatedDataResponse<Allocation>;
     offices: OfficeOption[];
     fuelTypes: FuelTypeOption[];
-    filters: { search: string; office_id: string; status: string; date_from: string; date_to: string };
+    officeBalances: OfficeBalance[];
+    filters: { search: string; office_id: string; fuel_type_id: string; status: string; date_from: string; date_to: string };
     urls: { index: string; store: string; update: string; void: string; fuelMonitoring: string };
 };
 
@@ -54,14 +72,16 @@ function liters(value: string | number | null | undefined) {
     return `${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L`;
 }
 
-export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, filters, urls }: Props) {
+export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, officeBalances, filters, urls }: Props) {
     const can = useCan();
     const canManage = can('fuel-allocations.manage');
     const [dialogOpen, setDialogOpen] = useState(false);
     const [voidDialog, setVoidDialog] = useState<Allocation | null>(null);
     const [editing, setEditing] = useState<Allocation | null>(null);
+    const [history, setHistory] = useState<Allocation | null>(null);
     const [search, setSearch] = useState(filters.search ?? '');
     const [officeId, setOfficeId] = useState(filters.office_id ?? '');
+    const [fuelTypeId, setFuelTypeId] = useState(filters.fuel_type_id ?? '');
     const [status, setStatus] = useState(filters.status ?? '');
     const [dateFrom, setDateFrom] = useState(filters.date_from ?? '');
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
@@ -80,9 +100,15 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
     });
     const voidForm = useForm({ void_reason: '' });
 
+    const selectedSourceBalance = officeBalances.find((b) => String(b.office_id) === form.data.source_office_id && String(b.fuel_type_id ?? '') === form.data.fuel_type_id);
+    const litersValue = Number(form.data.allocated_liters || 0);
+    const amountValue = Number(form.data.allocated_amount || 0);
+    const hasInsufficientSource = form.data.type === 'transfer' && !!selectedSourceBalance && ((litersValue > 0 && Number(selectedSourceBalance.remaining_liters) < litersValue) || (amountValue > 0 && Number(selectedSourceBalance.remaining_amount) < amountValue));
+
     const query = {
         search: search || undefined,
         office_id: officeId || undefined,
+        fuel_type_id: fuelTypeId || undefined,
         status: status || undefined,
         date_from: dateFrom || undefined,
         date_to: dateTo || undefined,
@@ -146,7 +172,7 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                 <Card>
                     <CardHeader><CardTitle className="text-base">Filters</CardTitle></CardHeader>
                     <CardContent>
-                        <form onSubmit={submitFilter} className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                        <form onSubmit={submitFilter} className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                             <div className="space-y-2 xl:col-span-2">
                                 <Label htmlFor="search">Search</Label>
                                 <div className="relative">
@@ -164,6 +190,15 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                                 />
                             </div>
                             <div className="space-y-2">
+                                <Label>Fuel type</Label>
+                                <CustomComboBox
+                                    items={[{ value: '', label: 'All fuel types' }, ...fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))]}
+                                    value={fuelTypeId}
+                                    placeholder="All fuel types"
+                                    onSelect={(v) => setFuelTypeId(v ?? '')}
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Status</Label>
                                 <CustomComboBox
                                     items={[{ value: '', label: 'All statuses' }, { value: 'active', label: 'Active' }, { value: 'voided', label: 'Voided' }]}
@@ -174,9 +209,9 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                             </div>
                             <div className="space-y-2"><Label htmlFor="date_from">Date from</Label><Input id="date_from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} /></div>
                             <div className="space-y-2"><Label htmlFor="date_to">Date to</Label><Input id="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} /></div>
-                            <div className="flex items-end gap-2 xl:col-span-4">
+                            <div className="flex items-end gap-2 xl:col-span-6">
                                 <Button type="submit">Apply filters</Button>
-                                <Button type="button" variant="outline" onClick={() => { setSearch(''); setOfficeId(''); setStatus(''); setDateFrom(''); setDateTo(''); router.get(urls.index); }}>Reset</Button>
+                                <Button type="button" variant="outline" onClick={() => { setSearch(''); setOfficeId(''); setFuelTypeId(''); setStatus(''); setDateFrom(''); setDateTo(''); router.get(urls.index); }}>Reset</Button>
                             </div>
                         </form>
                     </CardContent>
@@ -223,6 +258,7 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                                                 {canManage && allocation.status === 'active' && allocation.type !== 'transfer' && <>
                                                     <Button variant="outline" size="sm" onClick={() => openEdit(allocation)}><Pencil className="size-4" /></Button>
                                                 </>}
+                                                <Button variant="outline" size="sm" onClick={() => setHistory(allocation)} title="History">History</Button>
                                                 {canManage && allocation.status === 'active' && (
                                                     <Button variant="outline" size="sm" onClick={() => { voidForm.reset(); voidForm.clearErrors(); setVoidDialog(allocation); }}><Trash2 className="size-4" /></Button>
                                                 )}
@@ -299,6 +335,12 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                             <div className="space-y-2"><Label htmlFor="allocated_amount">Allocated amount (PHP)</Label><Input id="allocated_amount" type="number" min="0" step="0.01" value={form.data.allocated_amount} onChange={(e) => form.setData('allocated_amount', e.target.value)} /><InputError message={form.errors.allocated_amount} /></div>
                         </div>
                         <div className="space-y-2"><Label htmlFor="remarks">Remarks</Label><Textarea id="remarks" rows={3} value={form.data.remarks} onChange={(e) => form.setData('remarks', e.target.value)} /><InputError message={form.errors.remarks} /></div>
+                        {form.data.type === 'transfer' && selectedSourceBalance && (
+                            <div className={`rounded-md border p-3 text-xs ${hasInsufficientSource ? 'border-destructive/40 bg-destructive/5 text-destructive' : 'text-muted-foreground'}`}>
+                                Source balance for selected fuel type: {liters(selectedSourceBalance.remaining_liters)} / {money(selectedSourceBalance.remaining_amount)}
+                                {hasInsufficientSource ? ' — warning: transfer may exceed remaining balance (still allowed, will be recorded).' : ''}
+                            </div>
+                        )}
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
                             <Button type="submit" disabled={form.processing}>{editing ? 'Save changes' : 'Add allocation'}</Button>
@@ -317,6 +359,28 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                             <Button type="submit" variant="destructive" disabled={voidForm.processing}>Void allocation</Button>
                         </DialogFooter>
                     </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!history} onOpenChange={(open) => !open && setHistory(null)}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Allocation history</DialogTitle>
+                        <DialogDescription>{history?.office?.office_name ?? 'Allocation'} · {history?.reference_no || 'No reference'}</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] space-y-3 overflow-y-auto">
+                        {history?.events?.length ? history.events.map((event) => (
+                            <div key={event.id} className="rounded-md border p-3 text-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="font-medium">{event.event}</span>
+                                    <span className="text-muted-foreground text-xs">{event.created_at ? formatDate(event.created_at) : '—'}</span>
+                                </div>
+                                <p className="text-muted-foreground text-xs">By: {event.actor?.name ?? 'System'}</p>
+                                {event.remarks && <p className="mt-1 text-xs">Remarks: {event.remarks}</p>}
+                                {event.meta && <pre className="bg-muted mt-2 overflow-x-auto rounded p-2 text-[11px]">{JSON.stringify(event.meta, null, 2)}</pre>}
+                            </div>
+                        )) : <p className="text-muted-foreground text-sm">No history yet.</p>}
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

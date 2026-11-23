@@ -107,6 +107,8 @@ export type TripTicket = {
     fuel_cost: string | null;
     fuel_station: string | null;
     fuel_receipt_no: string | null;
+    fuel_receipt_path: string | null;
+    fuel_receipt_url: string | null;
     fuel_consumed: string | null;
     remarks: string | null;
     ticket_no: string | null;
