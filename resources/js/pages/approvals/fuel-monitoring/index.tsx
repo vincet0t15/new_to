@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Download, Fuel, Search } from 'lucide-react';
+import { Download, Eye, Fuel, Printer, Search } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { formatDateTime } from '@/lib/date-format';
+import travelOrders from '@/routes/travel-orders';
 import type { PaginatedDataResponse } from '@/types';
 
 type OfficeOption = { id: number; office_name: string };
@@ -59,6 +60,7 @@ type Props = {
         remaining_amount: number;
     };
     byOffice: Array<{
+        office_id: number;
         office_name: string;
         total_tickets: number;
         estimated_liters: string | number;
@@ -149,7 +151,7 @@ export default function FuelMonitoringIndex({
     return (
         <>
             <Head title="Fuel Monitoring" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
+            <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <Heading
                         title="Fuel Monitoring"
@@ -241,7 +243,7 @@ export default function FuelMonitoringIndex({
                             {byOffice.length > 0 ? byOffice.map((row) => (
                                 <div key={row.office_name} className="rounded-lg border p-3">
                                     <div className="flex items-center justify-between gap-3">
-                                        <p className="font-medium">{row.office_name}</p>
+                                        <button type="button" className="font-medium text-left underline-offset-2 hover:underline" onClick={() => { const id = String(row.office_id); setOfficeId(id); router.get(urls.index, { ...query, office_id: id }, { preserveState: true, preserveScroll: true }); }}>{row.office_name}</button>
                                         <span className="text-muted-foreground text-xs">{row.total_tickets} ticket(s)</span>
                                     </div>
                                     <div className="text-muted-foreground mt-2 grid grid-cols-2 gap-2 text-xs">
@@ -289,6 +291,7 @@ export default function FuelMonitoringIndex({
                                         <TableHead className="text-right">Actual L</TableHead>
                                         <TableHead className="text-right">Cost</TableHead>
                                         <TableHead>Station / Receipt</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -333,10 +336,38 @@ export default function FuelMonitoringIndex({
                                                     <p className="text-muted-foreground text-xs">{formatDateTime(ticket.created_at)}</p>
                                                 </div>
                                             </TableCell>
+                                            <TableCell>
+                                                <div className="flex justify-end gap-2">
+                                                    {ticket.travel_order?.id ? (
+                                                        <>
+                                                            <Button
+                                                                variant="outline"
+                                                                size="sm"
+                                                                onClick={() => router.visit(travelOrders.tripTickets.show([ticket.travel_order!.id, ticket.id]).url)}
+                                                            >
+                                                                <Eye className="size-4" />
+                                                                View
+                                                            </Button>
+                                                            <Button variant="outline" size="sm" asChild>
+                                                                <a
+                                                                    href={travelOrders.tripTickets.print([ticket.travel_order!.id, ticket.id]).url}
+                                                                    target="_blank"
+                                                                    rel="noreferrer"
+                                                                >
+                                                                    <Printer className="size-4" />
+                                                                    Print
+                                                                </a>
+                                                            </Button>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-xs">—</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                         </TableRow>
                                     )) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="text-muted-foreground h-24 text-center">
+                                            <TableCell colSpan={8} className="text-muted-foreground h-24 text-center">
                                                 No fuel records found for the selected filters.
                                             </TableCell>
                                         </TableRow>

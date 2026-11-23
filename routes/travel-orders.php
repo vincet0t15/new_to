@@ -38,9 +38,6 @@ Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-ord
         Route::post('/{travelOrder}/trip-tickets', [TravelOrderTripTicketController::class, 'store'])
             ->middleware('permission:travel-orders.update')
             ->name('trip-tickets.store');
-        Route::get('/{travelOrder}/trip-tickets/{tripTicket}', [TravelOrderTripTicketController::class, 'show'])
-            ->name('trip-tickets.show')
-            ->scopeBindings();
         Route::get('/{travelOrder}/trip-tickets/{tripTicket}/edit', [TravelOrderTripTicketController::class, 'edit'])
             ->middleware('permission:travel-orders.update')
             ->name('trip-tickets.edit')
@@ -61,9 +58,19 @@ Route::middleware(['auth', 'verified', 'portal:employee', 'permission:travel-ord
             ->middleware('permission:travel-orders.update')
             ->name('trip-tickets.destroy')
             ->scopeBindings();
-        Route::get('/{travelOrder}/trip-tickets/{tripTicket}/print', [TravelOrderTripTicketController::class, 'print'])
+    });
+
+Route::middleware(['auth', 'verified'])
+    ->prefix('travel-orders/{travelOrder}/trip-tickets')
+    ->name('travel-orders.trip-tickets.')
+    ->group(function () {
+        Route::get('/{tripTicket}', [TravelOrderTripTicketController::class, 'show'])
+            ->middleware('permission:travel-orders.view')
+            ->name('show')
+            ->scopeBindings();
+        Route::get('/{tripTicket}/print', [TravelOrderTripTicketController::class, 'print'])
             ->middleware('permission:travel-orders.print')
-            ->name('trip-tickets.print')
+            ->name('print')
             ->scopeBindings();
     });
 

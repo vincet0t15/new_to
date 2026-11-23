@@ -66,6 +66,7 @@ class FuelMonitoringController extends Controller
             $actualCost = (float) ($usage?->fuel_cost ?? 0);
 
             return [
+                'office_id' => (int) $officeId,
                 'office_name' => $allocation?->office_name ?? $usage?->office_name,
                 'total_tickets' => (int) ($usage?->total_tickets ?? 0),
                 'estimated_liters' => (float) ($usage?->estimated_liters ?? 0),

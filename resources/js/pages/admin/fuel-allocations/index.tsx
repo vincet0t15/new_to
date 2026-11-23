@@ -43,7 +43,7 @@ type Props = {
     offices: OfficeOption[];
     fuelTypes: FuelTypeOption[];
     filters: { search: string; office_id: string; status: string; date_from: string; date_to: string };
-    urls: { index: string; store: string; update: string; void: string };
+    urls: { index: string; store: string; update: string; void: string; fuelMonitoring: string };
 };
 
 function money(value: string | number | null | undefined) {
@@ -137,7 +137,7 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
     return (
         <>
             <Head title="Fuel Allocations" />
-            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
+            <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <Heading title="Fuel Allocations" description="Configure fuel allocations per office. You can also record office-to-office fuel transfers/borrowing. Consumption is tracked from trip tickets in Fuel Monitoring." />
                     {canManage && <Button onClick={openCreate}><Plus className="size-4" />Add allocation / transfer</Button>}
@@ -196,7 +196,11 @@ export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, 
                                 {allocations.data.length > 0 ? allocations.data.map((allocation) => (
                                     <TableRow key={allocation.id}>
                                         <TableCell>{formatDate(allocation.allocation_date)}</TableCell>
-                                        <TableCell className="font-medium">{allocation.office?.office_name ?? '—'}</TableCell>
+                                        <TableCell className="font-medium">
+                                            <button type="button" className="text-left underline-offset-2 hover:underline" onClick={() => router.get(urls.fuelMonitoring, { office_id: String(allocation.office_id) }, { preserveScroll: true })}>
+                                                {allocation.office?.office_name ?? '—'}
+                                            </button>
+                                        </TableCell>
                                         <TableCell>
                                             <div className="space-y-1">
                                                 <Badge variant={allocation.type === 'transfer' ? 'outline' : 'secondary'}>{allocation.type}</Badge>

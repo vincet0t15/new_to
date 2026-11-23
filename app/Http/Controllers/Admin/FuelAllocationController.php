@@ -61,6 +61,7 @@ class FuelAllocationController extends Controller
                 'store' => route($prefix.'.fuel-allocations.store'),
                 'update' => route($prefix.'.fuel-allocations.update', ['fuelAllocation' => '__ID__']),
                 'void' => route($prefix.'.fuel-allocations.void', ['fuelAllocation' => '__ID__']),
+                'fuelMonitoring' => route($prefix.'.fuel-monitoring.index'),
             ],
         ]);
     }

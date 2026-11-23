@@ -77,7 +77,7 @@ class TravelOrderTripTicketController extends Controller
 
     public function show(Request $request, TravelOrder $travelOrder, TripTicket $tripTicket): Response
     {
-        $this->authorizeOwner($request->user(), $travelOrder);
+        $this->authorizeViewer($request->user(), $travelOrder);
 
         $tripTicket->load(['travelOrder.office', 'travelOrder.destinationLocation', 'driver', 'fuelSourceOffice', 'fuelTypeRecord', 'creator', 'completer']);
 
@@ -182,7 +182,7 @@ class TravelOrderTripTicketController extends Controller
 
     public function print(Request $request, TravelOrder $travelOrder, TripTicket $tripTicket): Response
     {
-        $this->authorizeOwner($request->user(), $travelOrder);
+        $this->authorizeViewer($request->user(), $travelOrder);
 
         $tripTicket->load(['driver', 'creator']);
 
@@ -274,5 +274,21 @@ class TravelOrderTripTicketController extends Controller
     private function authorizeOwner(?User $user, TravelOrder $travelOrder): void
     {
         abort_unless($user instanceof User && $travelOrder->created_by === $user->id, 403);
+    }
+
+    private function authorizeViewer(?User $user, TravelOrder $travelOrder): void
+    {
+        abort_unless($user instanceof User, 403);
+
+        if ($travelOrder->created_by === $user->id) {
+            return;
+        }
+
+        abort_unless(
+            $user->can('travel-orders.view-all')
+            || $travelOrder->deliveries()->where('user_id', $user->id)->exists()
+            || $travelOrder->actions()->where('actor_user_id', $user->id)->exists(),
+            403,
+        );
     }
 }
