@@ -193,7 +193,9 @@ export default function ShowApproval({
                                             {travelOrder.fund_source_assigned_at && (
                                                 <p>
                                                     Fund source assigned:{' '}
-                                                    {travelOrder.fund_source_assigned_at}
+                                                    {
+                                                        travelOrder.fund_source_assigned_at
+                                                    }
                                                 </p>
                                             )}
                                             {travelOrder.earmarked_at && (
@@ -257,7 +259,9 @@ export default function ShowApproval({
                                                     placeholder="Enter earmark number"
                                                 />
                                                 <InputError
-                                                    message={errors.earmark_number}
+                                                    message={
+                                                        errors.earmark_number
+                                                    }
                                                 />
                                                 <Button
                                                     variant="secondary"
@@ -327,14 +331,18 @@ export default function ShowApproval({
                                                 <option value="">
                                                     Select fund source
                                                 </option>
-                                                {fundSources.map((fundSource) => (
-                                                    <option
-                                                        key={fundSource.id}
-                                                        value={fundSource.id}
-                                                    >
-                                                        {fundSource.name}
-                                                    </option>
-                                                ))}
+                                                {fundSources.map(
+                                                    (fundSource) => (
+                                                        <option
+                                                            key={fundSource.id}
+                                                            value={
+                                                                fundSource.id
+                                                            }
+                                                        >
+                                                            {fundSource.name}
+                                                        </option>
+                                                    ),
+                                                )}
                                             </select>
                                             <InputError
                                                 message={errors.fund_source_id}

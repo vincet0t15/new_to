@@ -26,7 +26,9 @@ export function DeleteFuelTypeDialog({ isOpen, onClose, fuelType }: Props) {
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        destroy(fuelTypes.destroy(fuelType).url, { onSuccess: () => onClose() });
+        destroy(fuelTypes.destroy(fuelType).url, {
+            onSuccess: () => onClose(),
+        });
     };
 
     return (
@@ -43,10 +45,16 @@ export function DeleteFuelTypeDialog({ isOpen, onClose, fuelType }: Props) {
                     </DialogHeader>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="button" variant="outline">Close</Button>
+                            <Button type="button" variant="outline">
+                                Close
+                            </Button>
                         </DialogClose>
                         {!isInUse && (
-                            <Button type="submit" variant="destructive" disabled={processing}>
+                            <Button
+                                type="submit"
+                                variant="destructive"
+                                disabled={processing}
+                            >
                                 {processing && <Spinner />}Delete Fuel Type
                             </Button>
                         )}

@@ -48,31 +48,56 @@ export function CreateFuelTypeDialog({ isOpen, onClose }: Props) {
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Create Fuel Type</DialogTitle>
-                        <DialogDescription>Add a fuel type for trip tickets and allocations.</DialogDescription>
+                        <DialogDescription>
+                            Add a fuel type for trip tickets and allocations.
+                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
                             <Label htmlFor="name">Name</Label>
-                            <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
+                            <Input
+                                id="name"
+                                value={data.name}
+                                onChange={(e) =>
+                                    setData('name', e.target.value)
+                                }
+                                required
+                            />
                             <InputError message={errors.name} />
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" value={data.description} onChange={(e) => setData('description', e.target.value)} />
+                            <Textarea
+                                id="description"
+                                value={data.description}
+                                onChange={(e) =>
+                                    setData('description', e.target.value)
+                                }
+                            />
                             <InputError message={errors.description} />
                         </div>
                         <div className="flex items-center gap-3">
-                            <Checkbox id="is_active" checked={data.is_active} onCheckedChange={(checked) => setData('is_active', checked === true)} />
+                            <Checkbox
+                                id="is_active"
+                                checked={data.is_active}
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
+                                }
+                            />
                             <Label htmlFor="is_active">Active</Label>
                         </div>
                     </div>
 
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button type="button" variant="outline">Cancel</Button>
+                            <Button type="button" variant="outline">
+                                Cancel
+                            </Button>
                         </DialogClose>
-                        <Button type="submit" disabled={processing}>{processing && <Spinner />}Create Fuel Type</Button>
+                        <Button type="submit" disabled={processing}>
+                            {processing && <Spinner />}Create Fuel Type
+                        </Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

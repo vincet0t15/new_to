@@ -207,11 +207,18 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 <Detail
                                     label="Fuel type"
-                                    value={tripTicket.fuel_type_record?.name ?? tripTicket.fuel_type ?? '—'}
+                                    value={
+                                        tripTicket.fuel_type_record?.name ??
+                                        tripTicket.fuel_type ??
+                                        '—'
+                                    }
                                 />
                                 <Detail
                                     label="Fuel source office"
-                                    value={tripTicket.fuel_source_office?.office_name ?? '—'}
+                                    value={
+                                        tripTicket.fuel_source_office
+                                            ?.office_name ?? '—'
+                                    }
                                 />
                                 <Detail
                                     label="Fuel efficiency"
@@ -275,7 +282,22 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 <Detail
                                     label="Receipt attachment"
-                                    value={tripTicket.fuel_receipt_url ? <a href={tripTicket.fuel_receipt_url} target="_blank" rel="noreferrer" className="underline underline-offset-2">View receipt</a> : '—'}
+                                    value={
+                                        tripTicket.fuel_receipt_url ? (
+                                            <a
+                                                href={
+                                                    tripTicket.fuel_receipt_url
+                                                }
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="underline underline-offset-2"
+                                            >
+                                                View receipt
+                                            </a>
+                                        ) : (
+                                            '—'
+                                        )
+                                    }
                                 />
                                 <Detail
                                     label="Odometer at departure"
@@ -442,7 +464,9 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                     type="number"
                                     min="0"
                                     step="0.01"
-                                    value={completeForm.data.fuel_price_per_liter}
+                                    value={
+                                        completeForm.data.fuel_price_per_liter
+                                    }
                                     onChange={(event) =>
                                         completeForm.setData(
                                             'fuel_price_per_liter',
@@ -451,7 +475,9 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                     }
                                 />
                                 <InputError
-                                    message={completeForm.errors.fuel_price_per_liter}
+                                    message={
+                                        completeForm.errors.fuel_price_per_liter
+                                    }
                                 />
                             </div>
                             <div className="space-y-2">
@@ -474,7 +500,9 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="fuel_station">Fuel station</Label>
+                                <Label htmlFor="fuel_station">
+                                    Fuel station
+                                </Label>
                                 <Input
                                     id="fuel_station"
                                     value={completeForm.data.fuel_station}
@@ -504,16 +532,48 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                     }
                                 />
                                 <InputError
-                                    message={completeForm.errors.fuel_receipt_no}
+                                    message={
+                                        completeForm.errors.fuel_receipt_no
+                                    }
                                 />
                             </div>
                             <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor="complete_fuel_receipt">Receipt attachment</Label>
-                                <Input id="complete_fuel_receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => completeForm.setData('fuel_receipt', e.target.files?.[0] ?? null)} />
-                                <InputError message={completeForm.errors.fuel_receipt} />
-                                {tripTicket.fuel_receipt_url && !completeForm.data.remove_fuel_receipt && (
-                                    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={completeForm.data.remove_fuel_receipt} onChange={(e) => completeForm.setData('remove_fuel_receipt', e.target.checked)} />Remove current receipt</label>
-                                )}
+                                <Label htmlFor="complete_fuel_receipt">
+                                    Receipt attachment
+                                </Label>
+                                <Input
+                                    id="complete_fuel_receipt"
+                                    type="file"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    onChange={(e) =>
+                                        completeForm.setData(
+                                            'fuel_receipt',
+                                            e.target.files?.[0] ?? null,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={completeForm.errors.fuel_receipt}
+                                />
+                                {tripTicket.fuel_receipt_url &&
+                                    !completeForm.data.remove_fuel_receipt && (
+                                        <label className="flex items-center gap-2 text-xs">
+                                            <input
+                                                type="checkbox"
+                                                checked={
+                                                    completeForm.data
+                                                        .remove_fuel_receipt
+                                                }
+                                                onChange={(e) =>
+                                                    completeForm.setData(
+                                                        'remove_fuel_receipt',
+                                                        e.target.checked,
+                                                    )
+                                                }
+                                            />
+                                            Remove current receipt
+                                        </label>
+                                    )}
                             </div>
                         </div>
                         <div className="space-y-2">

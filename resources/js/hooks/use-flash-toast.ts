@@ -31,10 +31,18 @@ function showFlash(flash?: FlashPayload): void {
 
 export function useFlashToast(): void {
     useEffect(() => {
-        showFlash((router as unknown as { page?: { props?: { flash?: FlashPayload } } }).page?.props?.flash);
+        showFlash(
+            (
+                router as unknown as {
+                    page?: { props?: { flash?: FlashPayload } };
+                }
+            ).page?.props?.flash,
+        );
 
         return router.on('flash', (event) => {
-            const detail = (event as CustomEvent).detail?.flash as FlashPayload | undefined;
+            const detail = (event as CustomEvent).detail?.flash as
+                | FlashPayload
+                | undefined;
             showFlash(detail);
         });
     }, []);

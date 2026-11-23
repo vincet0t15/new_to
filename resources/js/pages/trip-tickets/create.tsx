@@ -12,7 +12,12 @@ type Props = {
     fuelTypes: { id: number; name: string }[];
 };
 
-export default function CreateTripTicket({ travelOrder, drivers, offices, fuelTypes }: Props) {
+export default function CreateTripTicket({
+    travelOrder,
+    drivers,
+    offices,
+    fuelTypes,
+}: Props) {
     return (
         <>
             <Head title="New Trip Ticket" />

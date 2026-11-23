@@ -235,5 +235,8 @@ test('admin dashboard shows fuel low balance alerts', function () {
         ->has('fuelAlerts', 1)
         ->where('fuelAlerts.0.office_name', 'Alert Office')
         ->where('fuelAlerts.0.fuel_type', 'Diesel')
+        ->has('recentOrders')
+        ->has('fuelSummary')
+        ->where('fuelSummary.active_allocations', 1)
     );
 });

@@ -46,6 +46,7 @@ test('the employee dashboard counts only the account\'s own travel orders', func
             ->where('stats.submitted', 1)
             ->where('stats.returned', 0)
             ->where('stats.approved', 1)
+            ->has('recentOrders', 3)
         );
 });
 
@@ -81,6 +82,7 @@ test('the department head dashboard counts pending and processed work', function
             ->where('stats.pending', 1)
             ->where('stats.processed', 0)
             ->where('stats.returned', 0)
+            ->has('pendingItems', 1)
         );
 
     app(TravelOrderApprovalService::class)->approve($order, $chain['headUser']);

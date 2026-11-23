@@ -73,7 +73,9 @@ export function TripTicketForm({
             tripTicket?.driver_id !== undefined
                 ? String(tripTicket.driver_id)
                 : '',
-        fuel_type_id: tripTicket?.fuel_type_id ? String(tripTicket.fuel_type_id) : '',
+        fuel_type_id: tripTicket?.fuel_type_id
+            ? String(tripTicket.fuel_type_id)
+            : '',
         fuel_type: tripTicket?.fuel_type ?? '',
         fuel_source_office_id: defaultFuelOfficeId,
         fuel_efficiency: tripTicket?.fuel_efficiency ?? '',
@@ -196,18 +198,29 @@ export function TripTicketForm({
                             <Combobox
                                 value={form.data.fuel_type_id}
                                 onValueChange={(value) => {
-                                    const selected = fuelTypes.find((ft) => String(ft.id) === value);
+                                    const selected = fuelTypes.find(
+                                        (ft) => String(ft.id) === value,
+                                    );
                                     form.setData((data) => ({
                                         ...data,
                                         fuel_type_id: value,
-                                        fuel_type: selected?.name ?? data.fuel_type,
+                                        fuel_type:
+                                            selected?.name ?? data.fuel_type,
                                     }));
                                 }}
-                                options={fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))}
+                                options={fuelTypes.map((ft) => ({
+                                    value: String(ft.id),
+                                    label: ft.name,
+                                }))}
                                 placeholder="Select fuel type"
                                 searchPlaceholder="Search fuel type..."
                             />
-                            <InputError message={form.errors.fuel_type_id ?? form.errors.fuel_type} />
+                            <InputError
+                                message={
+                                    form.errors.fuel_type_id ??
+                                    form.errors.fuel_type
+                                }
+                            />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
                             <Label>Fuel source office</Label>
@@ -223,10 +236,14 @@ export function TripTicketForm({
                                 placeholder="Select fuel source office"
                                 searchPlaceholder="Search office..."
                             />
-                            <p className="text-muted-foreground text-xs">
-                                Default is the travel order&apos;s office. Change if fuel will be borrowed/charged to another office.
+                            <p className="text-xs text-muted-foreground">
+                                Default is the travel order&apos;s office.
+                                Change if fuel will be borrowed/charged to
+                                another office.
                             </p>
-                            <InputError message={form.errors.fuel_source_office_id} />
+                            <InputError
+                                message={form.errors.fuel_source_office_id}
+                            />
                         </div>
                     </div>
                 </section>
@@ -337,7 +354,10 @@ export function TripTicketForm({
                                 step="0.01"
                                 value={form.data.fuel_cost}
                                 onChange={(event) =>
-                                    form.setData('fuel_cost', event.target.value)
+                                    form.setData(
+                                        'fuel_cost',
+                                        event.target.value,
+                                    )
                                 }
                                 placeholder={
                                     estimatedCost > 0
@@ -377,28 +397,52 @@ export function TripTicketForm({
                                 }
                                 placeholder="Optional receipt or invoice number"
                             />
-                            <InputError
-                                message={form.errors.fuel_receipt_no}
-                            />
+                            <InputError message={form.errors.fuel_receipt_no} />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                            <Label htmlFor="fuel_receipt">Receipt attachment (JPG/PNG/PDF)</Label>
+                            <Label htmlFor="fuel_receipt">
+                                Receipt attachment (JPG/PNG/PDF)
+                            </Label>
                             <Input
                                 id="fuel_receipt"
                                 type="file"
                                 accept=".jpg,.jpeg,.png,.pdf"
-                                onChange={(e) => form.setData('fuel_receipt', e.target.files?.[0] ?? null)}
+                                onChange={(e) =>
+                                    form.setData(
+                                        'fuel_receipt',
+                                        e.target.files?.[0] ?? null,
+                                    )
+                                }
                             />
                             <InputError message={form.errors.fuel_receipt} />
-                            {tripTicket?.fuel_receipt_url && !form.data.remove_fuel_receipt && (
-                                <div className="flex items-center gap-2 text-xs">
-                                    <a href={tripTicket.fuel_receipt_url} target="_blank" rel="noreferrer" className="underline underline-offset-2">View current receipt</a>
-                                    <label className="flex items-center gap-1">
-                                        <Checkbox checked={form.data.remove_fuel_receipt} onCheckedChange={(c) => form.setData('remove_fuel_receipt', c === true)} />
-                                        Remove receipt
-                                    </label>
-                                </div>
-                            )}
+                            {tripTicket?.fuel_receipt_url &&
+                                !form.data.remove_fuel_receipt && (
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <a
+                                            href={tripTicket.fuel_receipt_url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="underline underline-offset-2"
+                                        >
+                                            View current receipt
+                                        </a>
+                                        <label className="flex items-center gap-1">
+                                            <Checkbox
+                                                checked={
+                                                    form.data
+                                                        .remove_fuel_receipt
+                                                }
+                                                onCheckedChange={(c) =>
+                                                    form.setData(
+                                                        'remove_fuel_receipt',
+                                                        c === true,
+                                                    )
+                                                }
+                                            />
+                                            Remove receipt
+                                        </label>
+                                    </div>
+                                )}
                         </div>
                     </div>
 
@@ -424,7 +468,8 @@ export function TripTicketForm({
                         </p>
                         {estimatedCost > 0 && (
                             <p className="mt-2 text-sm font-medium text-foreground">
-                                Estimated fuel cost: PHP {estimatedCost.toFixed(2)}
+                                Estimated fuel cost: PHP{' '}
+                                {estimatedCost.toFixed(2)}
                             </p>
                         )}
                     </div>

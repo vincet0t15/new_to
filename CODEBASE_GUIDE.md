@@ -88,11 +88,14 @@ Layers are **not** enforced by namespace rules; authorization is deliberately sp
 | `travel_order_revisions`        | One row per return/resubmit round: change type, changed/previous/new data                                                                                                                                              |
 | `notifications`                 | Standard Laravel notifications                                                                                                                                                                                         |
 | `travel_order_itineraries`      | Place-to-place legs with fare/per diem/registration and `*_is_auto` flags                                                                                                                                              |
-| `trip_tickets`                  | Vehicle/fuel/odometer data, ticket no, status `issued/completed/cancelled`                                                                                                                                             |
+| `trip_tickets`                  | Vehicle/fuel/odometer data, ticket no, status `issued/completed/cancelled`; `fuel_source_office_id`, optional `fuel_type_id`, `fuel_receipt_path`; actual `fuel_consumed`/`fuel_cost` written on completion            |
+| `fuel_types` (`FuelType`)       | Admin-managed fuel catalogue (`name`, `code`, `is_active`), seeded with Philippine fuel names; referenced by trip tickets and allocations                                                                              |
+| `fuel_allocations`              | Append-only office fuel ledger: `type` `allocation                                                                                                                                                                     | transfer`, signed liters/amount (transfer = paired debit/credit), status `active | voided`, source/related links, void audit fields  |
+| `fuel_allocation_events`        | Append-only allocation history: `created                                                                                                                                                                               | updated                                                                          | voided` with actor, remarks and before/after meta |
 
 ### 4.3 Travel setup & printing
 
-`transportation_modes` + `transportation_fares`, `expense_types`, `fund_sources`, `locations`, `travel_classifications`, `per_diem_configurations` + meal rules + location pivot (`2026_11_18_000006/000007`), `signatory_groups` (3-line for the TO) and `itinerary_signatory_groups` (2-line for Appendix A).
+`transportation_modes` + `transportation_fares`, `expense_types`, `fund_sources`, `locations`, `travel_classifications`, `per_diem_configurations` + meal rules + location pivot (`2026_11_18_000006/000007`), `signatory_groups` (3-line for the TO) and `itinerary_signatory_groups` (2-line for Appendix A). Fuel setup (`fuel_types`) is managed from the admin sidebar and is part of travel operations rather than travel-order routing.
 
 ---
 
@@ -102,10 +105,10 @@ Layers are **not** enforced by namespace rules; authorization is deliberately sp
 Draft ──submit()──► Submitted ──approve()/acknowledge() per step──► Approved
   ▲                    │  returnTo()                                  │
   │                    ▼                                              ▼
-  └──resubmit()──── Returned                                    Trip ticket
-                                                                 (issued →
-                                                                  completed/cancelled)
+  └──resubmit()──── Returned                                   operational use
 ```
+
+Trip tickets are independent of the approval state: they can be prepared for **any** order that uses a government vehicle and move `issued → completed/cancelled` (§7.3).
 
 Statuses: `draft`, `submitted`, `approved`, `returned`, `cancelled`, `completed`, `rejected` (`TravelOrderStatus.php:8-16`). Only `submitted` is "open"; `draft` and `returned` are creator-editable (`:49-63`).
 
@@ -241,24 +244,42 @@ result = number_format(amount, 2, '.', '')
 
 ### 7.3 Trip tickets
 
-Only for an `Approved` order (`TripTicketService.php:185-192`). Statuses `issued|completed|cancelled`; only `issued` is editable.
+Allowed for **any travel order that will use a government vehicle** (`TripTicketService::ensureOrderAllowsTicket()`); there is no `Approved`-only gate and no approval workflow for the ticket itself. Statuses `issued|completed|cancelled`; only `issued` is editable.
 
-- Create: trims plate, rejects duplicate non-cancelled plate on the same order, sets `ticket_no = TT-{YEAR}-{5-digit id}` (`:28-67`).
-- Fuel formula: `liters = round(distance * (round_trip ? 2 : 1) / fuel_efficiency, 2)`, else `0.00` (`:157-183`). Example: 80 km round trip at 10 km/L → 16.00 L.
-- Complete: requires `issued`, validates odometer ordering, can derive distance from readings (`:98-138`). Cancel: requires `issued` + reason (`:140-155`). Delete: only after cancellation (`TravelOrderTripTicketController.php:156-174`). All screens are owner-only.
+- Create: trims plate, rejects duplicate non-cancelled plate on the same order, sets `ticket_no = TT-{YEAR}-{5-digit id}` (`:28-67`). The create dialog is available on the travel order page when a government vehicle is part of the trip.
+- Fuel source defaults to the travel order's office. Selecting a different `fuel_source_office_id` marks the ticket as **borrowed fuel**; completion deducts actual liters/cost from that source office's balance (§7.4).
+- Fuel estimate: `liters = round(distance * (round_trip ? 2 : 1) / fuel_efficiency, 2)`, else `0.00` (`:157-183`).
+- Complete: requires `issued`, validates odometer ordering, can derive distance from readings, and writes actual `fuel_consumed`, `fuel_cost`, receipt number and optional receipt file (`:108-155`). Cancel: requires `issued` + reason (`:158-170`). Delete: only after cancellation.
+- Receipt evidence is stored on the `public` disk under `trip-ticket-receipts` (JPG/PNG/PDF, max 5 MB); `fuel_receipt_url` is appended to the model. Keep `php artisan storage:link` in place.
+- **Mutations are owner-only** (`authorizeOwner()`). `show`/`print` live outside the employee portal and are readable by the owner, `travel-orders.view-all` holders, delivery recipients, and users who acted on the order (`authorizeViewer()`); routes require `travel-orders.view` / `travel-orders.print`.
 
-### 7.4 Printing
+### 7.4 Fuel management
+
+Fuel is tracked per **office + fuel type** in an append-only ledger. Balances are derived, never stored:
+
+```
+Remaining = SUM(active allocations for office+fuel type)
+          - SUM(actual fuel from COMPLETED trip tickets whose source office matches)
+```
+
+- **Allocations** (`Admin\FuelAllocationController`): create/edit/void active records; edits and voids are logged to `fuel_allocation_events` (before/after snapshots, actor, reason). Voiding an active transfer record also voids its paired record. No hard delete and no approval workflow.
+- **Transfers** (`type=transfer`): office-to-office fuel borrowing creates a paired negative (source) and positive (target) entry in one DB transaction. Transfers are immutable; void and recreate. Insufficient source balance is **warning-only** — the transfer is still recorded and the warning is flashed.
+- **Fuel types** (admin `fuel-types` CRUD): full catalogue with active flag, permissions `fuel-types.view/create/update/delete`, and a Philippine fuel-name seeder. Trip tickets and allocations store `fuel_type_id` plus a denormalized `fuel_type` name.
+- **Monitoring** (`Approvals\FuelMonitoringController`, shared by Admin and Approvals): filter by office, fuel type, status, borrowed-only, dates and free text; summary includes estimated liters (non-cancelled tickets), actual liters/cost (completed only), allocations and remaining balances. Usage is grouped by office and fuel type, and borrowed fuel is broken down by borrower → source office. CSV export includes receipt number/URL. Both portals use the same page component and route prefix from `$prefix`.
+- **Admin dashboard alerts**: configured thresholds (`config/travel-orders.php` → `fuel.low_balance_liters`, `fuel.low_balance_amount`) drive low/negative balance alerts; negative balances are labeled “Over allocation”.
+
+### 7.5 Printing
 
 - `printOrder()` / `printItinerary()` load relations and pass letterhead (`config/travel-orders.php:82-89`) + signatories: **frozen JSON for filed orders, live for drafts** (`TravelOrderController.php:367-402`; `SignatoryResolver.php:27-39`).
 - Viewers: owner or anyone ever delivered to (`:666-678`), plus `travel-orders.print` permission on the route.
 - Shared print primitives in `components/travel-orders/print/document.tsx` (screen toolbar hidden with `print:hidden`, letterhead images `/LGU.png` and `/Bagong Pilipinas logo.png`); `print/totals.ts` coerces decimal strings to finite numbers.
-- `travel-orders/print-order` and `print-itinerary` render **inside AppLayout** and hide chrome via print CSS; only `trip-tickets/print` is layout-free (`app.tsx:17-18`).
+- `travel-orders/print-order`, `print-itinerary`, and `trip-tickets/print` are **layout-free** (`app.tsx`): no app sidebar/header is rendered, so the printed sheets are clean at any paper size.
 
-### 7.5 Notifications & audit
+### 7.6 Notifications & audit
 
 `TravelOrderNotification` always writes a DB row; mail only for a `User` with an email (`TravelOrderNotification.php:12-40`). Only two events notify: `returned()` to the creator and `routed()` to each recipient (`TravelOrderNotifier.php:20-69`). No notification for approval/acknowledge/completion/trip-ticket events.
 
-`TravelOrderAudit::record()` appends every workflow event (`:19-43`). `TravelOrderRoutePresenter` turns state into UI arrays: `route()`, `timeline()`, `revisions()` (`:29-166`). Admin surfaces: searchable register (`TravelOrderRegisterController.php:11-41`), reports + CSV (`ReportsController.php:17-131`), audit log (`AuditLogController.php:11-49`).
+`TravelOrderAudit::record()` appends every workflow event (`:19-43`). `TravelOrderRoutePresenter` turns state into UI arrays: `route()`, `timeline()`, `revisions()` (`:29-166`). Admin surfaces: searchable register (`TravelOrderRegisterController.php:11-41`), reports + CSV (`ReportsController.php:17-131`), audit log (`AuditLogController.php:11-49`). Fuel allocation changes additionally append to `fuel_allocation_events` (§7.4); fuel receipts and visible ticket history are exposed through fuel monitoring.
 
 ---
 
@@ -295,7 +316,7 @@ A portal is a **route-prefix UX workspace**, not a separate app or guard (`Porta
 - The active portal is **derived from the URL**, never persisted (`PortalResolver.php:75-97`; `HandleInertiaRequests.php:46-54`).
 - `EnsurePortalAccess` fails closed: 401 for guests, accepts if any `portal:` argument is enterable, else 403 (`:29-44`).
 - `PortalSwitcher` appears in the user dropdown only when ≥2 portals are available (`portal-switcher.tsx:25-58`); the sidebar builds a different nav group set per portal (`app-sidebar.tsx:350-388`).
-- Portal dashboards are lightweight placeholders; the Approvals portal's landing is the real inbox.
+- Portal dashboards are role-focused operational views (see §12.2): the employee dashboard shows personal order counts plus recent orders; the department-head dashboard shows the approval queue plus pending items; the admin dashboard shows pipeline counts, fuel position, recent organization orders and fuel alerts. The shared `/approvals` inbox remains the Approvals portal landing page.
 
 ---
 
@@ -309,15 +330,20 @@ React `Can` / `useCan` / `NavMain` checks are **UI-only** (`can.tsx:4-20`; `use-
 
 Capability summary (still subject to state/ownership/holder checks):
 
-| Area                                       | Employee/filer                                  | Approver roles                                | Admin                               |
-| ------------------------------------------ | ----------------------------------------------- | --------------------------------------------- | ----------------------------------- |
-| Create/edit/delete own draft               | yes                                             | no                                            | no special route                    |
-| Submit/resubmit own order                  | yes                                             | no                                            | no                                  |
-| Manage itinerary                           | own draft/returned                              | no                                            | no                                  |
-| Prepare/complete/cancel/print trip ticket  | approved order only                             | no                                            | no                                  |
-| Receive/approve/acknowledge/return/forward | no                                              | only with active delivery + correct step type | only if designated                  |
-| Print TO / Appendix A                      | owner or delivered recipient + print permission | delivered recipient + print permission        | print permission alone insufficient |
-| View all orders / reports / audit          | no                                              | no                                            | yes with admin permissions          |
+| Area                                       | Employee/filer                                    | Approver roles                                | Admin                               |
+| ------------------------------------------ | ------------------------------------------------- | --------------------------------------------- | ----------------------------------- |
+| Create/edit/delete own draft               | yes                                               | no                                            | no special route                    |
+| Submit/resubmit own order                  | yes                                               | no                                            | no                                  |
+| Manage itinerary                           | own draft/returned                                | no                                            | no                                  |
+| Prepare/complete/cancel/print trip ticket  | own order, government vehicle required            | no                                            | no                                  |
+| View/print trip ticket                     | owner, `travel-orders.view-all`, delivered, actor | delivered recipient + view/print permission   | view/print permission               |
+| Receive/approve/acknowledge/return/forward | no                                                | only with active delivery + correct step type | only if designated                  |
+| Budget earmark / fund source               | no                                                | Budget Review holder action, no step advance  | no                                  |
+| HRMO series/control/recording/distribution | no                                                | HRMO Review holder action, no step advance    | no                                  |
+| Manage fuel allocations/transfers/types    | no                                                | no                                            | yes with fuel permissions           |
+| View fuel monitoring                       | no                                                | yes (shared Approvals/Admin page)             | yes                                 |
+| Print TO / Appendix A                      | owner or delivered recipient + print permission   | delivered recipient + print permission        | print permission alone insufficient |
+| View all orders / reports / audit          | no                                                | no                                            | yes with admin permissions          |
 
 ---
 
@@ -351,7 +377,9 @@ Most resources follow this shape: migration → model → contract + Eloquent re
 
 ### 12.2 UI system
 
-shadcn/ui `new-york` + Radix + Tailwind v4 tokens in `resources/css/app.css:8-143` (semantic `oklch` variables, `.dark` overrides). Theme state is an external store backed by localStorage **and** a cookie read server-side by `HandleAppearance.php:19`, preventing a flash. Forms use Inertia `useForm`, `InputError`, and Sonner toasts driven by `Inertia::flash('toast', …)` → `useFlashToast()` → global `<Toaster />` (`use-flash-toast.ts:6-19`; `types/ui.ts:19-22`).
+shadcn/ui `new-york` + Radix + Tailwind v4 tokens in `resources/css/app.css:8-143` (semantic `oklch` variables, `.dark` overrides). Theme state is an external store backed by localStorage **and** a cookie read server-side by `HandleAppearance.php:19`, preventing a flash. Forms use Inertia `useForm`, `InputError`, and Sonner toasts driven by `Inertia::flash('toast', …)` → `useFlashToast()` → global `<Toaster />` (`use-flash-toast.ts`; `types/ui.ts`). Flash payloads are shared by `HandleInertiaRequests` as `flash.toast`, `flash.success`, `flash.warning` and `flash.error`; `useFlashToast()` listens to Inertia router events rather than calling `usePage()` outside a page component.
+
+Portal dashboards share a small presentational kit in `components/dashboard/`: `DashboardHeader` (eyebrow, greeting, description, date, actions), `DashboardPanel` (icon header, action slot, flush content, footer), `SectionHeading`, `QuickLinks`, `EmptyState` and `DashboardLink`. `StatCard` (`components/stat-card.tsx`) is the KPI tile used by dashboards and the approvals inbox; it supports neutral/info/warning/success/danger tones, optional icons and hrefs, and quiets itself when the value is zero. The visual direction is civic/institutional: emerald brand accent (matching `welcome.tsx`), neutral `bg-muted/30` page background, a max-width shell, and card surfaces using existing tokens. No dashboard adds fabricated trend data; all figures come from controller props.
 
 ### 12.3 Types
 
@@ -374,7 +402,7 @@ No generated data-type bridge. `resources/js/types/**` is hand-maintained, mirro
 
 These are observations from the source analysis, not changes:
 
-1. **Unwired states/events.** `Completed`, `Cancelled`, `Rejected` statuses and `PulledBack`, `Cancelled` events are declared/presented but never written; `travel-orders.cancel` and `.earmark` permissions are seeded but unused. Presentation maps `Rejected`/`Cancelled` as "cancelled".
+1. **Unwired travel-order states/events.** The travel-order statuses `Completed`, `Cancelled`, `Rejected` and the `PulledBack`, `Cancelled` workflow events are declared/presented but still have no producer; the admin dashboard shows those buckets (usually `0`) until one exists. `travel-orders.earmark` is now used by the Budget Review holder action, but `travel-orders.cancel` remains seeded and unused. Presentation maps `Rejected`/`Cancelled` as "cancelled". Trip-ticket `completed`/`cancelled` **are** actively written.
 2. **No superadmin routing bypass.** All approval actions still require a live delivery; `/approvals` explicitly excludes admin roles.
 3. ~~**`SignatoryResolver::routedTypes()` key mismatch** — `array_flip(routed_steps)` builds step-ID→index, but step _types_ are sorted by `$positions[$type->id]` (step-type ID), so route ordering of signature lines isn't actually guaranteed.~~ **Fixed 2026-11-21:** steps are now sorted by their own position in `routed_steps` before their types are plucked; a regression test in `TravelOrderPrintTest.php` pins the order.
 4. **`forward()` closes open deliveries globally**, not scoped to the current step — safe under the current assumption that only the current step has open copies (`TravelOrderApprovalService.php:178,554-560`).
@@ -388,21 +416,25 @@ These are observations from the source analysis, not changes:
 12. **Per-diem config cache is instance-local** (fresh service per request, so fine today).
 13. **Nested transaction** in `TravelOrderController::resubmit()` wrapping the service transaction (savepoints; correct but note for rollback debugging).
 14. **Workflow deletion guards use `travel_orders.workflow_id`**, set only at submission; drafts are unaffected.
+15. **Admin has no travel-order detail route** — the admin register is index-only, so the admin dashboard's recent-orders rows are informational and deliberately not linked; employees/department heads reach detail pages through their own portals.
 
 ---
 
 ## 15. "Where do I go to…" quick reference
 
-| Task                          | Start here                                                                                                                                                                                                 |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Add a master-data resource    | Copy the Office slice (§11): migration, model, repo contract+impl, provider binding, FormRequests, controller, route file + `require`, seeder permissions, TS types, pages, nav, tests                     |
-| Change approval routing rules | `WorkflowRouteResolver`, `TravelOrderSubmissionService`, `TravelOrderApprovalService`, `config/travel-orders.php`                                                                                          |
-| Add an approval action        | `routes/portals.php`, permission in `RolesAndPermissionsSeeder`, `TravelOrderActionController`, a service method, ability flags in `ApprovalInboxController::show()`, button in `pages/approvals/show.tsx` |
-| Change per-diem math          | `PerDiemComputationService`, `TravelOrderItineraryController::persist()`                                                                                                                                   |
-| Change print output           | `components/travel-orders/print/*`, `pages/travel-orders/print-*.tsx`, `SignatoryResolver`, `config/travel-orders.php:82-89`                                                                               |
-| Change what a portal can see  | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx`                                                                                                                             |
-| Change shared client props    | `HandleInertiaRequests::share()`, `types/global.d.ts`                                                                                                                                                      |
-| Debug a stuck approval        | Delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                                                                               |
-| Run all checks                | `composer test` and `npm run check && npm run types:check`                                                                                                                                                 |
+| Task                          | Start here                                                                                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add a master-data resource    | Copy the Office slice (§11): migration, model, repo contract+impl, provider binding, FormRequests, controller, route file + `require`, seeder permissions, TS types, pages, nav, tests                                    |
+| Change approval routing rules | `WorkflowRouteResolver`, `TravelOrderSubmissionService`, `TravelOrderApprovalService`, `config/travel-orders.php`                                                                                                         |
+| Add an approval action        | `routes/portals.php`, permission in `RolesAndPermissionsSeeder`, `TravelOrderActionController`, a service method, ability flags in `ApprovalInboxController::show()`, button in `pages/approvals/show.tsx`                |
+| Change per-diem math          | `PerDiemComputationService`, `TravelOrderItineraryController::persist()`                                                                                                                                                  |
+| Change print output           | `components/travel-orders/print/*`, `pages/travel-orders/print-*.tsx`, `SignatoryResolver`, `config/travel-orders.php:82-89`                                                                                              |
+| Change trip-ticket rules      | `TripTicketService`, `TravelOrderTripTicketController`, `SaveTripTicketRequest`/`CompleteTripTicketRequest`, `pages/trip-tickets/*`, `routes/travel-orders.php`                                                           |
+| Change fuel behavior          | `Admin\FuelAllocationController`, `Approvals\FuelMonitoringController`, `FuelAllocation*` models, `fuel_allocations`/`fuel_allocation_events` migrations, `pages/fuel-allocations/*`, `pages/approvals/fuel-monitoring/*` |
+| Change a portal dashboard     | `PortalDashboardController` / `Admin\DashboardController`, `types/dashboard.ts`, `pages/portals/{employee,department-head,admin}/dashboard.tsx`, `components/dashboard/*`, `components/stat-card.tsx`                     |
+| Change what a portal can see  | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx`                                                                                                                                            |
+| Change shared client props    | `HandleInertiaRequests::share()`, `types/global.d.ts`                                                                                                                                                                     |
+| Debug a stuck approval        | Delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                                                                                              |
+| Run all checks                | `composer test` and `npm run check && npm run types:check`                                                                                                                                                                |
 
 Detailed, citation-heavy source reports live in `%TEMP%\opencode\newto-analysis\` (`01-workflow-approval.md`, `02-travel-order-domain.md`, `03-auth-portals-crud.md`, `04-frontend-tooling.md`) if you need line-level depth beyond this guide.

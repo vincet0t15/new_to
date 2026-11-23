@@ -59,7 +59,8 @@ export default function CreateTravelOrder({
     };
 
     const routingError = (errors as Record<string, string | undefined>).routing;
-    const employeeError = (errors as Record<string, string | undefined>).employee;
+    const employeeError = (errors as Record<string, string | undefined>)
+        .employee;
 
     return (
         <>
@@ -67,7 +68,12 @@ export default function CreateTravelOrder({
             <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
-                        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="-ml-2 w-fit"
+                            asChild
+                        >
                             <Link href={travelOrdersRoutes.index().url}>
                                 <ArrowLeft className="size-4" />
                                 Back to travel orders
@@ -79,13 +85,16 @@ export default function CreateTravelOrder({
                             </h1>
                             <p className="max-w-2xl text-sm text-muted-foreground">
                                 Complete the travel details below. The approval
-                                route is resolved automatically from your office.
+                                route is resolved automatically from your
+                                office.
                             </p>
                         </div>
                     </div>
                     {filer && (
                         <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm sm:max-w-xs">
-                            <p className="font-medium text-foreground">{filer.name}</p>
+                            <p className="font-medium text-foreground">
+                                {filer.name}
+                            </p>
                             <p className="text-muted-foreground">
                                 {filer.office ?? 'No office assigned'}
                             </p>
@@ -118,8 +127,8 @@ export default function CreateTravelOrder({
                                     Additional notes
                                 </CardTitle>
                                 <CardDescription>
-                                    Optional context for approvers reviewing this
-                                    request.
+                                    Optional context for approvers reviewing
+                                    this request.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-2">
@@ -151,52 +160,70 @@ export default function CreateTravelOrder({
                                     Approval route
                                 </CardTitle>
                                 <CardDescription>
-                                    Steps are determined by your office workflow.
+                                    Steps are determined by your office
+                                    workflow.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {routePreview ? (
                                     <>
                                         <ol className="space-y-3">
-                                            {routePreview.steps.map((step, index) => (
-                                                <li
-                                                    key={step.id}
-                                                    className="flex gap-3 text-sm"
-                                                >
-                                                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground">
-                                                        {index + 1}
-                                                    </span>
-                                                    <div className="min-w-0">
-                                                        <p className="font-medium leading-6 text-foreground">
-                                                            {step.label}
-                                                        </p>
-                                                        <p className="text-xs text-muted-foreground">
-                                                            {step.office.office_name}
-                                                            {step.designees.length > 0
-                                                                ? ` · ${step.designees
-                                                                      .map((d) => d.name)
-                                                                      .join(', ')}`
-                                                                : ' · No designee assigned'}
-                                                        </p>
-                                                    </div>
-                                                </li>
-                                            ))}
-                                            {routePreview.steps.length === 0 && (
+                                            {routePreview.steps.map(
+                                                (step, index) => (
+                                                    <li
+                                                        key={step.id}
+                                                        className="flex gap-3 text-sm"
+                                                    >
+                                                        <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground">
+                                                            {index + 1}
+                                                        </span>
+                                                        <div className="min-w-0">
+                                                            <p className="leading-6 font-medium text-foreground">
+                                                                {step.label}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                {
+                                                                    step.office
+                                                                        .office_name
+                                                                }
+                                                                {step.designees
+                                                                    .length > 0
+                                                                    ? ` · ${step.designees
+                                                                          .map(
+                                                                              (
+                                                                                  d,
+                                                                              ) =>
+                                                                                  d.name,
+                                                                          )
+                                                                          .join(
+                                                                              ', ',
+                                                                          )}`
+                                                                    : ' · No designee assigned'}
+                                                            </p>
+                                                        </div>
+                                                    </li>
+                                                ),
+                                            )}
+                                            {routePreview.steps.length ===
+                                                0 && (
                                                 <li className="text-sm text-muted-foreground">
-                                                    No workflow steps are configured.
+                                                    No workflow steps are
+                                                    configured.
                                                 </li>
                                             )}
                                         </ol>
                                         {!routePreview.is_ready && (
                                             <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
-                                                Some steps have no designee. Submission
-                                                may be blocked until the route is ready.
+                                                Some steps have no designee.
+                                                Submission may be blocked until
+                                                the route is ready.
                                             </p>
                                         )}
                                     </>
                                 ) : (
                                     <p className="text-sm text-muted-foreground">
-                                        No route preview available for your account.
+                                        No route preview available for your
+                                        account.
                                     </p>
                                 )}
                             </CardContent>
@@ -204,11 +231,13 @@ export default function CreateTravelOrder({
 
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Actions</CardTitle>
+                                <CardTitle className="text-base">
+                                    Actions
+                                </CardTitle>
                                 <CardDescription>
-                                    Save this travel order as a draft first. You can
-                                    review details, add itinerary, and submit for
-                                    approval from the details page.
+                                    Save this travel order as a draft first. You
+                                    can review details, add itinerary, and
+                                    submit for approval from the details page.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">

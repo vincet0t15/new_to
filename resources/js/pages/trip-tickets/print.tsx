@@ -154,7 +154,11 @@ export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
                         />
                         <Field
                             label="Fuel type"
-                            value={tripTicket.fuel_type_record?.name ?? tripTicket.fuel_type ?? '—'}
+                            value={
+                                tripTicket.fuel_type_record?.name ??
+                                tripTicket.fuel_type ??
+                                '—'
+                            }
                         />
                         <Field
                             label="Fuel efficiency"
@@ -205,7 +209,11 @@ export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
                         />
                         <Field
                             label="Receipt attachment"
-                            value={tripTicket.fuel_receipt_url ? 'Attached (see digital record)' : '—'}
+                            value={
+                                tripTicket.fuel_receipt_url
+                                    ? 'Attached (see digital record)'
+                                    : '—'
+                            }
                         />
                         <Field
                             label="Odometer at departure"

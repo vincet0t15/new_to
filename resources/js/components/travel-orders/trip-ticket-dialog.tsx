@@ -193,25 +193,39 @@ export function TripTicketDialog({
                                         placeholder="Select the driver"
                                         searchPlaceholder="Search employee..."
                                     />
-                                    <InputError message={form.errors.driver_id} />
+                                    <InputError
+                                        message={form.errors.driver_id}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Fuel type</Label>
                                     <Combobox
                                         value={form.data.fuel_type_id}
                                         onValueChange={(value) => {
-                                            const selected = fuelTypes.find((ft) => String(ft.id) === value);
+                                            const selected = fuelTypes.find(
+                                                (ft) => String(ft.id) === value,
+                                            );
                                             form.setData((data) => ({
                                                 ...data,
                                                 fuel_type_id: value,
-                                                fuel_type: selected?.name ?? data.fuel_type,
+                                                fuel_type:
+                                                    selected?.name ??
+                                                    data.fuel_type,
                                             }));
                                         }}
-                                        options={fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))}
+                                        options={fuelTypes.map((ft) => ({
+                                            value: String(ft.id),
+                                            label: ft.name,
+                                        }))}
                                         placeholder="Select fuel type"
                                         searchPlaceholder="Search fuel type..."
                                     />
-                                    <InputError message={form.errors.fuel_type_id ?? form.errors.fuel_type} />
+                                    <InputError
+                                        message={
+                                            form.errors.fuel_type_id ??
+                                            form.errors.fuel_type
+                                        }
+                                    />
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
                                     <Label>Fuel source office</Label>
@@ -230,18 +244,24 @@ export function TripTicketDialog({
                                         placeholder="Select fuel source office"
                                         searchPlaceholder="Search office..."
                                     />
-                                    <p className="text-muted-foreground text-xs">
-                                        Default is the travel order&apos;s office. Change this if fuel will be borrowed/charged to another office.
+                                    <p className="text-xs text-muted-foreground">
+                                        Default is the travel order&apos;s
+                                        office. Change this if fuel will be
+                                        borrowed/charged to another office.
                                     </p>
                                     <InputError
-                                        message={form.errors.fuel_source_office_id}
+                                        message={
+                                            form.errors.fuel_source_office_id
+                                        }
                                     />
                                 </div>
                             </div>
                         </section>
 
                         <section className="space-y-4 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">Trip figures</h3>
+                            <h3 className="text-base font-semibold">
+                                Trip figures
+                            </h3>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="tt_distance_km">
@@ -343,11 +363,15 @@ export function TripTicketDialog({
                                         placeholder="e.g., 65.00"
                                     />
                                     <InputError
-                                        message={form.errors.fuel_price_per_liter}
+                                        message={
+                                            form.errors.fuel_price_per_liter
+                                        }
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tt_fuel_cost">Fuel cost</Label>
+                                    <Label htmlFor="tt_fuel_cost">
+                                        Fuel cost
+                                    </Label>
                                     <Input
                                         id="tt_fuel_cost"
                                         type="number"
@@ -366,7 +390,9 @@ export function TripTicketDialog({
                                                 : 'e.g., 1560.00'
                                         }
                                     />
-                                    <InputError message={form.errors.fuel_cost} />
+                                    <InputError
+                                        message={form.errors.fuel_cost}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="tt_fuel_station">
@@ -407,9 +433,23 @@ export function TripTicketDialog({
                                     />
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
-                                    <Label htmlFor="tt_fuel_receipt">Receipt attachment (JPG/PNG/PDF)</Label>
-                                    <Input id="tt_fuel_receipt" type="file" accept=".jpg,.jpeg,.png,.pdf" onChange={(e) => form.setData('fuel_receipt', e.target.files?.[0] ?? null)} />
-                                    <InputError message={form.errors.fuel_receipt} />
+                                    <Label htmlFor="tt_fuel_receipt">
+                                        Receipt attachment (JPG/PNG/PDF)
+                                    </Label>
+                                    <Input
+                                        id="tt_fuel_receipt"
+                                        type="file"
+                                        accept=".jpg,.jpeg,.png,.pdf"
+                                        onChange={(e) =>
+                                            form.setData(
+                                                'fuel_receipt',
+                                                e.target.files?.[0] ?? null,
+                                            )
+                                        }
+                                    />
+                                    <InputError
+                                        message={form.errors.fuel_receipt}
+                                    />
                                 </div>
                             </div>
 
@@ -447,26 +487,33 @@ export function TripTicketDialog({
 
                     <div className="space-y-4">
                         <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">Itinerary</h3>
+                            <h3 className="text-base font-semibold">
+                                Itinerary
+                            </h3>
                             {(travelOrder.itineraries ?? []).length > 0 ? (
                                 <ol className="space-y-3">
-                                    {(travelOrder.itineraries ?? []).map((leg) => (
-                                        <li
-                                            key={leg.id}
-                                            className="border-l-2 pl-3 text-sm"
-                                        >
-                                            <p className="font-medium">
-                                                {leg.from_location?.name ?? '—'} →{' '}
-                                                {leg.to_location?.name ?? '—'}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {formatDateRange(
-                                                    leg.date_from,
-                                                    leg.date_to,
-                                                )}
-                                            </p>
-                                        </li>
-                                    ))}
+                                    {(travelOrder.itineraries ?? []).map(
+                                        (leg) => (
+                                            <li
+                                                key={leg.id}
+                                                className="border-l-2 pl-3 text-sm"
+                                            >
+                                                <p className="font-medium">
+                                                    {leg.from_location?.name ??
+                                                        '—'}{' '}
+                                                    →{' '}
+                                                    {leg.to_location?.name ??
+                                                        '—'}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {formatDateRange(
+                                                        leg.date_from,
+                                                        leg.date_to,
+                                                    )}
+                                                </p>
+                                            </li>
+                                        ),
+                                    )}
                                 </ol>
                             ) : (
                                 <p className="text-sm text-muted-foreground">

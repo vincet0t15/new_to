@@ -96,7 +96,9 @@ export function TravelOrderHeaderFields({
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Basic information</CardTitle>
+                    <CardTitle className="text-base">
+                        Basic information
+                    </CardTitle>
                     <CardDescription>
                         Identify the classification and purpose of this travel.
                     </CardDescription>
@@ -105,7 +107,8 @@ export function TravelOrderHeaderFields({
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2 sm:max-w-md">
                             <Label htmlFor="travel_classification_id">
-                                Travel classification <span className="text-destructive">*</span>
+                                Travel classification{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Combobox
                                 id="travel_classification_id"
@@ -121,7 +124,9 @@ export function TravelOrderHeaderFields({
                                 searchPlaceholder="Search classification..."
                                 emptyMessage="No classifications found. Add one in Travel Setup."
                             />
-                            <InputError message={errors.travel_classification_id} />
+                            <InputError
+                                message={errors.travel_classification_id}
+                            />
                         </div>
                     </div>
 
@@ -147,7 +152,8 @@ export function TravelOrderHeaderFields({
                 <CardHeader>
                     <CardTitle className="text-base">Route and dates</CardTitle>
                     <CardDescription>
-                        Set where the travel starts, where it goes, and when it happens.
+                        Set where the travel starts, where it goes, and when it
+                        happens.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -172,7 +178,8 @@ export function TravelOrderHeaderFields({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="destination_id">
-                                Destination <span className="text-destructive">*</span>
+                                Destination{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Combobox
                                 id="destination_id"
@@ -217,15 +224,17 @@ export function TravelOrderHeaderFields({
                             role="status"
                             className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-sm text-amber-700 dark:text-amber-400"
                         >
-                            No locations are configured yet. Ask an administrator to
-                            add them in Travel Setup before filing a travel order.
+                            No locations are configured yet. Ask an
+                            administrator to add them in Travel Setup before
+                            filing a travel order.
                         </p>
                     )}
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-2">
                             <Label htmlFor="date_from">
-                                Date from <span className="text-destructive">*</span>
+                                Date from{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="date_from"
@@ -239,7 +248,8 @@ export function TravelOrderHeaderFields({
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="date_to">
-                                Date to <span className="text-destructive">*</span>
+                                Date to{' '}
+                                <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="date_to"
@@ -271,7 +281,8 @@ export function TravelOrderHeaderFields({
                             const id = String(mode.id);
                             const checked =
                                 data.transportation_mode_ids.includes(id);
-                            const disabled = mode.is_active === false && !checked;
+                            const disabled =
+                                mode.is_active === false && !checked;
 
                             return (
                                 <label
@@ -289,7 +300,9 @@ export function TravelOrderHeaderFields({
                                             )
                                         }
                                     />
-                                    <span className="leading-5">{mode.name}</span>
+                                    <span className="leading-5">
+                                        {mode.name}
+                                    </span>
                                 </label>
                             );
                         })}
@@ -306,7 +319,9 @@ export function TravelOrderHeaderFields({
 
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">Expenses authorized</CardTitle>
+                    <CardTitle className="text-base">
+                        Expenses authorized
+                    </CardTitle>
                     <CardDescription>
                         Select the expenses this travel order authorizes.
                     </CardDescription>
@@ -335,7 +350,9 @@ export function TravelOrderHeaderFields({
                                             )
                                         }
                                     />
-                                    <span className="leading-5">{expenseType.name}</span>
+                                    <span className="leading-5">
+                                        {expenseType.name}
+                                    </span>
                                 </label>
                             );
                         })}
@@ -356,7 +373,10 @@ export function TravelOrderHeaderFields({
                                 id="other_expenses"
                                 value={data.other_expenses}
                                 onChange={(event) =>
-                                    onChange('other_expenses', event.target.value)
+                                    onChange(
+                                        'other_expenses',
+                                        event.target.value,
+                                    )
                                 }
                                 placeholder="Describe the other expenses"
                             />

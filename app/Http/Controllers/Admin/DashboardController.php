@@ -68,18 +68,53 @@ class DashboardController extends Controller
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        $recentOrders = TravelOrder::query()
+            ->with(['office:id,office_name', 'employee:id,first_name,middle_name,last_name,suffix'])
+            ->latest('updated_at')
+            ->limit(6)
+            ->get()
+            ->map(fn (TravelOrder $order): array => [
+                'id' => $order->id,
+                'control_no' => $order->control_no,
+                'to_number' => $order->to_number,
+                'purpose' => $order->purpose,
+                'status' => $order->status->value,
+                'employee' => $order->employee?->full_name,
+                'office' => $order->office?->office_name,
+                'updated_at' => $order->updated_at?->toIso8601String(),
+            ])
+            ->values();
+
+        $pendingFuelTickets = (int) DB::table('trip_tickets')
+            ->where('status', 'issued')
+            ->count();
+        $completedFuelTickets = (int) DB::table('trip_tickets')
+            ->where('status', 'completed')
+            ->count();
+        $activeAllocations = (int) FuelAllocation::query()
+            ->where('status', FuelAllocation::STATUS_ACTIVE)
+            ->count();
+
         return Inertia::render('portals/admin/dashboard', [
             'stats' => [
                 'draft' => (int) ($toStats[TravelOrderStatus::Draft->value] ?? 0),
                 'submitted' => (int) ($toStats[TravelOrderStatus::Submitted->value] ?? 0),
+                'returned' => (int) ($toStats[TravelOrderStatus::Returned->value] ?? 0),
                 'approved' => (int) ($toStats[TravelOrderStatus::Approved->value] ?? 0),
                 'completed' => (int) ($toStats[TravelOrderStatus::Completed->value] ?? 0),
                 'cancelled' => (int) ($toStats[TravelOrderStatus::Cancelled->value] ?? 0),
+                'rejected' => (int) ($toStats[TravelOrderStatus::Rejected->value] ?? 0),
             ],
             'fuelAlerts' => $alerts,
             'fuelThresholds' => [
                 'low_balance_liters' => $lowLiters,
                 'low_balance_amount' => $lowAmount,
+            ],
+            'recentOrders' => $recentOrders,
+            'fuelSummary' => [
+                'active_allocations' => $activeAllocations,
+                'issued_trip_tickets' => $pendingFuelTickets,
+                'completed_trip_tickets' => $completedFuelTickets,
             ],
         ]);
     }

@@ -120,8 +120,15 @@ export default function EditTravelOrder({
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
-                        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
-                            <Link href={travelOrdersRoutes.show(travelOrder).url}>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="-ml-2 w-fit"
+                            asChild
+                        >
+                            <Link
+                                href={travelOrdersRoutes.show(travelOrder).url}
+                            >
                                 <ArrowLeft className="size-4" />
                                 Back to travel order
                             </Link>
@@ -200,8 +207,8 @@ export default function EditTravelOrder({
                                     Additional notes
                                 </CardTitle>
                                 <CardDescription>
-                                    Optional context for approvers reviewing this
-                                    request.
+                                    Optional context for approvers reviewing
+                                    this request.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-2">
@@ -228,10 +235,12 @@ export default function EditTravelOrder({
                     <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Actions</CardTitle>
+                                <CardTitle className="text-base">
+                                    Actions
+                                </CardTitle>
                                 <CardDescription>
-                                    Save changes, submit, or resubmit this travel
-                                    order.
+                                    Save changes, submit, or resubmit this
+                                    travel order.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-3">
@@ -239,7 +248,11 @@ export default function EditTravelOrder({
                                     <Button
                                         className="w-full"
                                         onClick={submit}
-                                        disabled={processing || submitting || resubmitting}
+                                        disabled={
+                                            processing ||
+                                            submitting ||
+                                            resubmitting
+                                        }
                                     >
                                         {processing ? (
                                             <Loader2 className="size-4 animate-spin" />
@@ -255,7 +268,11 @@ export default function EditTravelOrder({
                                             variant="outline"
                                             className="w-full"
                                             onClick={submitForApproval}
-                                            disabled={processing || submitting || resubmitting}
+                                            disabled={
+                                                processing ||
+                                                submitting ||
+                                                resubmitting
+                                            }
                                         >
                                             {submitting ? (
                                                 <Loader2 className="size-4 animate-spin" />
@@ -272,12 +289,16 @@ export default function EditTravelOrder({
                                             <div className="space-y-2">
                                                 <Label htmlFor="revision_remarks">
                                                     Resubmission remarks{' '}
-                                                    <span className="text-destructive">*</span>
+                                                    <span className="text-destructive">
+                                                        *
+                                                    </span>
                                                 </Label>
                                                 <Textarea
                                                     id="revision_remarks"
                                                     rows={3}
-                                                    value={data.revision_remarks}
+                                                    value={
+                                                        data.revision_remarks
+                                                    }
                                                     onChange={(event) =>
                                                         setData(
                                                             'revision_remarks',
@@ -287,13 +308,19 @@ export default function EditTravelOrder({
                                                     placeholder="Describe what changed"
                                                 />
                                                 <InputError
-                                                    message={errors.revision_remarks}
+                                                    message={
+                                                        errors.revision_remarks
+                                                    }
                                                 />
                                             </div>
                                             <Button
                                                 className="w-full"
                                                 onClick={resubmitForApproval}
-                                                disabled={processing || submitting || resubmitting}
+                                                disabled={
+                                                    processing ||
+                                                    submitting ||
+                                                    resubmitting
+                                                }
                                             >
                                                 {resubmitting ? (
                                                     <Loader2 className="size-4 animate-spin" />
