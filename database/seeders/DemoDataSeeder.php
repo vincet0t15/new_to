@@ -350,11 +350,10 @@ class DemoDataSeeder extends Seeder
      */
     private function seedPerDiem(): void
     {
-        $location = Location::query()->where('name', 'Provincial Capitol')->first();
-
-        if (! $location instanceof Location) {
-            throw new RuntimeException('The Provincial Capitol location is missing. Run LocationSeeder first.');
-        }
+        $location = Location::query()->firstOrCreate(
+            ['name' => 'Provincial Capitol'],
+            ['is_active' => true],
+        );
 
         $configuration = PerDiemConfiguration::query()->firstOrCreate(
             ['name' => 'Demo Standard Per Diem'],
