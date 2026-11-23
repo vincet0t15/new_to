@@ -203,7 +203,11 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 <Detail
                                     label="Fuel type"
-                                    value={tripTicket.fuel_type ?? '—'}
+                                    value={tripTicket.fuel_type_record?.name ?? tripTicket.fuel_type ?? '—'}
+                                />
+                                <Detail
+                                    label="Fuel source office"
+                                    value={tripTicket.fuel_source_office?.office_name ?? '—'}
                                 />
                                 <Detail
                                     label="Fuel efficiency"

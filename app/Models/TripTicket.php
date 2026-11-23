@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $vehicle_type
  * @property int|null $driver_id
  * @property string|null $fuel_type
+ * @property int|null $fuel_source_office_id
  * @property string|null $fuel_efficiency
  * @property string $distance_km
  * @property bool $round_trip
@@ -57,7 +58,9 @@ use Illuminate\Support\Carbon;
     'vehicle_plate_no',
     'vehicle_type',
     'driver_id',
+    'fuel_type_id',
     'fuel_type',
+    'fuel_source_office_id',
     'fuel_efficiency',
     'distance_km',
     'round_trip',
@@ -130,6 +133,22 @@ class TripTicket extends Model
     public function completer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'completed_by');
+    }
+
+    /**
+     * @return BelongsTo<Office, $this>
+     */
+    public function fuelSourceOffice(): BelongsTo
+    {
+        return $this->belongsTo(Office::class, 'fuel_source_office_id');
+    }
+
+    /**
+     * @return BelongsTo<FuelType, $this>
+     */
+    public function fuelTypeRecord(): BelongsTo
+    {
+        return $this->belongsTo(FuelType::class, 'fuel_type_id');
     }
 
     public function isEditable(): bool

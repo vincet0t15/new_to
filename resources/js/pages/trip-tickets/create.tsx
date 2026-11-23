@@ -8,9 +8,11 @@ import type { TripTicketDriver, TripTicketTravelOrder } from '@/types';
 type Props = {
     travelOrder: TripTicketTravelOrder;
     drivers: TripTicketDriver[];
+    offices: { id: number; office_name: string }[];
+    fuelTypes: { id: number; name: string }[];
 };
 
-export default function CreateTripTicket({ travelOrder, drivers }: Props) {
+export default function CreateTripTicket({ travelOrder, drivers, offices, fuelTypes }: Props) {
     return (
         <>
             <Head title="New Trip Ticket" />
@@ -24,6 +26,8 @@ export default function CreateTripTicket({ travelOrder, drivers }: Props) {
                 <TripTicketForm
                     travelOrder={travelOrder}
                     drivers={drivers}
+                    offices={offices}
+                    fuelTypes={fuelTypes}
                     action={{
                         url: tripTickets.store(travelOrder.id).url,
                         method: 'post',

@@ -6,6 +6,7 @@ import {
     Car,
     ChartColumn,
     ClipboardList,
+    Droplets,
     FileText,
     FileSignature,
     Fuel,
@@ -47,6 +48,7 @@ import designations from '@/routes/designations';
 import employees from '@/routes/employees';
 import employmentTypes from '@/routes/employment-types';
 import expenseTypes from '@/routes/expense-types';
+import fuelTypes from '@/routes/fuel-types';
 import fundSources from '@/routes/fund-sources';
 import itinerarySignatoryGroups from '@/routes/itinerary-signatory-groups';
 import locations from '@/routes/locations';
@@ -290,6 +292,12 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: expenseTypes.index().url,
                     icon: Receipt,
                     permission: 'expense-types.view',
+                },
+                {
+                    title: 'Fuel Types',
+                    href: fuelTypes.index().url,
+                    icon: Droplets,
+                    permission: 'fuel-types.view',
                 },
                 {
                     title: 'Per Diem Configurations',

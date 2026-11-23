@@ -22,6 +22,8 @@ import type { TravelOrder, TripTicketDriver } from '@/types';
 type Props = {
     travelOrder: TravelOrder;
     drivers: TripTicketDriver[];
+    offices: { id: number; office_name: string }[];
+    fuelTypes: { id: number; name: string }[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
 };
@@ -30,7 +32,9 @@ type TripTicketFormData = {
     vehicle_plate_no: string;
     vehicle_type: string;
     driver_id: string;
+    fuel_type_id: string;
     fuel_type: string;
+    fuel_source_office_id: string;
     fuel_efficiency: string;
     distance_km: string;
     round_trip: boolean;
@@ -52,14 +56,22 @@ function formatDateRange(from: string | null, to: string | null): string {
 export function TripTicketDialog({
     travelOrder,
     drivers,
+    offices,
+    fuelTypes,
     open,
     onOpenChange,
 }: Props) {
+    const defaultFuelOfficeId = travelOrder.office?.id
+        ? String(travelOrder.office.id)
+        : '';
+
     const form = useForm<TripTicketFormData>({
         vehicle_plate_no: '',
         vehicle_type: '',
         driver_id: '',
+        fuel_type_id: '',
         fuel_type: '',
+        fuel_source_office_id: defaultFuelOfficeId,
         fuel_efficiency: '',
         distance_km: '',
         round_trip: true,
@@ -73,9 +85,10 @@ export function TripTicketDialog({
     useEffect(() => {
         if (open) {
             form.reset();
+            form.setData('fuel_source_office_id', defaultFuelOfficeId);
             form.clearErrors();
         }
-    }, [open]);
+    }, [open, defaultFuelOfficeId]);
 
     const driverChoices = drivers.map((driver) => ({
         value: String(driver.id),
@@ -180,19 +193,46 @@ export function TripTicketDialog({
                                     <InputError message={form.errors.driver_id} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="tt_fuel_type">Fuel type</Label>
-                                    <Input
-                                        id="tt_fuel_type"
-                                        value={form.data.fuel_type}
-                                        onChange={(event) =>
+                                    <Label>Fuel type</Label>
+                                    <Combobox
+                                        value={form.data.fuel_type_id}
+                                        onValueChange={(value) => {
+                                            const selected = fuelTypes.find((ft) => String(ft.id) === value);
+                                            form.setData((data) => ({
+                                                ...data,
+                                                fuel_type_id: value,
+                                                fuel_type: selected?.name ?? data.fuel_type,
+                                            }));
+                                        }}
+                                        options={fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))}
+                                        placeholder="Select fuel type"
+                                        searchPlaceholder="Search fuel type..."
+                                    />
+                                    <InputError message={form.errors.fuel_type_id ?? form.errors.fuel_type} />
+                                </div>
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label>Fuel source office</Label>
+                                    <Combobox
+                                        value={form.data.fuel_source_office_id}
+                                        onValueChange={(value) =>
                                             form.setData(
-                                                'fuel_type',
-                                                event.target.value,
+                                                'fuel_source_office_id',
+                                                value,
                                             )
                                         }
-                                        placeholder="e.g., Diesel, gasoline"
+                                        options={offices.map((office) => ({
+                                            value: String(office.id),
+                                            label: office.office_name,
+                                        }))}
+                                        placeholder="Select fuel source office"
+                                        searchPlaceholder="Search office..."
                                     />
-                                    <InputError message={form.errors.fuel_type} />
+                                    <p className="text-muted-foreground text-xs">
+                                        Default is the travel order&apos;s office. Change this if fuel will be borrowed/charged to another office.
+                                    </p>
+                                    <InputError
+                                        message={form.errors.fuel_source_office_id}
+                                    />
                                 </div>
                             </div>
                         </section>

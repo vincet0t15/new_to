@@ -7,6 +7,8 @@ use App\Http\Requests\TripTickets\CancelTripTicketRequest;
 use App\Http\Requests\TripTickets\CompleteTripTicketRequest;
 use App\Http\Requests\TripTickets\SaveTripTicketRequest;
 use App\Models\Employee;
+use App\Models\FuelType;
+use App\Models\Office;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
@@ -50,6 +52,8 @@ class TravelOrderTripTicketController extends Controller
         return Inertia::render('trip-tickets/create', [
             'travelOrder' => $this->orderPayload($travelOrder),
             'drivers' => $this->driverOptions(),
+            'offices' => $this->officeOptions(),
+            'fuelTypes' => $this->fuelTypeOptions(),
         ]);
     }
 
@@ -75,7 +79,7 @@ class TravelOrderTripTicketController extends Controller
     {
         $this->authorizeOwner($request->user(), $travelOrder);
 
-        $tripTicket->load(['travelOrder.office', 'travelOrder.destinationLocation', 'driver', 'creator', 'completer']);
+        $tripTicket->load(['travelOrder.office', 'travelOrder.destinationLocation', 'driver', 'fuelSourceOffice', 'fuelTypeRecord', 'creator', 'completer']);
 
         return Inertia::render('trip-tickets/show', [
             'travelOrder' => $this->orderPayload($travelOrder),
@@ -98,8 +102,10 @@ class TravelOrderTripTicketController extends Controller
 
         return Inertia::render('trip-tickets/edit', [
             'travelOrder' => $this->orderPayload($travelOrder),
-            'tripTicket' => $tripTicket,
+            'tripTicket' => $tripTicket->load(['fuelSourceOffice:id,office_name', 'fuelTypeRecord:id,name']),
             'drivers' => $this->driverOptions(),
+            'offices' => $this->officeOptions(),
+            'fuelTypes' => $this->fuelTypeOptions(),
         ]);
     }
 
@@ -240,6 +246,29 @@ class TravelOrderTripTicketController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<int, array{id: int, office_name: string}>
+     */
+    private function officeOptions(): array
+    {
+        return Office::query()
+            ->orderBy('office_name')
+            ->get(['id', 'office_name'])
+            ->toArray();
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function fuelTypeOptions(): array
+    {
+        return FuelType::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->toArray();
     }
 
     private function authorizeOwner(?User $user, TravelOrder $travelOrder): void

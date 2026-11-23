@@ -14,6 +14,9 @@ use Illuminate\Support\Carbon;
  *
  * @property int $id
  * @property int $office_id
+ * @property string $type
+ * @property int|null $source_office_id
+ * @property int|null $related_allocation_id
  * @property Carbon $allocation_date
  * @property string|null $reference_no
  * @property string|null $fuel_type
@@ -28,13 +31,19 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Office $office
+ * @property-read Office|null $sourceOffice
+ * @property-read FuelAllocation|null $relatedAllocation
  * @property-read User|null $creator
  * @property-read User|null $updater
  */
 #[Fillable([
     'office_id',
+    'type',
+    'source_office_id',
+    'related_allocation_id',
     'allocation_date',
     'reference_no',
+    'fuel_type_id',
     'fuel_type',
     'allocated_liters',
     'allocated_amount',
@@ -54,6 +63,10 @@ class FuelAllocation extends Model
 
     public const STATUS_VOIDED = 'voided';
 
+    public const TYPE_ALLOCATION = 'allocation';
+
+    public const TYPE_TRANSFER = 'transfer';
+
     protected function casts(): array
     {
         return [
@@ -70,6 +83,30 @@ class FuelAllocation extends Model
     public function office(): BelongsTo
     {
         return $this->belongsTo(Office::class);
+    }
+
+    /**
+     * @return BelongsTo<Office, $this>
+     */
+    public function sourceOffice(): BelongsTo
+    {
+        return $this->belongsTo(Office::class, 'source_office_id');
+    }
+
+    /**
+     * @return BelongsTo<FuelType, $this>
+     */
+    public function fuelTypeRecord(): BelongsTo
+    {
+        return $this->belongsTo(FuelType::class, 'fuel_type_id');
+    }
+
+    /**
+     * @return BelongsTo<FuelAllocation, $this>
+     */
+    public function relatedAllocation(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_allocation_id');
     }
 
     /**

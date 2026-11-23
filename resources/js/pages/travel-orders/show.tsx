@@ -174,6 +174,8 @@ export default function ShowTravelOrder({
                         travelOrder={travelOrder}
                         canCreate={can.createTripTicket}
                         drivers={options.drivers}
+                        offices={options.offices}
+                        fuelTypes={options.fuelTypes}
                     />
 
                     <section className="space-y-3 rounded-xl border p-4">

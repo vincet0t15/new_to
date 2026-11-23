@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\FuelAllocations;
 
+use App\Models\FuelAllocation;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -20,9 +21,18 @@ class SaveFuelAllocationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'type' => ['required', 'string', Rule::in([FuelAllocation::TYPE_ALLOCATION, FuelAllocation::TYPE_TRANSFER])],
             'office_id' => ['required', 'integer', Rule::exists('offices', 'id')],
+            'source_office_id' => [
+                'nullable',
+                Rule::requiredIf(fn (): bool => $this->input('type') === FuelAllocation::TYPE_TRANSFER),
+                'integer',
+                'different:office_id',
+                Rule::exists('offices', 'id'),
+            ],
             'allocation_date' => ['required', 'date'],
             'reference_no' => ['nullable', 'string', 'max:100'],
+            'fuel_type_id' => ['nullable', 'integer', Rule::exists('fuel_types', 'id')],
             'fuel_type' => ['nullable', 'string', 'max:50'],
             'allocated_liters' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'allocated_amount' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],

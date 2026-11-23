@@ -19,6 +19,8 @@ type Props = {
     travelOrder: TravelOrder;
     canCreate: boolean;
     drivers: TripTicketDriver[];
+    offices: { id: number; office_name: string }[];
+    fuelTypes: { id: number; name: string }[];
 };
 
 function formatDistance(value: string, roundTrip: boolean): string {
@@ -35,6 +37,8 @@ export function TravelOrderTripTicketPanel({
     travelOrder,
     canCreate,
     drivers,
+    offices,
+    fuelTypes,
 }: Props) {
     const [createOpen, setCreateOpen] = useState(false);
     const tickets = travelOrder.trip_tickets ?? [];
@@ -171,6 +175,8 @@ export function TravelOrderTripTicketPanel({
             <TripTicketDialog
                 travelOrder={travelOrder}
                 drivers={drivers}
+                offices={offices}
+                fuelTypes={fuelTypes}
                 open={createOpen}
                 onOpenChange={setCreateOpen}
             />

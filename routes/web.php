@@ -31,6 +31,7 @@ require __DIR__.'/designations.php';
 require __DIR__.'/travel-orders.php';
 require __DIR__.'/transportation-modes.php';
 require __DIR__.'/expense-types.php';
+require __DIR__.'/fuel-types.php';
 require __DIR__.'/fund-sources.php';
 require __DIR__.'/locations.php';
 require __DIR__.'/travel-classifications.php';

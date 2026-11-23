@@ -27,6 +27,7 @@ type FuelTicket = {
     vehicle_plate_no: string;
     vehicle_type: string | null;
     fuel_type: string | null;
+    fuel_type_record?: { id: number; name: string } | null;
     distance_km: string;
     liters: string;
     fuel_consumed: string | null;
@@ -42,6 +43,7 @@ type FuelTicket = {
         purpose: string | null;
         office?: { id: number; office_name: string } | null;
     } | null;
+    fuel_source_office?: { id: number; office_name: string } | null;
     driver?: { id: number; full_name: string } | null;
 };
 
@@ -66,6 +68,14 @@ type Props = {
         allocated_amount: string | number;
         remaining_liters: string | number;
         remaining_amount: string | number;
+    }>;
+    borrowedByOffice: Array<{
+        borrower_office_name: string;
+        source_office_name: string;
+        total_tickets: number;
+        estimated_liters: string | number;
+        actual_liters: string | number;
+        fuel_cost: string | number;
     }>;
     tickets: PaginatedDataResponse<FuelTicket>;
     offices: OfficeOption[];
@@ -107,6 +117,7 @@ function liters(value: string | number | null | undefined): string {
 export default function FuelMonitoringIndex({
     summary,
     byOffice,
+    borrowedByOffice,
     tickets,
     offices,
     filters,
@@ -154,9 +165,9 @@ export default function FuelMonitoringIndex({
 
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                     <Card><CardHeader className="pb-2"><CardDescription>Allocated fuel</CardDescription><CardTitle className="text-2xl">{liters(summary.allocated_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.allocated_amount)}</p></CardHeader></Card>
-                    <Card><CardHeader className="pb-2"><CardDescription>Actual consumed</CardDescription><CardTitle className="text-2xl">{liters(summary.actual_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.fuel_cost)}</p></CardHeader></Card>
-                    <Card><CardHeader className="pb-2"><CardDescription>Remaining balance</CardDescription><CardTitle className={`text-2xl ${summary.remaining_liters < 0 || summary.remaining_amount < 0 ? 'text-destructive' : ''}`}>{liters(summary.remaining_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.remaining_amount)}</p></CardHeader></Card>
-                    <Card><CardHeader className="pb-2"><CardDescription>Trip tickets / Estimated</CardDescription><CardTitle className="text-2xl">{summary.total_tickets}</CardTitle><p className="text-muted-foreground text-xs">Est. {liters(summary.estimated_liters)}</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Actual consumed</CardDescription><CardTitle className="text-2xl">{liters(summary.actual_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.fuel_cost)} · completed tickets only</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Remaining balance</CardDescription><CardTitle className={`text-2xl ${summary.remaining_liters < 0 || summary.remaining_amount < 0 ? 'text-destructive' : ''}`}>{liters(summary.remaining_liters)}</CardTitle><p className="text-muted-foreground text-xs">{money(summary.remaining_amount)} remaining</p></CardHeader></Card>
+                    <Card><CardHeader className="pb-2"><CardDescription>Trip tickets / Estimated</CardDescription><CardTitle className="text-2xl">{summary.total_tickets}</CardTitle><p className="text-muted-foreground text-xs">Est. {liters(summary.estimated_liters)} · issued/active estimate</p></CardHeader></Card>
                 </div>
 
                 <Card>
@@ -244,6 +255,18 @@ export default function FuelMonitoringIndex({
                             )) : (
                                 <p className="text-muted-foreground text-sm">No fuel records found.</p>
                             )}
+
+                            <div className="border-t pt-4">
+                                <p className="mb-2 text-sm font-medium">Borrowed fuel</p>
+                                {borrowedByOffice.length > 0 ? borrowedByOffice.map((row) => (
+                                    <div key={`${row.borrower_office_name}-${row.source_office_name}`} className="mb-2 rounded-md border p-2 text-xs last:mb-0">
+                                        <p className="font-medium">{row.borrower_office_name} borrowed from {row.source_office_name}</p>
+                                        <p className="text-muted-foreground mt-1">{row.total_tickets} ticket(s) · Est. {liters(row.estimated_liters)} · Actual {liters(row.actual_liters)} · {money(row.fuel_cost)}</p>
+                                    </div>
+                                )) : (
+                                    <p className="text-muted-foreground text-xs">No borrowed fuel records in selected filters.</p>
+                                )}
+                            </div>
                         </CardContent>
                     </Card>
 
@@ -260,7 +283,7 @@ export default function FuelMonitoringIndex({
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Ticket / TO</TableHead>
-                                        <TableHead>Office</TableHead>
+                                        <TableHead>Fuel source</TableHead>
                                         <TableHead>Vehicle / Driver</TableHead>
                                         <TableHead className="text-right">Est. L</TableHead>
                                         <TableHead className="text-right">Actual L</TableHead>
@@ -282,11 +305,22 @@ export default function FuelMonitoringIndex({
                                                     </p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{ticket.travel_order?.office?.office_name ?? '—'}</TableCell>
+                                            <TableCell>
+                                                <div className="space-y-1">
+                                                    <p>{ticket.fuel_source_office?.office_name ?? ticket.travel_order?.office?.office_name ?? '—'}</p>
+                                                    {ticket.fuel_source_office?.office_name && ticket.travel_order?.office?.office_name && ticket.fuel_source_office.office_name !== ticket.travel_order.office.office_name && (
+                                                        <>
+                                                            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">Borrowed from this office</p>
+                                                            <p className="text-muted-foreground text-xs">By TO office: {ticket.travel_order.office.office_name}</p>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                             <TableCell>
                                                 <div className="space-y-1">
                                                     <p>{ticket.vehicle_plate_no}</p>
                                                     <p className="text-muted-foreground text-xs">{ticket.driver?.full_name ?? 'No driver'}</p>
+                                                    <p className="text-muted-foreground text-xs">{ticket.fuel_type_record?.name ?? ticket.fuel_type ?? '—'}</p>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right tabular-nums">{liters(ticket.liters)}</TableCell>

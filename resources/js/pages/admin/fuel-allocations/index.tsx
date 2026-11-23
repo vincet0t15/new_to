@@ -17,9 +17,13 @@ import { formatDate } from '@/lib/date-format';
 import type { PaginatedDataResponse } from '@/types';
 
 type OfficeOption = { id: number; office_name: string };
+type FuelTypeOption = { id: number; name: string };
 type Allocation = {
     id: number;
     office_id: number;
+    type: 'allocation' | 'transfer';
+    source_office_id: number | null;
+    fuel_type_id: number | null;
     allocation_date: string;
     reference_no: string | null;
     fuel_type: string | null;
@@ -29,12 +33,15 @@ type Allocation = {
     status: 'active' | 'voided';
     void_reason: string | null;
     office?: OfficeOption | null;
+    source_office?: OfficeOption | null;
+    fuel_type_record?: FuelTypeOption | null;
     creator?: { id: number; name: string } | null;
 };
 
 type Props = {
     allocations: PaginatedDataResponse<Allocation>;
     offices: OfficeOption[];
+    fuelTypes: FuelTypeOption[];
     filters: { search: string; office_id: string; status: string; date_from: string; date_to: string };
     urls: { index: string; store: string; update: string; void: string };
 };
@@ -47,7 +54,7 @@ function liters(value: string | number | null | undefined) {
     return `${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L`;
 }
 
-export default function FuelAllocationsIndex({ allocations, offices, filters, urls }: Props) {
+export default function FuelAllocationsIndex({ allocations, offices, fuelTypes, filters, urls }: Props) {
     const can = useCan();
     const canManage = can('fuel-allocations.manage');
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,9 +67,12 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
     const [dateTo, setDateTo] = useState(filters.date_to ?? '');
 
     const form = useForm({
+        type: 'allocation',
         office_id: '',
+        source_office_id: '',
         allocation_date: new Date().toISOString().slice(0, 10),
         reference_no: '',
+        fuel_type_id: '',
         fuel_type: '',
         allocated_liters: '',
         allocated_amount: '',
@@ -95,9 +105,12 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
         setEditing(allocation);
         form.clearErrors();
         form.setData({
+            type: allocation.type,
             office_id: String(allocation.office_id),
+            source_office_id: allocation.source_office_id ? String(allocation.source_office_id) : '',
             allocation_date: allocation.allocation_date?.slice(0, 10) ?? '',
             reference_no: allocation.reference_no ?? '',
+            fuel_type_id: allocation.fuel_type_id ? String(allocation.fuel_type_id) : '',
             fuel_type: allocation.fuel_type ?? '',
             allocated_liters: allocation.allocated_liters ?? '',
             allocated_amount: allocation.allocated_amount ?? '',
@@ -126,8 +139,8 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
             <Head title="Fuel Allocations" />
             <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <Heading title="Fuel Allocations" description="Configure fuel allocations per office. Consumption is tracked from trip tickets in Fuel Monitoring." />
-                    {canManage && <Button onClick={openCreate}><Plus className="size-4" />Add allocation</Button>}
+                    <Heading title="Fuel Allocations" description="Configure fuel allocations per office. You can also record office-to-office fuel transfers/borrowing. Consumption is tracked from trip tickets in Fuel Monitoring." />
+                    {canManage && <Button onClick={openCreate}><Plus className="size-4" />Add allocation / transfer</Button>}
                 </div>
 
                 <Card>
@@ -177,16 +190,22 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
                     <CardContent className="overflow-x-auto">
                         <Table>
                             <TableHeader><TableRow>
-                                <TableHead>Date</TableHead><TableHead>Office</TableHead><TableHead>Fuel type</TableHead><TableHead className="text-right">Liters</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Reference / Remarks</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
+                                <TableHead>Date</TableHead><TableHead>Office</TableHead><TableHead>Type / Source</TableHead><TableHead>Fuel type</TableHead><TableHead className="text-right">Liters</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Reference / Remarks</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead>
                             </TableRow></TableHeader>
                             <TableBody>
                                 {allocations.data.length > 0 ? allocations.data.map((allocation) => (
                                     <TableRow key={allocation.id}>
                                         <TableCell>{formatDate(allocation.allocation_date)}</TableCell>
                                         <TableCell className="font-medium">{allocation.office?.office_name ?? '—'}</TableCell>
-                                        <TableCell>{allocation.fuel_type || '—'}</TableCell>
-                                        <TableCell className="text-right tabular-nums">{liters(allocation.allocated_liters)}</TableCell>
-                                        <TableCell className="text-right tabular-nums">{money(allocation.allocated_amount)}</TableCell>
+                                        <TableCell>
+                                            <div className="space-y-1">
+                                                <Badge variant={allocation.type === 'transfer' ? 'outline' : 'secondary'}>{allocation.type}</Badge>
+                                                {allocation.type === 'transfer' && <p className="text-muted-foreground text-xs">Source: {allocation.source_office?.office_name ?? '—'}</p>}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>{allocation.fuel_type_record?.name || allocation.fuel_type || '—'}</TableCell>
+                                        <TableCell className={`text-right tabular-nums ${Number(allocation.allocated_liters) < 0 ? 'text-destructive' : ''}`}>{liters(allocation.allocated_liters)}</TableCell>
+                                        <TableCell className={`text-right tabular-nums ${Number(allocation.allocated_amount) < 0 ? 'text-destructive' : ''}`}>{money(allocation.allocated_amount)}</TableCell>
                                         <TableCell>
                                             <div className="space-y-1">
                                                 <p>{allocation.reference_no || '—'}</p>
@@ -197,14 +216,16 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
                                         <TableCell><Badge variant={allocation.status === 'active' ? 'default' : 'secondary'}>{allocation.status}</Badge></TableCell>
                                         <TableCell>
                                             <div className="flex justify-end gap-2">
-                                                {canManage && allocation.status === 'active' && <>
+                                                {canManage && allocation.status === 'active' && allocation.type !== 'transfer' && <>
                                                     <Button variant="outline" size="sm" onClick={() => openEdit(allocation)}><Pencil className="size-4" /></Button>
-                                                    <Button variant="outline" size="sm" onClick={() => { voidForm.reset(); voidForm.clearErrors(); setVoidDialog(allocation); }}><Trash2 className="size-4" /></Button>
                                                 </>}
+                                                {canManage && allocation.status === 'active' && (
+                                                    <Button variant="outline" size="sm" onClick={() => { voidForm.reset(); voidForm.clearErrors(); setVoidDialog(allocation); }}><Trash2 className="size-4" /></Button>
+                                                )}
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                )) : <TableRow><TableCell colSpan={8} className="text-muted-foreground h-24 text-center">No fuel allocations found.</TableCell></TableRow>}
+                                )) : <TableRow><TableCell colSpan={9} className="text-muted-foreground h-24 text-center">No fuel allocations found.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                         {allocations.links?.length > 3 && <div className="mt-4 flex flex-wrap gap-2">{allocations.links.map((link, i) => <Button key={`${link.label}-${i}`} variant={link.active ? 'default' : 'outline'} size="sm" disabled={!link.url} onClick={() => link.url && router.visit(link.url, { preserveScroll: true, preserveState: true })}><span dangerouslySetInnerHTML={{ __html: link.label }} /></Button>)}</div>}
@@ -215,24 +236,61 @@ export default function FuelAllocationsIndex({ allocations, offices, filters, ur
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
-                        <DialogTitle>{editing ? 'Edit fuel allocation' : 'Add fuel allocation'}</DialogTitle>
-                        <DialogDescription>Record fuel allocated to an office. This affects Fuel Monitoring balances.</DialogDescription>
+                        <DialogTitle>{editing ? 'Edit fuel allocation' : 'Add fuel allocation / transfer'}</DialogTitle>
+                        <DialogDescription>Record regular allocation, or transfer/borrow fuel from one office to another. Transfers create paired debit/credit records.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={submitAllocation} className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>Office *</Label>
+                                <Label>Record type *</Label>
                                 <CustomComboBox
-                                    items={offices.map((office) => ({ value: String(office.id), label: office.office_name }))}
+                                    items={[{ value: 'allocation', label: 'Regular allocation' }, { value: 'transfer', label: 'Office transfer / borrow' }]}
+                                    value={form.data.type}
+                                    placeholder="Select type"
+                                    onSelect={(v) => form.setData('type', (v as 'allocation' | 'transfer') ?? 'allocation')}
+                                    disabled={!!editing}
+                                />
+                                <InputError message={form.errors.type} />
+                            </div>
+                            {form.data.type === 'transfer' && (
+                                <div className="space-y-2">
+                                    <Label>Source office (galing) *</Label>
+                                    <CustomComboBox
+                                        items={offices.filter((o) => String(o.id) !== form.data.office_id).map((office) => ({ value: String(office.id), label: office.office_name }))}
+                                        value={form.data.source_office_id}
+                                        placeholder="Select source office"
+                                        onSelect={(v) => form.setData('source_office_id', v ?? '')}
+                                        disabled={!!editing}
+                                    />
+                                    <InputError message={form.errors.source_office_id} />
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <Label>{form.data.type === 'transfer' ? 'Receiving office (papunta) *' : 'Office *'}</Label>
+                                <CustomComboBox
+                                    items={offices.filter((o) => String(o.id) !== form.data.source_office_id).map((office) => ({ value: String(office.id), label: office.office_name }))}
                                     value={form.data.office_id}
                                     placeholder="Select office"
                                     onSelect={(v) => form.setData('office_id', v ?? '')}
+                                    disabled={!!editing}
                                 />
                                 <InputError message={form.errors.office_id} />
                             </div>
                             <div className="space-y-2"><Label htmlFor="allocation_date">Allocation date *</Label><Input id="allocation_date" type="date" value={form.data.allocation_date} onChange={(e) => form.setData('allocation_date', e.target.value)} /><InputError message={form.errors.allocation_date} /></div>
                             <div className="space-y-2"><Label htmlFor="reference_no">Reference no.</Label><Input id="reference_no" value={form.data.reference_no} onChange={(e) => form.setData('reference_no', e.target.value)} /><InputError message={form.errors.reference_no} /></div>
-                            <div className="space-y-2"><Label htmlFor="fuel_type">Fuel type</Label><Input id="fuel_type" value={form.data.fuel_type} onChange={(e) => form.setData('fuel_type', e.target.value)} placeholder="Diesel, Gasoline..." /><InputError message={form.errors.fuel_type} /></div>
+                            <div className="space-y-2">
+                                <Label>Fuel type</Label>
+                                <CustomComboBox
+                                    items={fuelTypes.map((ft) => ({ value: String(ft.id), label: ft.name }))}
+                                    value={form.data.fuel_type_id}
+                                    placeholder="Select fuel type"
+                                    onSelect={(v) => {
+                                        const selected = fuelTypes.find((ft) => String(ft.id) === v);
+                                        form.setData((data) => ({ ...data, fuel_type_id: v ?? '', fuel_type: selected?.name ?? '' }));
+                                    }}
+                                />
+                                <InputError message={form.errors.fuel_type_id ?? form.errors.fuel_type} />
+                            </div>
                             <div className="space-y-2"><Label htmlFor="allocated_liters">Allocated liters</Label><Input id="allocated_liters" type="number" min="0" step="0.01" value={form.data.allocated_liters} onChange={(e) => form.setData('allocated_liters', e.target.value)} /><InputError message={form.errors.allocated_liters} /></div>
                             <div className="space-y-2"><Label htmlFor="allocated_amount">Allocated amount (PHP)</Label><Input id="allocated_amount" type="number" min="0" step="0.01" value={form.data.allocated_amount} onChange={(e) => form.setData('allocated_amount', e.target.value)} /><InputError message={form.errors.allocated_amount} /></div>
                         </div>

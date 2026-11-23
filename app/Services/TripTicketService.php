@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\TripTicketStatus;
+use App\Models\FuelType;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
@@ -188,10 +189,18 @@ class TripTicketService
             $fuelCost = round($fuelPrice * $liters, 2);
         }
 
+        $fuelTypeId = $data['fuel_type_id'] ?? null;
+        $fuelTypeName = $this->text($data['fuel_type'] ?? null);
+        if ($fuelTypeId !== null && $fuelTypeId !== '') {
+            $fuelTypeName = FuelType::query()->whereKey($fuelTypeId)->value('name') ?? $fuelTypeName;
+        }
+
         return [
             'vehicle_type' => $this->text($data['vehicle_type'] ?? null),
             'driver_id' => $data['driver_id'] ?? null,
-            'fuel_type' => $this->text($data['fuel_type'] ?? null),
+            'fuel_type_id' => $fuelTypeId !== '' ? $fuelTypeId : null,
+            'fuel_type' => $fuelTypeName,
+            'fuel_source_office_id' => $data['fuel_source_office_id'] ?? null,
             'fuel_efficiency' => $efficiency > 0 ? round($efficiency, 2) : null,
             'distance_km' => round($distance, 2),
             'round_trip' => $roundTrip,

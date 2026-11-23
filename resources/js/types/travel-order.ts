@@ -94,7 +94,9 @@ export type TripTicket = {
     vehicle_plate_no: string;
     vehicle_type: string | null;
     driver_id: number | null;
+    fuel_type_id: number | null;
     fuel_type: string | null;
+    fuel_source_office_id: number | null;
     fuel_efficiency: string | null;
     distance_km: string;
     round_trip: boolean;
@@ -116,6 +118,8 @@ export type TripTicket = {
     created_at: string | null;
     updated_at: string | null;
     driver?: { id: number; full_name: string } | null;
+    fuel_type_record?: { id: number; name: string } | null;
+    fuel_source_office?: { id: number; office_name: string } | null;
     creator?: { id: number; name: string } | null;
     completer?: { id: number; name: string } | null;
 };
@@ -365,6 +369,8 @@ export type TravelOrderShowOptions = {
     locations: TravelOrderLookupOption[];
     transportationModes: TravelOrderLookupOption[];
     drivers: TripTicketDriver[];
+    offices: { id: number; office_name: string }[];
+    fuelTypes: { id: number; name: string }[];
 };
 
 export type TravelOrderCreateRequest = {

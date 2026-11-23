@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             TravelOptionsSeeder::class,
             LocationSeeder::class,
             PerDiemConfigurationSeeder::class,
+            FuelTypeSeeder::class,
         ]);
     }
 }

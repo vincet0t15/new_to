@@ -12,12 +12,16 @@ type Props = {
     travelOrder: TripTicketTravelOrder;
     tripTicket: TripTicket;
     drivers: TripTicketDriver[];
+    offices: { id: number; office_name: string }[];
+    fuelTypes: { id: number; name: string }[];
 };
 
 export default function EditTripTicket({
     travelOrder,
     tripTicket,
     drivers,
+    offices,
+    fuelTypes,
 }: Props) {
     return (
         <>
@@ -32,6 +36,8 @@ export default function EditTripTicket({
                 <TripTicketForm
                     travelOrder={travelOrder}
                     drivers={drivers}
+                    offices={offices}
+                    fuelTypes={fuelTypes}
                     tripTicket={tripTicket}
                     action={{
                         url: tripTickets.update([travelOrder.id, tripTicket.id])

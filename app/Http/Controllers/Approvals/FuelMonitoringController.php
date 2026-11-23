@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Approvals;
 
+use App\Enums\TripTicketStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FuelAllocation;
 use App\Models\Office;
 use App\Models\TripTicket;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,21 +21,25 @@ class FuelMonitoringController extends Controller
         $filters = $this->filters($request);
         $base = $this->filteredQuery($filters);
 
+        $completed = TripTicketStatus::Completed->value;
+        $cancelled = TripTicketStatus::Cancelled->value;
+        $officeExpr = 'COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id)';
+
         $summary = (clone $base)
             ->selectRaw('COUNT(*) as total_tickets')
-            ->selectRaw('COALESCE(SUM(liters), 0) as estimated_liters')
-            ->selectRaw('COALESCE(SUM(fuel_consumed), 0) as actual_liters')
-            ->selectRaw('COALESCE(SUM(fuel_cost), 0) as fuel_cost')
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
             ->first();
 
         $usageByOffice = (clone $base)
-            ->join('offices', 'offices.id', '=', 'travel_orders.office_id')
+            ->join('offices', 'offices.id', '=', DB::raw($officeExpr))
             ->selectRaw('offices.id as office_id')
             ->selectRaw('offices.office_name')
             ->selectRaw('COUNT(trip_tickets.id) as total_tickets')
-            ->selectRaw('COALESCE(SUM(trip_tickets.liters), 0) as estimated_liters')
-            ->selectRaw('COALESCE(SUM(trip_tickets.fuel_consumed), 0) as actual_liters')
-            ->selectRaw('COALESCE(SUM(trip_tickets.fuel_cost), 0) as fuel_cost')
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
             ->groupBy('offices.id', 'offices.office_name')
             ->get()
             ->keyBy('office_id');
@@ -72,11 +78,28 @@ class FuelMonitoringController extends Controller
             ];
         })->sortByDesc('fuel_cost')->values();
 
+        $borrowedByOffice = (clone $base)
+            ->whereNotNull('trip_tickets.fuel_source_office_id')
+            ->whereColumn('trip_tickets.fuel_source_office_id', '!=', 'travel_orders.office_id')
+            ->join('offices as borrower_offices', 'borrower_offices.id', '=', 'travel_orders.office_id')
+            ->join('offices as source_offices', 'source_offices.id', '=', 'trip_tickets.fuel_source_office_id')
+            ->selectRaw('borrower_offices.office_name as borrower_office_name')
+            ->selectRaw('source_offices.office_name as source_office_name')
+            ->selectRaw('COUNT(trip_tickets.id) as total_tickets')
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
+            ->groupBy('borrower_offices.office_name', 'source_offices.office_name')
+            ->orderByDesc('fuel_cost')
+            ->get();
+
         $tickets = (clone $base)
             ->select('trip_tickets.*')
             ->with([
                 'travelOrder:id,control_no,to_number,purpose,office_id',
                 'travelOrder.office:id,office_name',
+                'fuelSourceOffice:id,office_name',
+                'fuelTypeRecord:id,name',
                 'driver:id,first_name,middle_name,last_name,suffix',
             ])
             ->latest('trip_tickets.created_at')
@@ -104,6 +127,7 @@ class FuelMonitoringController extends Controller
                 'remaining_amount' => (float) ($allocationSummary?->allocated_amount ?? 0) - (float) ($summary?->fuel_cost ?? 0),
             ],
             'byOffice' => $byOffice,
+            'borrowedByOffice' => $borrowedByOffice,
             'tickets' => $tickets,
             'offices' => Office::query()->orderBy('office_name')->get(['id', 'office_name']),
             'filters' => $filters,
@@ -121,6 +145,8 @@ class FuelMonitoringController extends Controller
             ->with([
                 'travelOrder:id,control_no,to_number,purpose,office_id',
                 'travelOrder.office:id,office_name',
+                'fuelSourceOffice:id,office_name',
+                'fuelTypeRecord:id,name',
                 'driver:id,first_name,middle_name,last_name,suffix',
             ])
             ->orderByDesc('trip_tickets.created_at');
@@ -139,7 +165,9 @@ class FuelMonitoringController extends Controller
             fputcsv($handle, [
                 'Ticket No',
                 'Status',
-                'Office',
+                'Fuel Source Office',
+                'Travel Order Office',
+                'Borrowed',
                 'Travel Order',
                 'Purpose',
                 'Vehicle Plate',
@@ -158,10 +186,14 @@ class FuelMonitoringController extends Controller
 
             $query->chunk(200, function ($tickets) use ($handle): void {
                 foreach ($tickets as $ticket) {
+                    $sourceOffice = $ticket->fuelSourceOffice?->office_name ?? $ticket->travelOrder?->office?->office_name;
+                    $toOffice = $ticket->travelOrder?->office?->office_name;
                     fputcsv($handle, [
                         $ticket->ticket_no,
                         $ticket->status->value,
-                        $ticket->travelOrder?->office?->office_name,
+                        $sourceOffice,
+                        $toOffice,
+                        $sourceOffice && $toOffice && $sourceOffice !== $toOffice ? 'Yes' : 'No',
                         $ticket->travelOrder?->control_no ?? $ticket->travelOrder?->to_number ?? $ticket->travel_order_id,
                         $ticket->travelOrder?->purpose,
                         $ticket->vehicle_plate_no,
@@ -218,7 +250,7 @@ class FuelMonitoringController extends Controller
                         ->orWhere('travel_orders.to_number', 'like', $search);
                 });
             })
-            ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->where('travel_orders.office_id', (int) $filters['office_id']))
+            ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->whereRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) = ?', [(int) $filters['office_id']]))
             ->when($filters['status'] !== '', fn (Builder $query): Builder => $query->where('trip_tickets.status', $filters['status']))
             ->when($filters['date_from'] !== '', fn (Builder $query): Builder => $query->whereDate('trip_tickets.created_at', '>=', $filters['date_from']))
             ->when($filters['date_to'] !== '', fn (Builder $query): Builder => $query->whereDate('trip_tickets.created_at', '<=', $filters['date_to']));

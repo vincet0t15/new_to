@@ -10,6 +10,7 @@ use App\Http\Requests\TravelOrders\StoreTravelOrderRequest;
 use App\Http\Requests\TravelOrders\UpdateTravelOrderRequest;
 use App\Models\Employee;
 use App\Models\ExpenseType;
+use App\Models\FuelType;
 use App\Models\Location;
 use App\Models\Office;
 use App\Models\TransportationMode;
@@ -351,6 +352,8 @@ class TravelOrderController extends Controller
             'itineraries.toLocation',
             'itineraries.transportationMode',
             'tripTickets.driver',
+            'tripTickets.fuelTypeRecord',
+            'tripTickets.fuelSourceOffice',
         ]);
 
         $editable = $travelOrder->status === TravelOrderStatus::Draft
@@ -381,6 +384,11 @@ class TravelOrderController extends Controller
                     ])
                     ->values()
                     ->all(),
+                'offices' => Office::query()
+                    ->orderBy('office_name')
+                    ->get(['id', 'office_name'])
+                    ->toArray(),
+                'fuelTypes' => FuelType::query()->where('is_active', true)->orderBy('name')->get(['id', 'name'])->toArray(),
             ],
             'can' => [
                 'submit' => $travelOrder->status === TravelOrderStatus::Draft,
