@@ -1,15 +1,21 @@
-import { Head, router, useForm } from '@inertiajs/react';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, FileText, Loader2, Route, Save, Send } from 'lucide-react';
 import { Can } from '@/components/can';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import {
     TravelOrderHeaderFields,
     type TravelOrderHeaderValues,
 } from '@/components/travel-orders/header-fields';
 import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-// native textarea used instead
+import { Textarea } from '@/components/ui/textarea';
 import travelOrdersRoutes from '@/routes/travel-orders';
 import type {
     TravelOrderCreateRequest,
@@ -35,7 +41,7 @@ export default function CreateTravelOrder({
     routePreview,
     filer,
 }: Props) {
-    const { data, setData, post, processing, errors } =
+    const { data, setData, post, processing, errors, transform } =
         useForm<TravelOrderCreateRequest>(initial);
 
     const changeHeader = <K extends keyof TravelOrderHeaderValues>(
@@ -46,62 +52,58 @@ export default function CreateTravelOrder({
     };
 
     const submit = (status: 'draft' | 'submitted') => {
-        setData('status', status);
-        post(travelOrdersRoutes.store().url);
+        transform((current) => ({ ...current, status }));
+        post(travelOrdersRoutes.store().url, {
+            preserveScroll: true,
+        });
     };
+
+    const routingError = (errors as Record<string, string | undefined>).routing;
+    const employeeError = (errors as Record<string, string | undefined>).employee;
 
     return (
         <>
             <Head title="New Travel Order" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                            router.visit(travelOrdersRoutes.index().url)
-                        }
-                    >
-                        <ArrowLeft className="size-4" />
-                        Back
-                    </Button>
-                    <Heading
-                        title="New Travel Order"
-                        description="Fill in the details. The route is resolved automatically from your office."
-                    />
+            <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-2">
+                        <Button variant="ghost" size="sm" className="-ml-2 w-fit" asChild>
+                            <Link href={travelOrdersRoutes.index().url}>
+                                <ArrowLeft className="size-4" />
+                                Back to travel orders
+                            </Link>
+                        </Button>
+                        <div className="space-y-1">
+                            <h1 className="text-2xl font-semibold tracking-tight">
+                                New Travel Order
+                            </h1>
+                            <p className="max-w-2xl text-sm text-muted-foreground">
+                                Complete the travel details below. The approval
+                                route is resolved automatically from your office.
+                            </p>
+                        </div>
+                    </div>
+                    {filer && (
+                        <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm sm:max-w-xs">
+                            <p className="font-medium text-foreground">{filer.name}</p>
+                            <p className="text-muted-foreground">
+                                {filer.office ?? 'No office assigned'}
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                {(errors as Record<string, string | undefined>).routing && (
-                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                        {(errors as Record<string, string | undefined>).routing}
-                    </div>
-                )}
-                {(errors as Record<string, string | undefined>).employee && (
-                    <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                        {
-                            (errors as Record<string, string | undefined>)
-                                .employee
-                        }
+                {(routingError || employeeError) && (
+                    <div
+                        role="alert"
+                        className="rounded-lg border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive"
+                    >
+                        {routingError ?? employeeError}
                     </div>
                 )}
 
-                <div className="grid gap-6 lg:grid-cols-3">
-                    <div className="space-y-6 lg:col-span-2">
-                        {filer && (
-                            <section className="space-y-1 rounded-xl border p-4">
-                                <h3 className="text-base font-semibold">
-                                    Filer
-                                </h3>
-                                <p className="text-sm text-muted-foreground">
-                                    {filer.name}
-                                    {filer.office ? ` · ${filer.office}` : ''}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    Travel orders are filed for your own
-                                    employee record and office.
-                                </p>
-                            </section>
-                        )}
+                <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+                    <div className="min-w-0 space-y-6">
                         <TravelOrderHeaderFields
                             options={options}
                             data={data}
@@ -109,18 +111,24 @@ export default function CreateTravelOrder({
                             onChange={changeHeader}
                         />
 
-                        <section className="space-y-4 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Additional notes
-                            </h3>
-                            <div className="space-y-2">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <FileText className="size-4 text-muted-foreground" />
+                                    Additional notes
+                                </CardTitle>
+                                <CardDescription>
+                                    Optional context for approvers reviewing this
+                                    request.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
                                 <Label htmlFor="submission_notes">
                                     Submission notes
                                 </Label>
-                                <textarea
+                                <Textarea
                                     id="submission_notes"
-                                    rows={2}
-                                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    rows={3}
                                     value={data.submission_notes}
                                     onChange={(event) =>
                                         setData(
@@ -128,91 +136,112 @@ export default function CreateTravelOrder({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Optional notes for the approvers"
+                                    placeholder="Add any note that may help approvers"
                                 />
                                 <InputError message={errors.submission_notes} />
-                            </div>
-                        </section>
+                            </CardContent>
+                        </Card>
                     </div>
 
-                    <div className="space-y-4">
-                        <section className="space-y-3 rounded-xl border p-4">
-                            <h3 className="text-base font-semibold">
-                                Approval route
-                            </h3>
-                            {routePreview ? (
-                                <ol className="space-y-2">
-                                    {routePreview.steps.map((step, index) => (
-                                        <li
-                                            key={step.id}
-                                            className="flex items-start gap-2 text-sm"
-                                        >
-                                            <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
-                                                {index + 1}
-                                            </span>
-                                            <div>
-                                                <p className="font-medium">
-                                                    {step.label}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {step.office.office_name}
-                                                    {step.designees.length > 0
-                                                        ? ` · ${step.designees
-                                                              .map(
-                                                                  (d) => d.name,
-                                                              )
-                                                              .join(', ')}`
-                                                        : ' · no designee'}
-                                                </p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                    {routePreview.steps.length === 0 && (
-                                        <p className="text-sm text-muted-foreground">
-                                            No steps configured.
-                                        </p>
-                                    )}
-                                </ol>
-                            ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    No route preview available.
-                                </p>
-                            )}
-                            {routePreview && !routePreview.is_ready && (
-                                <p className="text-sm text-amber-600">
-                                    Some steps have no designee. Submission may
-                                    be blocked.
-                                </p>
-                            )}
-                        </section>
+                    <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base">
+                                    <Route className="size-4 text-muted-foreground" />
+                                    Approval route
+                                </CardTitle>
+                                <CardDescription>
+                                    Steps are determined by your office workflow.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {routePreview ? (
+                                    <>
+                                        <ol className="space-y-3">
+                                            {routePreview.steps.map((step, index) => (
+                                                <li
+                                                    key={step.id}
+                                                    className="flex gap-3 text-sm"
+                                                >
+                                                    <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full border bg-background text-xs font-medium text-foreground">
+                                                        {index + 1}
+                                                    </span>
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium leading-6 text-foreground">
+                                                            {step.label}
+                                                        </p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {step.office.office_name}
+                                                            {step.designees.length > 0
+                                                                ? ` · ${step.designees
+                                                                      .map((d) => d.name)
+                                                                      .join(', ')}`
+                                                                : ' · No designee assigned'}
+                                                        </p>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                            {routePreview.steps.length === 0 && (
+                                                <li className="text-sm text-muted-foreground">
+                                                    No workflow steps are configured.
+                                                </li>
+                                            )}
+                                        </ol>
+                                        {!routePreview.is_ready && (
+                                            <p className="rounded-md border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                                                Some steps have no designee. Submission
+                                                may be blocked until the route is ready.
+                                            </p>
+                                        )}
+                                    </>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground">
+                                        No route preview available for your account.
+                                    </p>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                        <div className="flex flex-col gap-2">
-                            <Can permission="travel-orders.create">
-                                <Button
-                                    variant="outline"
-                                    onClick={() => submit('draft')}
-                                    disabled={processing}
-                                >
-                                    {processing && (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    )}
-                                    <Save className="size-4" />
-                                    Save as draft
-                                </Button>
-                            </Can>
-                            <Can permission="travel-orders.send">
-                                <Button
-                                    onClick={() => submit('submitted')}
-                                    disabled={processing}
-                                >
-                                    {processing && (
-                                        <Loader2 className="size-4 animate-spin" />
-                                    )}
-                                    Submit for approval
-                                </Button>
-                            </Can>
-                        </div>
-                    </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Actions</CardTitle>
+                                <CardDescription>
+                                    Save your progress or submit when ready.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-3">
+                                <Can permission="travel-orders.send">
+                                    <Button
+                                        className="w-full"
+                                        onClick={() => submit('submitted')}
+                                        disabled={processing}
+                                    >
+                                        {processing ? (
+                                            <Loader2 className="size-4 animate-spin" />
+                                        ) : (
+                                            <Send className="size-4" />
+                                        )}
+                                        Submit for approval
+                                    </Button>
+                                </Can>
+                                <Can permission="travel-orders.create">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => submit('draft')}
+                                        disabled={processing}
+                                    >
+                                        {processing ? (
+                                            <Loader2 className="size-4 animate-spin" />
+                                        ) : (
+                                            <Save className="size-4" />
+                                        )}
+                                        Save as draft
+                                    </Button>
+                                </Can>
+                            </CardContent>
+                        </Card>
+                    </aside>
                 </div>
             </div>
         </>

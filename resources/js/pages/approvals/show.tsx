@@ -52,7 +52,7 @@ type Props = {
 
 export default function ShowApproval({
     travelOrder,
-    route,
+    route: _route,
     timeline,
     revisions,
     currentStep,
