@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * The trip ticket prepared for an approved travel order.
+ * The trip ticket prepared for a travel order that uses a government vehicle.
  *
  * The vehicle details live on this row rather than in a fleet registry: the
  * plate, type, fuel and efficiency are exactly what the printed ticket needs,

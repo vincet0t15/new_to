@@ -5,13 +5,12 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * The trip ticket prepared for an approved travel order.
+ * The trip ticket prepared for a travel order that uses a government vehicle.
  *
  * Unlike the reference application this table carries the vehicle details
  * directly (plate, type, fuel, efficiency) instead of pointing at a fleet
  * registry, because the fleet module has not been ported to this application
- * yet. The ticket still follows the same lifecycle: it can only be prepared
- * for an approved order, it is numbered, it is completed after the trip, and a
+ * yet. The ticket is numbered when prepared, completed after the trip, and a
  * completed ticket cannot be cancelled.
  */
 return new class extends Migration
