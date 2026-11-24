@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Concerns\ResolvesSeedCredentials;
 use App\Enums\SystemRole;
 use App\Models\Employee;
 use App\Models\EmploymentType;
@@ -27,7 +28,8 @@ use RuntimeException;
  * Run it explicitly on a local or staging copy when the real roster has not
  * been entered yet and the workflow must be walked end to end.
  *
- * Every account signs in with the password "password" and holds both the
+ * Every account signs in with the configured demo password (development
+ * fallback: "password") and holds both the
  * Employee role (so it can file a travel order) and its seat role (so it can
  * approve one). Office codes in the roster refer to the official directory
  * seeded by OfficeSeeder.
@@ -57,9 +59,8 @@ use RuntimeException;
  */
 class DemoDataSeeder extends Seeder
 {
+    use ResolvesSeedCredentials;
     use WithoutModelEvents;
-
-    private const PASSWORD = 'password';
 
     /**
      * @var array<int, array{
@@ -284,7 +285,8 @@ class DemoDataSeeder extends Seeder
             if (! $user->exists) {
                 // A demo account is verified because it exists to be signed in
                 // to immediately; there is no mailbox to confirm.
-                $user->password = Hash::make(self::PASSWORD);
+                $user->password = Hash::make($this->seededPassword('seed-credentials.demo_password', 'DEMO_SEED_PASSWORD'));
+                $user->must_change_password = $this->shouldForcePasswordChange();
                 $user->email_verified_at = Carbon::now();
             }
 

@@ -18,6 +18,7 @@ use App\Models\TravelClassification;
 use App\Models\TravelOrder;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\ItinerarySignatoryResolver;
 use App\Services\SignatoryResolver;
 use App\Services\TravelOrderResubmissionService;
 use App\Services\TravelOrderRoutePresenter;
@@ -37,6 +38,7 @@ class TravelOrderController extends Controller
         private readonly TravelOrderSubmissionService $submissions,
         private readonly TravelOrderRoutePresenter $presenter,
         private readonly TravelOrderResubmissionService $resubmissions,
+        private readonly ItinerarySignatoryResolver $itinerarySignatories,
     ) {
         //
     }
@@ -121,10 +123,10 @@ class TravelOrderController extends Controller
                 'expense_type_ids' => [],
                 'transportation_mode_ids' => [],
             ],
-            'routePreview' => $office === null ? null : $this->routes->preview($office),
-            'filer' => $employee === null ? null : [
+            'routePreview' => $this->routes->preview($office),
+            'filer' => [
                 'name' => $employee->full_name,
-                'office' => $office?->office_name,
+                'office' => $office->office_name,
             ],
         ]);
     }
@@ -144,7 +146,7 @@ class TravelOrderController extends Controller
 
         $employee = $user->employee;
 
-        if ($employee === null || $employee->office_id === null) {
+        if ($employee === null) {
             return back()->withErrors([
                 'employee' => __('Your account must be linked to an employee record with an office before filing a travel order.'),
             ]);
@@ -668,31 +670,7 @@ class TravelOrderController extends Controller
      */
     private function itinerarySignatories(TravelOrder $travelOrder): array
     {
-        $group = $travelOrder->office()
-            ->with([
-                'itinerarySignatoryGroup.certifiedEmployee.position',
-                'itinerarySignatoryGroup.approvedEmployee.position',
-            ])
-            ->first()?->itinerarySignatoryGroup;
-
-        return [
-            'certified' => [
-                'name' => $group?->certifiedEmployee?->full_name,
-                'title' => $group === null
-                    ? 'Municipal Budget Officer'
-                    : ($group->certified_title
-                        ?? $group->certifiedEmployee?->position->name
-                        ?? 'Municipal Budget Officer'),
-            ],
-            'approved' => [
-                'name' => $group?->approvedEmployee?->full_name,
-                'title' => $group === null
-                    ? 'Municipal Mayor'
-                    : ($group->approved_title
-                        ?? $group->approvedEmployee?->position->name
-                        ?? 'Municipal Mayor'),
-            ],
-        ];
+        return $this->itinerarySignatories->for($travelOrder);
     }
 
     /**

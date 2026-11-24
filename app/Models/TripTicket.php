@@ -88,7 +88,7 @@ class TripTicket extends Model
     /** @use HasFactory<TripTicketFactory> */
     use HasFactory;
 
-    /** @var array<int, string> */
+    /** @var list<string> */
     protected $appends = ['fuel_receipt_url'];
 
     protected function casts(): array

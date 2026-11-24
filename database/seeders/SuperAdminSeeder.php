@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Concerns\ResolvesSeedCredentials;
 use App\Enums\SystemRole;
 use App\Models\Role;
 use App\Models\User;
@@ -18,6 +19,7 @@ use RuntimeException;
  */
 class SuperAdminSeeder extends Seeder
 {
+    use ResolvesSeedCredentials;
     use WithoutModelEvents;
 
     public function run(): void
@@ -43,6 +45,7 @@ class SuperAdminSeeder extends Seeder
             'username' => $username,
             'email' => config('superadmin.email'),
             'password' => $this->password(),
+            'must_change_password' => $this->shouldForcePasswordChange(),
         ]);
 
         // Assigned by the role model rather than by name, because the role's

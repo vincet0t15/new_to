@@ -140,6 +140,9 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
         Route::middleware('permission:travel-orders.view-all')->group(function () {
             Route::get('travel-orders', [TravelOrderRegisterController::class, 'index'])
                 ->name('travel-orders.index');
+            Route::post('travel-orders/reassign-bulk', [AdminTravelOrderActionController::class, 'reassignBulk'])
+                ->middleware('permission:travel-orders.reassign')
+                ->name('travel-orders.reassign-bulk');
             Route::post('travel-orders/{travelOrder}/reassign', [AdminTravelOrderActionController::class, 'reassign'])
                 ->middleware('permission:travel-orders.reassign')
                 ->name('travel-orders.reassign');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\ReadsAggregateRows;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FuelAllocations\SaveFuelAllocationRequest;
 use App\Http\Requests\FuelAllocations\VoidFuelAllocationRequest;
@@ -18,6 +19,8 @@ use Inertia\Response;
 
 class FuelAllocationController extends Controller
 {
+    use ReadsAggregateRows;
+
     public function index(Request $request): Response
     {
         $filters = [
@@ -181,37 +184,41 @@ class FuelAllocationController extends Controller
             ->where('status', FuelAllocation::STATUS_ACTIVE)
             ->selectRaw('office_id, fuel_type_id, COALESCE(SUM(allocated_liters),0) as liters, COALESCE(SUM(allocated_amount),0) as amount')
             ->groupBy('office_id', 'fuel_type_id')
-            ->get()
-            ->map(fn ($r) => [
-                'office_id' => (int) $r->office_id,
-                'fuel_type_id' => $r->fuel_type_id ? (int) $r->fuel_type_id : null,
-                'liters' => (float) $r->liters,
-                'amount' => (float) $r->amount,
-            ]);
+            ->get();
 
         $consumed = DB::table('trip_tickets')
             ->join('travel_orders', 'travel_orders.id', '=', 'trip_tickets.travel_order_id')
             ->where('trip_tickets.status', 'completed')
             ->selectRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) as office_id, trip_tickets.fuel_type_id, COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as liters, COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as amount')
             ->groupByRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id), trip_tickets.fuel_type_id')
-            ->get()
-            ->keyBy(fn ($r) => $r->office_id.'|'.($r->fuel_type_id ?? 'null'));
+            ->get();
 
-        return $allocated->map(function (array $row) use ($consumed): array {
-            $key = $row['office_id'].'|'.($row['fuel_type_id'] ?? 'null');
-            $c = $consumed->get($key);
+        $consumedByKey = [];
+        foreach ($consumed as $row) {
+            $key = $this->rawOfficeKey($row).'|'.$this->rawTypeKey($row, 'fuel_type_id');
+            $consumedByKey[$key] = $row;
+        }
 
-            return [
-                'office_id' => $row['office_id'],
-                'fuel_type_id' => $row['fuel_type_id'],
-                'remaining_liters' => $row['liters'] - (float) ($c?->liters ?? 0),
-                'remaining_amount' => $row['amount'] - (float) ($c?->amount ?? 0),
+        $balances = [];
+        foreach ($allocated as $row) {
+            $key = $this->rawOfficeKey($row).'|'.$this->rawTypeKey($row, 'fuel_type_id');
+            $consumption = $consumedByKey[$key] ?? null;
+            $liters = $this->rawFloat(data_get($row, 'liters'));
+            $amount = $this->rawFloat(data_get($row, 'amount'));
+
+            $balances[] = [
+                'office_id' => $this->rawInt(data_get($row, 'office_id')),
+                'fuel_type_id' => $this->rawNullableInt(data_get($row, 'fuel_type_id')),
+                'remaining_liters' => $liters - $this->rawFloat(data_get($consumption, 'liters')),
+                'remaining_amount' => $amount - $this->rawFloat(data_get($consumption, 'amount')),
             ];
-        })->values()->all();
+        }
+
+        return $balances;
     }
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $meta
      */
     private function logEvent(FuelAllocation $allocation, string $event, ?int $actorUserId, ?string $remarks = null, array $meta = []): void
     {
@@ -252,8 +259,8 @@ class FuelAllocationController extends Controller
             ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as liters, COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as amount')
             ->first();
 
-        $remainingLiters = (float) ($allocated?->liters ?? 0) - (float) ($consumed?->liters ?? 0);
-        $remainingAmount = (float) ($allocated?->amount ?? 0) - (float) ($consumed?->amount ?? 0);
+        $remainingLiters = $this->rawFloat(data_get($allocated, 'liters')) - $this->rawFloat(data_get($consumed, 'liters'));
+        $remainingAmount = $this->rawFloat(data_get($allocated, 'amount')) - $this->rawFloat(data_get($consumed, 'amount'));
 
         if (($liters > 0 && $remainingLiters < $liters) || ($amount > 0 && $remainingAmount < $amount)) {
             return sprintf(

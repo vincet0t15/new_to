@@ -11,6 +11,7 @@ use App\Models\TravelOrderDelivery;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentTravelOrderRepository implements TravelOrderRepository
@@ -85,6 +86,24 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
         return $this->inboxQuery($user)->count();
     }
 
+    public function stalledPending(int $limit = 8, ?int $stalledAfterDays = null): Collection
+    {
+        return $this->stalledQuery($stalledAfterDays)
+            ->with([
+                'office:id,office_name',
+                'employee:id,first_name,middle_name,last_name,suffix',
+                'recipient:id,name',
+            ])
+            ->orderBy('submitted_at')
+            ->limit($limit)
+            ->get();
+    }
+
+    public function stalledPendingCount(?int $stalledAfterDays = null): int
+    {
+        return $this->stalledQuery($stalledAfterDays)->count();
+    }
+
     public function countStatusesForCreator(User $user): array
     {
         $counts = TravelOrder::query()
@@ -149,6 +168,30 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
                         'travel_orders.current_step_index',
                     );
             });
+    }
+
+    /**
+     * The admin-wide version of the live queue: submitted orders with an open
+     * delivery at their current step, optionally older than a monitoring
+     * threshold. Ordering is done by the caller so the same query can feed both
+     * the widget and its total count.
+     *
+     * @return Builder<TravelOrder>
+     */
+    private function stalledQuery(?int $stalledAfterDays): Builder
+    {
+        return TravelOrder::query()
+            ->where('status', TravelOrderStatus::Submitted)
+            ->whereNotNull('current_step_index')
+            ->whereNotNull('submitted_at')
+            ->when($stalledAfterDays !== null, fn (Builder $query) => $query
+                ->where('submitted_at', '<=', now()->subDays($stalledAfterDays)))
+            ->whereHas('deliveries', fn ($query) => $query
+                ->open()
+                ->whereColumn(
+                    'travel_order_deliveries.step_index',
+                    'travel_orders.current_step_index',
+                ));
     }
 
     public function paginateHistory(User $user, int $perPage = 15): LengthAwarePaginator

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Concerns\ResolvesSeedCredentials;
 use App\Enums\SystemRole;
 use App\Models\Employee;
 use App\Models\EmploymentType;
@@ -24,13 +25,13 @@ use RuntimeException;
  *
  *   php artisan db:seed --class=KeyOfficialSeeder
  *
- * Accounts are created with password "password" only on first creation.
+ * Accounts are created with the configured key-official password (development
+ * fallback: "password") only on first creation.
  */
 class KeyOfficialSeeder extends Seeder
 {
+    use ResolvesSeedCredentials;
     use WithoutModelEvents;
-
-    private const PASSWORD = 'password';
 
     /**
      * @var array<int, array{
@@ -164,7 +165,8 @@ class KeyOfficialSeeder extends Seeder
             ]);
 
             if (! $user->exists) {
-                $user->password = Hash::make(self::PASSWORD);
+                $user->password = Hash::make($this->seededPassword('seed-credentials.key_official_password', 'KEY_OFFICIAL_SEED_PASSWORD'));
+                $user->must_change_password = $this->shouldForcePasswordChange();
                 $user->email_verified_at = Carbon::now();
             }
 

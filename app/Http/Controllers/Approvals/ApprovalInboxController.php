@@ -12,6 +12,7 @@ use App\Models\TravelOrderDelivery;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\ItinerarySignatoryResolver;
 use App\Services\SignatoryResolver;
 use App\Services\TravelOrderApprovalService;
 use App\Services\TravelOrderRoutePresenter;
@@ -34,6 +35,7 @@ class ApprovalInboxController extends Controller
         private readonly TravelOrderRepository $travelOrders,
         private readonly TravelOrderApprovalService $approvals,
         private readonly TravelOrderRoutePresenter $presenter,
+        private readonly ItinerarySignatoryResolver $itinerarySignatories,
     ) {
         //
     }
@@ -275,6 +277,7 @@ class ApprovalInboxController extends Controller
             'letterhead' => config('travel-orders.letterhead'),
             'signatories' => $travelOrder->signatories
                 ?? app(SignatoryResolver::class)->for($travelOrder),
+            'itinerarySignatories' => $this->itinerarySignatories->for($travelOrder),
         ]);
     }
 

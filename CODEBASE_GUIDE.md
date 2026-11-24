@@ -1,6 +1,6 @@
 # newTO — Codebase Guide
 
-A source-derived map of this application: what it is, how a request flows through it, the domain logic, and where to look when changing something. Built from a read-only deep analysis of the code as of 2026-11-20. Citations are `path:line`.
+A source-derived map of this application: what it is, how a request flows through it, the domain logic, and where to look when changing something. Built from a read-only deep analysis of the code as of 2026-11-20; operational additions through 2026-11-24 are in §16. Citations are `path:line`.
 
 > This document is descriptive, not prescriptive. It records how the code **currently** behaves, including known gaps (see §14).
 
@@ -391,7 +391,7 @@ No generated data-type bridge. `resources/js/types/**` is hand-maintained, mirro
 ## 13. Testing, tooling, CI
 
 - **Tests:** Pest 5 + Laravel plugin; suites Unit/Feature (`phpunit.xml:7-14`); in-memory SQLite (`:26-27`); `RefreshDatabase` bound to all Feature tests (`tests/Pest.php:20-22`); `withoutVite()` in `TestCase` (`:14-16`). Global helpers in `tests/Feature/TravelOrders/routing_helpers.php` (`routingEmployee()`, `routingUser()`, `routingChain()`) and `grantAdminPortal()` in `Pest.php:59-73`. Inertia assertions via `AssertableInertia`.
-- **No JavaScript test runner** — frontend assurance is `vp check` (lint) + `tsc --noEmit` + PHP-side Inertia assertions.
+- **Frontend tests:** `vp test` (`npm test`) with jsdom + Testing Library; configured in `vite.config.ts:42-46`, setup in `resources/js/test/setup.ts`. Specs cover the portal switcher, admin reassign dialog, and approval actions. Keep specs under `resources/js/test/`, not `pages/`: Inertia's resolver globs every `.tsx` under `pages/` and would ship tests as page chunks. Assurance is `vp check` + `tsc --noEmit` + `vp test` + PHP-side Inertia assertions.
 - **Quality:** Pint `laravel` preset (`pint.json`); Larastan level 7 over `app/`, `bootstrap/app.php`, `config/`, `database/`, `routes/` (`phpstan.neon:6-13`); no Rector.
 - **Scripts:** `composer setup` (install, `.env`, key, migrate, npm install + build), `composer dev` (`artisan dev`), `composer ci:check` (`npm run check` + `types:check` + `@test`), `composer test` (config clear → Pint check → PHPStan → `artisan test`).
 - **CI:** `.github/workflows/tests.yml` — push to `main` / PRs, PHP 8.5 + Composer 2, Node 22, `composer setup`, `composer ci:check`. Dependabot updates Actions weekly.
@@ -413,7 +413,7 @@ These are observations from the source analysis, not changes:
 8. **`verified` middleware is inert** (User is not `MustVerifyEmail`); 2FA is dormant.
 9. **SSR is half-configured** (no bundle path, no committed `bootstrap/ssr/`).
 10. **Generated Wayfinder code is untracked** — must generate before type-checking/building.
-11. **No JS tests**; PHP↔TS domain types are manually synchronized.
+11. ~~**No JS tests**~~ — **Fixed 2026-11-24:** `npm test` runs jsdom/Testing Library specs for the portal switcher, reassign dialog, and approval actions. PHP↔TS domain types are still manually synchronized.
 12. **Per-diem config cache is instance-local** (fresh service per request, so fine today).
 13. **Nested transaction** in `TravelOrderController::resubmit()` wrapping the service transaction (savepoints; correct but note for rollback debugging).
 14. **Workflow deletion guards use `travel_orders.workflow_id`**, set only at submission; drafts are unaffected.
@@ -435,7 +435,78 @@ These are observations from the source analysis, not changes:
 | Change a portal dashboard     | `PortalDashboardController` / `Admin\DashboardController`, `types/dashboard.ts`, `pages/portals/{employee,department-head,admin}/dashboard.tsx`, `components/dashboard/*`, `components/stat-card.tsx`                     |
 | Change what a portal can see  | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx`                                                                                                                                            |
 | Change shared client props    | `HandleInertiaRequests::share()`, `types/global.d.ts`                                                                                                                                                                     |
-| Debug a stuck approval        | Delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                                                                                              |
-| Run all checks                | `composer test` and `npm run check && npm run types:check`                                                                                                                                                                |
+| Debug a stuck approval        | Admin runbook §16; `php artisan travel-orders:check-integrity`, delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                              |
+| Run all checks                | `vendor/bin/pint --dirty`, `php artisan test`, `composer types:check`, `npm run check`, `npm run types:check`, `npm test`, `npm run build`                                                                                |
+
+---
+
+## 16. Admin runbook
+
+These procedures are for the shared admin portal. They observe or repair delivery state; they do not change routing rules. Workflow configuration changes affect future submissions only unless an explicit rescue action is taken.
+
+### 16.1 Daily monitoring
+
+The admin dashboard (`admin.dashboard`) exposes `stalledOrders`, `stalledTotal`, `stalledThresholdDays`, `fuelAlerts`, and `fuelSummary`.
+
+- The stalled threshold comes from `TRAVEL_ORDER_STALLED_AFTER_DAYS` (default `3`, clamped to at least `1`) in `config/travel-orders.php:96-108`. After changing it, run `php artisan config:clear` locally or rebuild the production config cache.
+- A stalled row is a monitoring hint only: no automatic approval, notification, or reassignment. Age is derived from `submitted_at`; holder is `recipient_user_id`; step is resolved from the frozen route.
+- Fuel alerts compare active allocations with **completed** trip tickets only; cancelled tickets are excluded. Negative balances are allowed and surfaced as alerts. Thresholds are `FUEL_LOW_BALANCE_LITERS` and `FUEL_LOW_BALANCE_AMOUNT`.
+
+### 16.2 Investigate a stalled approval
+
+1. Open the stalled panel on the admin dashboard and note the order number, holder, step, and age. The admin register is index-only, so there is no admin detail page.
+2. Run the read-only integrity check:
+
+    ```bash
+    php artisan travel-orders:check-integrity
+    php artisan travel-orders:check-integrity --json --fail-on-warning
+    ```
+
+    It exits `0` when there are no errors, `1` when any error exists (or any warning with `--fail-on-warning`). `--json` returns `ok`, `errors`, `warnings`, and `findings`. It never repairs data.
+
+    Error codes cover a submitted order without a workflow/route/timestamp, a mismatched frozen review map, an invalid current step, no open delivery, a missing or mismatched recipient, a stale open delivery, a delivery outside the frozen route, a missing delivery user, an acted delivery without a timestamp, and an orphan delivery. Warnings cover stale route pointers on closed orders, received deliveries without a timestamp, and open deliveries left at another step.
+
+3. Inspect `travel_order_deliveries` for open rows at `current_step_index` and compare them with `recipient_user_id`. Read the audit trail (`TravelOrderAudit`, including `Routed`, `Received`, `Forwarded`, and `Reassigned`) before acting.
+4. Do not edit `routed_steps`, `current_step_index`, or delivery rows directly. Use the designation impact + reassign flow below.
+
+### 16.3 Change a designation safely
+
+1. In the admin designations list, open **Impact** for the designation before replacing or ending it (`GET admin/designations/{designation}/impact`).
+2. The dialog lists only submitted orders whose **current-step open delivery** is held by the outgoing user and whose frozen step type matches the designation. Changing a designation never moves an existing pending delivery by itself.
+3. Candidate replacements prefer the holders named by the current step; if none are configured, the service falls back to approver-role accounts. The outgoing holder is excluded. Fix configuration or designations first if the candidate list is empty.
+4. After saving the designation, reassign the affected orders from the impact list. Bulk reassignment accepts at most 100 order IDs; each order is handled in its own transaction, so a stale document is reported without undoing successful rescues.
+
+### 16.4 Reassign a stranded order
+
+Requires `travel-orders.reassign` (`admin.travel-orders.reassign` / `admin.travel-orders.reassign-bulk`).
+
+- Reassignment is rescue-only. It closes open deliveries at the current step, creates one fresh `Pending` delivery for the new holder, updates `recipient_user_id`, records `WorkflowEvent::Reassigned` with `from_user_id`/`to_user_id`, and notifies the new holder.
+- It does **not** approve, return, or advance the workflow. A normal holder still uses **Approve** (advances) or **Forward** (passes to another person at the same step) in shared `/approvals`.
+- Always include remarks explaining why the original holder can no longer act. After a bulk pass, review the partial-failure report and rerun the integrity check; successful orders are not rolled back.
+
+### 16.5 Seeded accounts and password forcing
+
+Seed credentials are centralized in `config/seed-credentials.php` and applied by `ResolvesSeedCredentials`:
+
+- `DEMO_SEED_PASSWORD` and `KEY_OFFICIAL_SEED_PASSWORD` are required before seeding production. Local and test installs fall back to the historical `password` value. Re-seeding never resets an existing account's password.
+- `SEED_FORCE_PASSWORD_CHANGE` may be `true` or `false`. When unset, it defaults off in `local`/`testing` and on elsewhere; it only marks **newly seeded** accounts with `must_change_password`.
+- Flagged accounts are redirected to `security.edit`. Guests, `security.edit`, `user-password.update`, `logout`, and `verification.*` remain reachable so the user can sign in and change the password. A successful password update clears the flag.
+- The migration adds the column with a `false` default, so existing accounts are unaffected. If a production seed refuses to run, set the missing environment variables and rerun the seeder rather than editing the database directly.
+
+### 16.6 Verification gate
+
+Before committing or deploying a workflow/dashboard change:
+
+```bash
+vendor/bin/pint --dirty
+php artisan test
+composer types:check
+npm run check
+npm run types:check
+npm test
+npm run build
+```
+
+`npm test` runs the jsdom/Testing Library suite. Browser QA covers the admin stalled panel, the designation impact dialog, a reassign toast and audit row, both document-preview tabs, and the security banner for a flagged account; these paths were verified on 2026-11-24.
 
 Detailed, citation-heavy source reports live in `%TEMP%\opencode\newto-analysis\` (`01-workflow-approval.md`, `02-travel-order-domain.md`, `03-auth-portals-crud.md`, `04-frontend-tooling.md`) if you need line-level depth beyond this guide.

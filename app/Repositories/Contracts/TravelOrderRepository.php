@@ -5,6 +5,7 @@ namespace App\Repositories\Contracts;
 use App\Enums\TravelOrderStatus;
 use App\Models\TravelOrder;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface TravelOrderRepository
@@ -36,6 +37,20 @@ interface TravelOrderRepository
      * cannot drift apart.
      */
     public function pendingInboxCount(User $user): int;
+
+    /**
+     * Submitted orders that have been waiting at their current step longer
+     * than the monitoring threshold, oldest first. Used only by the admin
+     * dashboard; it does not affect routing or authorization.
+     *
+     * @return Collection<int, TravelOrder>
+     */
+    public function stalledPending(int $limit = 8, ?int $stalledAfterDays = null): Collection;
+
+    /**
+     * Total number of submitted orders past the stalled-approval threshold.
+     */
+    public function stalledPendingCount(?int $stalledAfterDays = null): int;
 
     /**
      * Every travel order that was ever delivered to this account, newest

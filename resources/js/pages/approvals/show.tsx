@@ -6,17 +6,20 @@ import {
     Inbox,
     RotateCcw,
 } from 'lucide-react';
+import { useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
+import { ItineraryDocument } from '@/components/travel-orders/print/itinerary-document';
 import { TravelOrderDocument } from '@/components/travel-orders/print/travel-order-document';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import type {
     ApprovalAbilities,
+    ItinerarySignatories,
     Letterhead,
     TravelOrder,
     TravelOrderDeliveryStatus,
@@ -41,6 +44,7 @@ type Props = {
     fundSources: { id: number; name: string }[];
     letterhead: Letterhead;
     signatories: TravelOrderSignatories;
+    itinerarySignatories: ItinerarySignatories;
     can: ApprovalAbilities;
     urls: {
         inbox: string;
@@ -66,9 +70,13 @@ export default function ShowApproval({
     fundSources,
     letterhead,
     signatories,
+    itinerarySignatories,
     can,
     urls,
 }: Props) {
+    const [documentTab, setDocumentTab] = useState<'order' | 'itinerary'>(
+        'order',
+    );
     const { data, setData, post, processing, errors, reset } = useForm({
         remarks: '',
         to_user_id: '',
@@ -119,12 +127,59 @@ export default function ShowApproval({
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
-                        <section className="overflow-hidden rounded-xl border bg-muted/40 p-3">
-                            <TravelOrderDocument
-                                travelOrder={travelOrder}
-                                letterhead={letterhead}
-                                signatories={signatories}
-                            />
+                        <section className="overflow-hidden rounded-xl border bg-muted/40">
+                            <div
+                                className="flex gap-1 border-b bg-background px-3 pt-3"
+                                role="tablist"
+                                aria-label="Document preview"
+                            >
+                                {(
+                                    [
+                                        ['order', 'Travel Order'],
+                                        ['itinerary', 'Itinerary'],
+                                    ] as const
+                                ).map(([key, label]) => (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        role="tab"
+                                        aria-selected={documentTab === key}
+                                        className={`rounded-t-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                                            documentTab === key
+                                                ? 'bg-muted text-foreground'
+                                                : 'text-muted-foreground hover:text-foreground'
+                                        }`}
+                                        onClick={() => setDocumentTab(key)}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div
+                                className="p-3"
+                                role="tabpanel"
+                                aria-label={
+                                    documentTab === 'order'
+                                        ? 'Travel Order'
+                                        : 'Itinerary'
+                                }
+                            >
+                                {documentTab === 'order' ? (
+                                    <TravelOrderDocument
+                                        travelOrder={travelOrder}
+                                        letterhead={letterhead}
+                                        signatories={signatories}
+                                    />
+                                ) : (
+                                    <ItineraryDocument
+                                        travelOrder={travelOrder}
+                                        letterhead={letterhead}
+                                        itinerarySignatories={
+                                            itinerarySignatories
+                                        }
+                                    />
+                                )}
+                            </div>
                         </section>
 
                         <section className="space-y-3 rounded-xl border p-4">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Approvals;
 
+use App\Concerns\ReadsAggregateRows;
 use App\Enums\TripTicketStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FuelAllocation;
@@ -17,6 +18,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FuelMonitoringController extends Controller
 {
+    use ReadsAggregateRows;
+
     public function index(Request $request): Response
     {
         $filters = $this->filters($request);
@@ -27,7 +30,7 @@ class FuelMonitoringController extends Controller
         $officeExpr = 'COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id)';
         $fuelTypeExpr = "COALESCE(NULLIF(fuel_types.name, ''), NULLIF(trip_tickets.fuel_type, ''), 'Unspecified')";
 
-        $summary = (clone $base)
+        $summaryRow = (clone $base)
             ->selectRaw('COUNT(*) as total_tickets')
             ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
             ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
@@ -60,24 +63,43 @@ class FuelMonitoringController extends Controller
             ->groupBy('offices.id', 'offices.office_name', DB::raw("COALESCE(NULLIF(allocation_fuel_types.name, ''), NULLIF(fuel_allocations.fuel_type, ''), 'Unspecified')"))
             ->get();
 
-        $usageByKey = $usageByOffice->keyBy(fn ($row): string => $row->office_id.'|'.$row->fuel_type);
-        $allocationsByKey = $allocationsByOffice->keyBy(fn ($row): string => $row->office_id.'|'.$row->fuel_type);
-        $keys = $usageByKey->keys()->merge($allocationsByKey->keys())->unique();
+        $usageByKey = [];
+        foreach ($usageByOffice as $row) {
+            $usageByKey[$this->rawPairKey($row)] = $row;
+        }
 
-        $byOfficeFuelType = $keys->map(function (string $key) use ($usageByKey, $allocationsByKey) {
-            $usage = $usageByKey->get($key);
-            $allocation = $allocationsByKey->get($key);
-            $allocatedLiters = (float) ($allocation?->allocated_liters ?? 0);
-            $allocatedAmount = (float) ($allocation?->allocated_amount ?? 0);
-            $actualLiters = (float) ($usage?->actual_liters ?? 0);
-            $actualCost = (float) ($usage?->fuel_cost ?? 0);
+        $allocationsByKey = [];
+        foreach ($allocationsByOffice as $row) {
+            $allocationsByKey[$this->rawPairKey($row)] = $row;
+        }
 
-            return [
-                'office_id' => (int) ($allocation?->office_id ?? $usage?->office_id),
-                'office_name' => $allocation?->office_name ?? $usage?->office_name,
-                'fuel_type' => $allocation?->fuel_type ?? $usage?->fuel_type ?? 'Unspecified',
-                'total_tickets' => (int) ($usage?->total_tickets ?? 0),
-                'estimated_liters' => (float) ($usage?->estimated_liters ?? 0),
+        $keys = array_values(array_unique(array_merge(
+            array_keys($usageByKey),
+            array_keys($allocationsByKey),
+        )));
+
+        $byOfficeFuelType = [];
+        foreach ($keys as $key) {
+            $usage = $usageByKey[$key] ?? null;
+            $allocation = $allocationsByKey[$key] ?? null;
+            $source = $allocation ?? $usage;
+            $allocatedLiters = $this->rawFloat(data_get($allocation, 'allocated_liters'));
+            $allocatedAmount = $this->rawFloat(data_get($allocation, 'allocated_amount'));
+            $actualLiters = $this->rawFloat(data_get($usage, 'actual_liters'));
+            $actualCost = $this->rawFloat(data_get($usage, 'fuel_cost'));
+
+            $byOfficeFuelType[] = [
+                'office_id' => $this->rawInt(data_get($source, 'office_id')),
+                'office_name' => $this->rawText(
+                    data_get($allocation, 'office_name'),
+                    $this->rawText(data_get($usage, 'office_name')),
+                ),
+                'fuel_type' => $this->rawText(
+                    data_get($allocation, 'fuel_type'),
+                    $this->rawText(data_get($usage, 'fuel_type'), 'Unspecified'),
+                ),
+                'total_tickets' => $this->rawInt(data_get($usage, 'total_tickets')),
+                'estimated_liters' => $this->rawFloat(data_get($usage, 'estimated_liters')),
                 'actual_liters' => $actualLiters,
                 'fuel_cost' => $actualCost,
                 'allocated_liters' => $allocatedLiters,
@@ -85,29 +107,38 @@ class FuelMonitoringController extends Controller
                 'remaining_liters' => $allocatedLiters - $actualLiters,
                 'remaining_amount' => $allocatedAmount - $actualCost,
             ];
-        })->sortBy([['office_name', 'asc'], ['fuel_type', 'asc']])->values();
+        }
 
-        $byOffice = $byOfficeFuelType
-            ->groupBy('office_id')
-            ->map(function ($rows) {
-                $first = $rows->first();
+        usort($byOfficeFuelType, static function (array $left, array $right): int {
+            return [$left['office_name'], $left['fuel_type']]
+                <=> [$right['office_name'], $right['fuel_type']];
+        });
 
-                return [
-                    'office_id' => (int) $first['office_id'],
-                    'office_name' => $first['office_name'],
-                    'total_tickets' => (int) $rows->sum('total_tickets'),
-                    'estimated_liters' => (float) $rows->sum('estimated_liters'),
-                    'actual_liters' => (float) $rows->sum('actual_liters'),
-                    'fuel_cost' => (float) $rows->sum('fuel_cost'),
-                    'allocated_liters' => (float) $rows->sum('allocated_liters'),
-                    'allocated_amount' => (float) $rows->sum('allocated_amount'),
-                    'remaining_liters' => (float) $rows->sum('remaining_liters'),
-                    'remaining_amount' => (float) $rows->sum('remaining_amount'),
-                    'fuel_types' => $rows->values()->all(),
-                ];
-            })
-            ->sortByDesc('fuel_cost')
-            ->values();
+        $groupedByOffice = [];
+        foreach ($byOfficeFuelType as $row) {
+            $groupedByOffice[$row['office_id']][] = $row;
+        }
+
+        $byOffice = [];
+        foreach ($groupedByOffice as $rows) {
+            $first = $rows[0];
+
+            $byOffice[] = [
+                'office_id' => $first['office_id'],
+                'office_name' => $first['office_name'],
+                'total_tickets' => (int) array_sum(array_column($rows, 'total_tickets')),
+                'estimated_liters' => (float) array_sum(array_column($rows, 'estimated_liters')),
+                'actual_liters' => (float) array_sum(array_column($rows, 'actual_liters')),
+                'fuel_cost' => (float) array_sum(array_column($rows, 'fuel_cost')),
+                'allocated_liters' => (float) array_sum(array_column($rows, 'allocated_liters')),
+                'allocated_amount' => (float) array_sum(array_column($rows, 'allocated_amount')),
+                'remaining_liters' => (float) array_sum(array_column($rows, 'remaining_liters')),
+                'remaining_amount' => (float) array_sum(array_column($rows, 'remaining_amount')),
+                'fuel_types' => $rows,
+            ];
+        }
+
+        usort($byOffice, static fn (array $left, array $right): int => $right['fuel_cost'] <=> $left['fuel_cost']);
 
         $borrowedByOffice = (clone $base)
             ->whereNotNull('trip_tickets.fuel_source_office_id')
@@ -140,7 +171,7 @@ class FuelMonitoringController extends Controller
 
         $prefix = $request->routeIs('admin.*') ? 'admin' : 'approvals';
 
-        $allocationSummary = FuelAllocation::query()
+        $allocationSummaryRow = FuelAllocation::query()
             ->where('status', FuelAllocation::STATUS_ACTIVE)
             ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->where('office_id', (int) $filters['office_id']))
             ->when($filters['fuel_type_id'] !== '', fn (Builder $query): Builder => $query->where('fuel_type_id', (int) $filters['fuel_type_id']))
@@ -150,14 +181,16 @@ class FuelMonitoringController extends Controller
 
         return Inertia::render('approvals/fuel-monitoring/index', [
             'summary' => [
-                'total_tickets' => (int) ($summary?->total_tickets ?? 0),
-                'estimated_liters' => (float) ($summary?->estimated_liters ?? 0),
-                'actual_liters' => (float) ($summary?->actual_liters ?? 0),
-                'fuel_cost' => (float) ($summary?->fuel_cost ?? 0),
-                'allocated_liters' => (float) ($allocationSummary?->allocated_liters ?? 0),
-                'allocated_amount' => (float) ($allocationSummary?->allocated_amount ?? 0),
-                'remaining_liters' => (float) ($allocationSummary?->allocated_liters ?? 0) - (float) ($summary?->actual_liters ?? 0),
-                'remaining_amount' => (float) ($allocationSummary?->allocated_amount ?? 0) - (float) ($summary?->fuel_cost ?? 0),
+                'total_tickets' => $this->rawInt(data_get($summaryRow, 'total_tickets')),
+                'estimated_liters' => $this->rawFloat(data_get($summaryRow, 'estimated_liters')),
+                'actual_liters' => $this->rawFloat(data_get($summaryRow, 'actual_liters')),
+                'fuel_cost' => $this->rawFloat(data_get($summaryRow, 'fuel_cost')),
+                'allocated_liters' => $this->rawFloat(data_get($allocationSummaryRow, 'allocated_liters')),
+                'allocated_amount' => $this->rawFloat(data_get($allocationSummaryRow, 'allocated_amount')),
+                'remaining_liters' => $this->rawFloat(data_get($allocationSummaryRow, 'allocated_liters'))
+                    - $this->rawFloat(data_get($summaryRow, 'actual_liters')),
+                'remaining_amount' => $this->rawFloat(data_get($allocationSummaryRow, 'allocated_amount'))
+                    - $this->rawFloat(data_get($summaryRow, 'fuel_cost')),
             ],
             'byOffice' => $byOffice,
             'byOfficeFuelType' => $byOfficeFuelType,
@@ -222,16 +255,26 @@ class FuelMonitoringController extends Controller
 
             $query->chunk(200, function ($tickets) use ($handle): void {
                 foreach ($tickets as $ticket) {
-                    $sourceOffice = $ticket->fuelSourceOffice?->office_name ?? $ticket->travelOrder?->office?->office_name;
-                    $toOffice = $ticket->travelOrder?->office?->office_name;
+                    $office = data_get($ticket, 'travelOrder.office');
+                    $sourceOffice = $this->rawText(
+                        data_get($ticket, 'fuelSourceOffice.office_name'),
+                        $this->rawText(data_get($office, 'office_name')),
+                    );
+                    $toOffice = $this->rawText(data_get($office, 'office_name'));
                     fputcsv($handle, [
                         $ticket->ticket_no,
                         $ticket->status->value,
                         $sourceOffice,
                         $toOffice,
-                        $sourceOffice && $toOffice && $sourceOffice !== $toOffice ? 'Yes' : 'No',
-                        $ticket->travelOrder?->control_no ?? $ticket->travelOrder?->to_number ?? $ticket->travel_order_id,
-                        $ticket->travelOrder?->purpose,
+                        $sourceOffice !== '' && $toOffice !== '' && $sourceOffice !== $toOffice ? 'Yes' : 'No',
+                        $this->rawText(
+                            data_get($ticket, 'travelOrder.control_no'),
+                            $this->rawText(
+                                data_get($ticket, 'travelOrder.to_number'),
+                                (string) $ticket->travel_order_id,
+                            ),
+                        ),
+                        $this->rawText(data_get($ticket, 'travelOrder.purpose')),
                         $ticket->vehicle_plate_no,
                         $ticket->vehicle_type,
                         $ticket->driver?->full_name,

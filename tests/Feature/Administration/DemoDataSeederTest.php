@@ -61,6 +61,18 @@ test('every demo account can sign in, file, and hold its seat role', function ()
     );
 });
 
+test('demo credentials and the first-login flag can be configured', function () {
+    config()->set('seed-credentials.demo_password', 'configured-secret');
+    config()->set('seed-credentials.force_password_change', true);
+
+    $this->seed(DemoDataSeeder::class);
+
+    $user = User::query()->where('username', 'employee.engineer')->sole();
+
+    expect(Hash::check('configured-secret', $user->password))->toBeTrue()
+        ->and($user->must_change_password)->toBeTrue();
+});
+
 test('the engineering chain resolves to its head and deputy', function () {
     $this->seed(DemoDataSeeder::class);
 

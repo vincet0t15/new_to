@@ -21,6 +21,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property string|null $email
  * @property Carbon|null $email_verified_at
  * @property string $password
+ * @property bool $must_change_password
  * @property int|null $employee_id
  * @property string|null $two_factor_secret
  * @property string|null $two_factor_recovery_codes
@@ -32,7 +33,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property-read Collection<int, Permission> $permissions
  * @property-read Employee|null $employee
  */
-#[Fillable(['name', 'username', 'email', 'password'])]
+#[Fillable(['name', 'username', 'email', 'password', 'must_change_password'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -49,6 +50,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'must_change_password' => 'boolean',
         ];
     }
 

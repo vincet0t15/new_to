@@ -272,7 +272,12 @@ class TripTicketService
                 Storage::disk('public')->delete($existing);
             }
 
-            return $file->store('trip-ticket-receipts', 'public');
+            $path = $file->store('trip-ticket-receipts', 'public');
+            if ($path === false) {
+                throw new \RuntimeException('Unable to store the fuel receipt.');
+            }
+
+            return $path;
         }
 
         if ($remove && $existing) {

@@ -2,16 +2,28 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Concerns\ReadsAggregateRows;
 use App\Enums\TravelOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\FuelAllocation;
 use App\Models\TravelOrder;
+use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\TravelOrderApprovalService;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class DashboardController extends Controller
 {
+    use ReadsAggregateRows;
+
+    public function __construct(
+        private readonly TravelOrderRepository $travelOrders,
+        private readonly TravelOrderApprovalService $approvals,
+    ) {
+        //
+    }
+
     public function __invoke(): Response
     {
         $lowLiters = (float) config('travel-orders.fuel.low_balance_liters', 20);
@@ -35,33 +47,52 @@ class DashboardController extends Controller
             ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as actual_liters')
             ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as fuel_cost')
             ->groupByRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id), trip_tickets.fuel_type_id, fuel_type')
-            ->get()
-            ->keyBy(fn ($r) => $r->office_id.'|'.($r->fuel_type_id ?? 'null').'|'.$r->fuel_type);
+            ->get();
 
-        $fuelBalances = $allocated->map(function ($row) use ($consumed) {
-            $key = $row->office_id.'|'.($row->fuel_type_id ?? 'null').'|'.$row->fuel_type;
-            $c = $consumed->get($key);
-            $remainingLiters = (float) $row->allocated_liters - (float) ($c?->actual_liters ?? 0);
-            $remainingAmount = (float) $row->allocated_amount - (float) ($c?->fuel_cost ?? 0);
+        $consumedByKey = [];
+        foreach ($consumed as $row) {
+            $key = $this->rawOfficeKey($row)
+                .'|'.$this->rawTypeKey($row, 'fuel_type_id')
+                .'|'.$this->rawTypeKey($row, 'fuel_type', 'Unspecified');
+            $consumedByKey[$key] = $row;
+        }
 
-            return [
-                'office_id' => (int) $row->office_id,
-                'office_name' => $row->office_name,
-                'fuel_type' => $row->fuel_type,
-                'allocated_liters' => (float) $row->allocated_liters,
-                'allocated_amount' => (float) $row->allocated_amount,
-                'actual_liters' => (float) ($c?->actual_liters ?? 0),
-                'fuel_cost' => (float) ($c?->fuel_cost ?? 0),
-                'remaining_liters' => $remainingLiters,
-                'remaining_amount' => $remainingAmount,
+        $fuelBalances = [];
+        foreach ($allocated as $row) {
+            $key = $this->rawOfficeKey($row)
+                .'|'.$this->rawTypeKey($row, 'fuel_type_id')
+                .'|'.$this->rawTypeKey($row, 'fuel_type', 'Unspecified');
+            $consumption = $consumedByKey[$key] ?? null;
+            $allocatedLiters = $this->rawFloat(data_get($row, 'allocated_liters'));
+            $allocatedAmount = $this->rawFloat(data_get($row, 'allocated_amount'));
+            $actualLiters = $this->rawFloat(data_get($consumption, 'actual_liters'));
+            $fuelCost = $this->rawFloat(data_get($consumption, 'fuel_cost'));
+
+            $fuelBalances[] = [
+                'office_id' => $this->rawInt(data_get($row, 'office_id')),
+                'office_name' => $this->rawText(data_get($row, 'office_name')),
+                'fuel_type' => $this->rawText(data_get($row, 'fuel_type'), 'Unspecified'),
+                'allocated_liters' => $allocatedLiters,
+                'allocated_amount' => $allocatedAmount,
+                'actual_liters' => $actualLiters,
+                'fuel_cost' => $fuelCost,
+                'remaining_liters' => $allocatedLiters - $actualLiters,
+                'remaining_amount' => $allocatedAmount - $fuelCost,
             ];
-        })->values();
+        }
 
-        $alerts = $fuelBalances
-            ->filter(fn (array $row): bool => $row['remaining_liters'] < 0 || $row['remaining_amount'] < 0 || $row['remaining_liters'] <= $lowLiters || $row['remaining_amount'] <= $lowAmount)
-            ->sortBy([['remaining_liters', 'asc'], ['remaining_amount', 'asc']])
-            ->take(8)
-            ->values();
+        $alerts = array_values(array_filter(
+            $fuelBalances,
+            static fn (array $row): bool => $row['remaining_liters'] < 0
+                || $row['remaining_amount'] < 0
+                || $row['remaining_liters'] <= $lowLiters
+                || $row['remaining_amount'] <= $lowAmount,
+        ));
+        usort($alerts, static function (array $left, array $right): int {
+            return [$left['remaining_liters'], $left['remaining_amount']]
+                <=> [$right['remaining_liters'], $right['remaining_amount']];
+        });
+        $alerts = array_slice($alerts, 0, 8);
 
         $toStats = TravelOrder::query()
             ->selectRaw('status, COUNT(*) as total')
@@ -95,6 +126,28 @@ class DashboardController extends Controller
             ->where('status', FuelAllocation::STATUS_ACTIVE)
             ->count();
 
+        $stalledAfterDays = max(1, (int) config('travel-orders.approval.stalled_after_days', 3));
+        $stalledOrders = $this->travelOrders
+            ->stalledPending(8, $stalledAfterDays)
+            ->map(function (TravelOrder $order): array {
+                return [
+                    'id' => $order->id,
+                    'control_no' => $order->control_no,
+                    'to_number' => $order->to_number,
+                    'purpose' => $order->purpose,
+                    'submitted_at' => $order->submitted_at?->toIso8601String(),
+                    'age_days' => (int) abs($order->submitted_at?->diffInDays(now()) ?? 0),
+                    'holder' => $order->recipient_user_id !== null
+                        ? $order->recipient->name
+                        : __('Unassigned'),
+                    'step' => $this->approvals->currentStep($order)?->displayLabel() ?? '—',
+                    'employee' => $order->employee?->full_name,
+                    'office' => $order->office?->office_name,
+                ];
+            })
+            ->values();
+        $stalledTotal = $this->travelOrders->stalledPendingCount($stalledAfterDays);
+
         return Inertia::render('portals/admin/dashboard', [
             'stats' => [
                 'draft' => (int) ($toStats[TravelOrderStatus::Draft->value] ?? 0),
@@ -111,6 +164,9 @@ class DashboardController extends Controller
                 'low_balance_amount' => $lowAmount,
             ],
             'recentOrders' => $recentOrders,
+            'stalledOrders' => $stalledOrders,
+            'stalledTotal' => $stalledTotal,
+            'stalledThresholdDays' => $stalledAfterDays,
             'fuelSummary' => [
                 'active_allocations' => $activeAllocations,
                 'issued_trip_tickets' => $pendingFuelTickets,

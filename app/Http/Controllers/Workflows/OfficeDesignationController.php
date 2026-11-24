@@ -10,6 +10,8 @@ use App\Models\Office;
 use App\Models\OfficeDesignation;
 use App\Repositories\Contracts\OfficeDesignationRepository;
 use App\Repositories\Contracts\WorkflowStepTypeRepository;
+use App\Services\TravelOrderApprovalService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -20,6 +22,7 @@ class OfficeDesignationController extends Controller
     public function __construct(
         private readonly OfficeDesignationRepository $designations,
         private readonly WorkflowStepTypeRepository $stepTypes,
+        private readonly TravelOrderApprovalService $approvals,
     ) {
         //
     }
@@ -72,6 +75,14 @@ class OfficeDesignationController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Designation updated.')]);
 
         return back();
+    }
+
+    /**
+     * In-flight orders that still sit with this designation's holder.
+     */
+    public function impact(OfficeDesignation $designation): JsonResponse
+    {
+        return response()->json($this->approvals->designationImpact($designation));
     }
 
     /**

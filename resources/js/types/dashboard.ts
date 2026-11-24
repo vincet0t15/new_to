@@ -42,6 +42,19 @@ export type AdminDashboardStats = {
     rejected: number;
 };
 
+export type StalledTravelOrderItem = {
+    id: number;
+    control_no: string | null;
+    to_number: string | null;
+    purpose: string | null;
+    submitted_at: string | null;
+    age_days: number;
+    holder: string;
+    step: string;
+    employee?: string | null;
+    office?: string | null;
+};
+
 export type FuelAlert = {
     office_id: number;
     office_name: string;

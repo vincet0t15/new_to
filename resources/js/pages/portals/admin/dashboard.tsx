@@ -36,6 +36,7 @@ import type {
     DashboardTravelOrderItem,
     FuelAlert,
     FuelSummary,
+    StalledTravelOrderItem,
 } from '@/types';
 
 type Props = {
@@ -43,6 +44,9 @@ type Props = {
     fuelAlerts: FuelAlert[];
     fuelThresholds: { low_balance_liters: number; low_balance_amount: number };
     recentOrders: DashboardTravelOrderItem[];
+    stalledOrders: StalledTravelOrderItem[];
+    stalledTotal: number;
+    stalledThresholdDays: number;
     fuelSummary: FuelSummary;
 };
 
@@ -65,6 +69,9 @@ export default function AdminDashboard({
     fuelAlerts,
     fuelThresholds,
     recentOrders,
+    stalledOrders,
+    stalledTotal,
+    stalledThresholdDays,
     fuelSummary,
 }: Props) {
     const { auth } = usePage().props;
@@ -200,6 +207,99 @@ export default function AdminDashboard({
                                 />
                             ))}
                         </div>
+                    </section>
+
+                    <section aria-labelledby="stalled-approvals-heading">
+                        <SectionHeading
+                            id="stalled-approvals-heading"
+                            title="Stalled approvals"
+                            description={`${stalledTotal} submitted travel ${
+                                stalledTotal === 1 ? 'order has' : 'orders have'
+                            } been waiting at least ${stalledThresholdDays} day${
+                                stalledThresholdDays === 1 ? '' : 's'
+                            } for action.`}
+                            action={
+                                <DashboardLink
+                                    href={
+                                        admin.travelOrders.index({
+                                            query: { status: 'submitted' },
+                                        }).url
+                                    }
+                                >
+                                    Review queue
+                                </DashboardLink>
+                            }
+                        />
+                        <DashboardPanel
+                            title="Oldest waiting orders"
+                            description="Open deliveries at their current step, oldest first."
+                            icon={FileClock}
+                            contentClassName="p-0"
+                            footer={
+                                <p className="text-[11px] leading-5 text-muted-foreground">
+                                    Age is measured from submission. This is a
+                                    monitoring hint; it does not move an order
+                                    or change who may act on it.
+                                </p>
+                            }
+                        >
+                            {stalledOrders.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="pl-5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Travel order
+                                            </TableHead>
+                                            <TableHead className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Current holder
+                                            </TableHead>
+                                            <TableHead className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Step
+                                            </TableHead>
+                                            <TableHead className="pr-5 text-right text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Waiting
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {stalledOrders.map((order) => (
+                                            <TableRow key={order.id}>
+                                                <TableCell className="pl-5">
+                                                    <span className="block text-sm font-medium">
+                                                        {order.control_no ??
+                                                            order.to_number ??
+                                                            `#${order.id}`}
+                                                    </span>
+                                                    <span className="block max-w-[18rem] truncate text-xs text-muted-foreground">
+                                                        {order.purpose ?? '—'}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <span className="block text-sm">
+                                                        {order.holder}
+                                                    </span>
+                                                    <span className="block text-xs text-muted-foreground">
+                                                        {order.office ?? '—'}
+                                                    </span>
+                                                </TableCell>
+                                                <TableCell className="text-sm">
+                                                    {order.step}
+                                                </TableCell>
+                                                <TableCell className="pr-5 text-right text-sm font-medium tabular-nums">
+                                                    {order.age_days}d
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <EmptyState
+                                    icon={FileClock}
+                                    title="No stalled approvals"
+                                    description="Nothing has been waiting past the monitoring threshold. New submissions appear here automatically if they age."
+                                />
+                            )}
+                        </DashboardPanel>
                     </section>
 
                     <section aria-labelledby="fuel-operations-heading">

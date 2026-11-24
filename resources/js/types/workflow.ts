@@ -166,3 +166,28 @@ export type DesignationEmployeeOption = {
     office_name: string;
     has_account: boolean;
 };
+
+export type DesignationImpactOrder = {
+    id: number;
+    control_no: string | null;
+    to_number: string | null;
+    purpose: string | null;
+    age_days: number;
+    holder: string;
+    step: string;
+};
+
+export type DesignationImpact = {
+    designation: {
+        id: number;
+        office: string;
+        step: string;
+        holder: string;
+    };
+    orders: DesignationImpactOrder[];
+    candidates: {
+        id: number;
+        name: string;
+        username: string;
+    }[];
+};

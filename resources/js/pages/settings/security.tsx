@@ -11,6 +11,7 @@ import { edit } from '@/routes/security';
 // oxfmt-ignore
 type Props = {
     passwordRules: string;
+    requiresPasswordChange: boolean;
 };
 
 export default function Security(props: Props) {
@@ -24,6 +25,22 @@ export default function Security(props: Props) {
             <h1 className="sr-only">Security settings</h1>
 
             <div className="space-y-6">
+                {props.requiresPasswordChange && (
+                    <div
+                        role="alert"
+                        className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                    >
+                        <p className="font-medium">
+                            Please change your password before continuing.
+                        </p>
+                        <p className="mt-1">
+                            Your account was created with a temporary seeded
+                            password. Choose a new one below to unlock the rest
+                            of the system.
+                        </p>
+                    </div>
+                )}
+
                 <Heading
                     variant="small"
                     title="Update password"

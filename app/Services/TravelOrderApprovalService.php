@@ -182,6 +182,8 @@ final class TravelOrderApprovalService
 
     /**
      * Record HRMO series number/control and release details.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function record(TravelOrder $order, User $actor, array $data): TravelOrder
     {
@@ -461,6 +463,109 @@ final class TravelOrderApprovalService
             ->with('roles')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * In-flight orders a designation change would leave with the old holder.
+     *
+     * Only the current step matters: an open delivery is the authority for who
+     * can act now, and changing a designation never moves a document by itself.
+     * The candidate list helps an admin repair those deliveries in one pass.
+     *
+     * @return array{designation: array<string, mixed>, orders: array<int, array<string, mixed>>, candidates: array<int, array{id: int, name: string, username: string}>}
+     */
+    public function designationImpact(OfficeDesignation $designation): array
+    {
+        $designation->loadMissing(['office', 'stepType', 'employee.user']);
+
+        $outgoingUserId = $designation->employee->user?->id;
+
+        $orders = $outgoingUserId === null
+            ? new Collection
+            : TravelOrder::query()
+                ->where('status', TravelOrderStatus::Submitted)
+                ->where('recipient_user_id', $outgoingUserId)
+                ->whereHas('deliveries', fn ($query) => $query
+                    ->open()
+                    ->whereColumn(
+                        'travel_order_deliveries.step_index',
+                        'travel_orders.current_step_index',
+                    ))
+                ->with(['office:id,office_name', 'recipient:id,name'])
+                ->orderBy('submitted_at')
+                ->get()
+                ->filter(function (TravelOrder $order) use ($designation): bool {
+                    $step = $this->currentStep($order);
+
+                    return $step !== null
+                        && $step->workflow_step_type_id === $designation->workflow_step_type_id;
+                })
+                ->values();
+
+        $firstOrder = $orders->first();
+        $candidates = $firstOrder instanceof TravelOrder
+            ? $this->reassignCandidates($firstOrder)
+                ->reject(fn (User $user): bool => $outgoingUserId !== null && $user->id === $outgoingUserId)
+                ->values()
+            : new BaseCollection;
+
+        return [
+            'designation' => [
+                'id' => $designation->id,
+                'office' => $designation->office->office_name,
+                'step' => $designation->stepType->name,
+                'holder' => $designation->employee->full_name,
+            ],
+            'orders' => $orders->map(function (TravelOrder $order): array {
+                $step = $this->currentStep($order);
+
+                return [
+                    'id' => $order->id,
+                    'control_no' => $order->control_no,
+                    'to_number' => $order->to_number,
+                    'purpose' => $order->purpose,
+                    'age_days' => (int) abs($order->submitted_at?->diffInDays(now()) ?? 0),
+                    'holder' => $order->recipient_user_id !== null
+                        ? $order->recipient->name
+                        : '—',
+                    'step' => $step?->displayLabel() ?? '—',
+                ];
+            })->all(),
+            'candidates' => $candidates->map(fn (User $user): array => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+            ])->all(),
+        ];
+    }
+
+    /**
+     * Reassign several orders, reporting each refusal without losing the rest.
+     *
+     * Each order keeps its own transaction through reassignCurrentStep(), so a
+     * stale document failing in the middle does not roll back earlier rescues.
+     *
+     * @param  iterable<TravelOrder>  $orders
+     * @return array{reassigned: array<int, int>, failed: array<int, array{id: int, message: string}>}
+     */
+    public function reassignMany(iterable $orders, User $actor, User $target, ?string $remarks = null): array
+    {
+        $reassigned = [];
+        $failed = [];
+
+        foreach ($orders as $order) {
+            try {
+                $this->reassignCurrentStep($order, $actor, $target, $remarks);
+                $reassigned[] = $order->id;
+            } catch (TravelOrderRoutingException $exception) {
+                $failed[] = [
+                    'id' => $order->id,
+                    'message' => $exception->getMessage(),
+                ];
+            }
+        }
+
+        return ['reassigned' => $reassigned, 'failed' => $failed];
     }
 
     /**

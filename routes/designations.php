@@ -8,6 +8,7 @@ Route::middleware(['auth', 'verified', 'portal:admin', 'permission:designations.
     ->name('designations.')
     ->group(function () {
         Route::get('/', [OfficeDesignationController::class, 'index'])->name('index');
+        Route::get('/{designation}/impact', [OfficeDesignationController::class, 'impact'])->name('impact');
         Route::post('/', [OfficeDesignationController::class, 'store'])->name('store');
         Route::put('/{designation}', [OfficeDesignationController::class, 'update'])->name('update');
         Route::delete('/{designation}', [OfficeDesignationController::class, 'destroy'])->name('destroy');

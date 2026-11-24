@@ -93,4 +93,18 @@ return [
         'low_balance_amount' => (float) env('FUEL_LOW_BALANCE_AMOUNT', 1000),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Stalled approvals
+    |--------------------------------------------------------------------------
+    |
+    | How long an order may wait at a step before the admin dashboard lists it
+    | as stalled. This is a monitoring hint only; it never changes routing.
+    |
+    */
+
+    'approval' => [
+        'stalled_after_days' => max(1, (int) env('TRAVEL_ORDER_STALLED_AFTER_DAYS', 3)),
+    ],
+
 ];

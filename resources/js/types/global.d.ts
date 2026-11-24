@@ -1,3 +1,4 @@
+import '@inertiajs/core';
 import type { Auth } from '@/types/auth';
 import type { AppNotification } from '@/types/notification';
 import type { PortalOption } from '@/types/portal';

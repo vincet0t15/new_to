@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
+import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
@@ -26,6 +26,7 @@ import type { WorkflowStepType } from '@/types/workflow';
 import { CreateDesignationDialog } from './create';
 import { DeleteDesignationDialog } from './delete';
 import { EditDesignationDialog } from './edit';
+import { DesignationImpactDialog } from './impact';
 
 type Props = {
     designations: PaginatedDataResponse<OfficeDesignation>;
@@ -49,6 +50,7 @@ export default function DesignationsIndex({
     const [selected, setSelected] = useState<OfficeDesignation | null>(null);
     const [editOpen, setEditOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [impactOpen, setImpactOpen] = useState(false);
 
     const [officeFilter, setOfficeFilter] = useState<string>(
         filters.office_id ? String(filters.office_id) : 'all',
@@ -199,6 +201,18 @@ export default function DesignationsIndex({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
+                                                className="h-8 w-8 text-emerald-600"
+                                                onClick={() => {
+                                                    setSelected(designation);
+                                                    setImpactOpen(true);
+                                                }}
+                                                title="Review impact"
+                                            >
+                                                <Eye />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
                                                 className="h-8 w-8 text-blue-600"
                                                 onClick={() => {
                                                     setSelected(designation);
@@ -270,6 +284,13 @@ export default function DesignationsIndex({
                     <DeleteDesignationDialog
                         isOpen={deleteOpen}
                         onClose={() => setDeleteOpen(false)}
+                        designation={selected}
+                    />
+                )}
+                {impactOpen && selected && (
+                    <DesignationImpactDialog
+                        isOpen={impactOpen}
+                        onClose={() => setImpactOpen(false)}
                         designation={selected}
                     />
                 )}

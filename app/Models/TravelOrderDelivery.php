@@ -26,7 +26,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read TravelOrder $travelOrder
- * @property-read User $user
+ * @property-read User|null $user
  * @property-read WorkflowStepType|null $stepType
  */
 #[Fillable([

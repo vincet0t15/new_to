@@ -19,6 +19,7 @@ class SecurityController extends Controller
     {
         $props = [
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'requiresPasswordChange' => $request->user()->must_change_password,
         ];
 
         return Inertia::render('settings/security', $props);
@@ -31,6 +32,7 @@ class SecurityController extends Controller
     {
         $request->user()->update([
             'password' => $request->password,
+            'must_change_password' => false,
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
