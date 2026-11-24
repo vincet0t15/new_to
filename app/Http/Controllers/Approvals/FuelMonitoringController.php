@@ -27,8 +27,6 @@ class FuelMonitoringController extends Controller
 
         $completed = TripTicketStatus::Completed->value;
         $cancelled = TripTicketStatus::Cancelled->value;
-        $officeExpr = 'COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id)';
-        $fuelTypeExpr = "COALESCE(NULLIF(fuel_types.name, ''), NULLIF(trip_tickets.fuel_type, ''), 'Unspecified')";
 
         $summaryRow = (clone $base)
             ->selectRaw('COUNT(*) as total_tickets')
@@ -37,30 +35,53 @@ class FuelMonitoringController extends Controller
             ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
             ->first();
 
-        $usageByOffice = (clone $base)
-            ->join('offices', 'offices.id', '=', DB::raw($officeExpr))
-            ->selectRaw('offices.id as office_id')
-            ->selectRaw('offices.office_name')
-            ->selectRaw("{$fuelTypeExpr} as fuel_type")
-            ->selectRaw('COUNT(trip_tickets.id) as total_tickets')
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
-            ->groupBy('offices.id', 'offices.office_name', DB::raw($fuelTypeExpr))
+        // Normalize the fuel label in a derived table, then group by plain
+        // columns. Newer MySQL releases can match a GROUP BY expression to the
+        // SELECT expression, but stricter builds reject the raw fuel_types.name
+        // reference under ONLY_FULL_GROUP_BY.
+        $usageSource = (clone $base)
+            ->select([
+                DB::raw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) as office_id'),
+                'trip_tickets.fuel_type_id',
+                DB::raw("COALESCE(NULLIF(fuel_types.name, ''), NULLIF(trip_tickets.fuel_type, ''), 'Unspecified') as resolved_fuel_type"),
+                'trip_tickets.status',
+                'trip_tickets.liters',
+                'trip_tickets.fuel_consumed',
+                'trip_tickets.fuel_cost',
+            ]);
+
+        $usageByOffice = DB::query()
+            ->fromSub($usageSource, 'ticket_rows')
+            ->join('offices', 'offices.id', '=', 'ticket_rows.office_id')
+            ->selectRaw('offices.id as office_id, offices.office_name, ticket_rows.resolved_fuel_type as fuel_type')
+            ->selectRaw('COUNT(*) as total_tickets')
+            ->selectRaw("COALESCE(SUM(CASE WHEN ticket_rows.status != '{$cancelled}' THEN ticket_rows.liters ELSE 0 END), 0) as estimated_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN ticket_rows.status = '{$completed}' THEN COALESCE(ticket_rows.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN ticket_rows.status = '{$completed}' THEN COALESCE(ticket_rows.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
+            ->groupBy('offices.id', 'offices.office_name', 'ticket_rows.resolved_fuel_type')
             ->get();
 
-        $allocationsByOffice = FuelAllocation::query()
+        $allocationSource = FuelAllocation::query()
             ->join('offices', 'offices.id', '=', 'fuel_allocations.office_id')
             ->leftJoin('fuel_types as allocation_fuel_types', 'allocation_fuel_types.id', '=', 'fuel_allocations.fuel_type_id')
             ->where('fuel_allocations.status', FuelAllocation::STATUS_ACTIVE)
             ->when($filters['office_id'] !== '', fn (Builder $query): Builder => $query->where('fuel_allocations.office_id', (int) $filters['office_id']))
             ->when($filters['fuel_type_id'] !== '', fn (Builder $query): Builder => $query->where('fuel_allocations.fuel_type_id', (int) $filters['fuel_type_id']))
-            ->selectRaw('offices.id as office_id')
-            ->selectRaw('offices.office_name')
-            ->selectRaw("COALESCE(NULLIF(allocation_fuel_types.name, ''), NULLIF(fuel_allocations.fuel_type, ''), 'Unspecified') as fuel_type")
-            ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_liters), 0) as allocated_liters')
-            ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_amount), 0) as allocated_amount')
-            ->groupBy('offices.id', 'offices.office_name', DB::raw("COALESCE(NULLIF(allocation_fuel_types.name, ''), NULLIF(fuel_allocations.fuel_type, ''), 'Unspecified')"))
+            ->select([
+                'offices.id as office_id',
+                'offices.office_name',
+                'fuel_allocations.fuel_type_id',
+                DB::raw("COALESCE(NULLIF(allocation_fuel_types.name, ''), NULLIF(fuel_allocations.fuel_type, ''), 'Unspecified') as resolved_fuel_type"),
+                'fuel_allocations.allocated_liters',
+                'fuel_allocations.allocated_amount',
+            ]);
+
+        $allocationsByOffice = DB::query()
+            ->fromSub($allocationSource, 'allocation_rows')
+            ->selectRaw('office_id, office_name, resolved_fuel_type as fuel_type')
+            ->selectRaw('COALESCE(SUM(allocated_liters), 0) as allocated_liters')
+            ->selectRaw('COALESCE(SUM(allocated_amount), 0) as allocated_amount')
+            ->groupBy('office_id', 'office_name', 'resolved_fuel_type')
             ->get();
 
         $usageByKey = [];
@@ -140,19 +161,29 @@ class FuelMonitoringController extends Controller
 
         usort($byOffice, static fn (array $left, array $right): int => $right['fuel_cost'] <=> $left['fuel_cost']);
 
-        $borrowedByOffice = (clone $base)
+        $borrowedSource = (clone $base)
             ->whereNotNull('trip_tickets.fuel_source_office_id')
             ->whereColumn('trip_tickets.fuel_source_office_id', '!=', 'travel_orders.office_id')
-            ->join('offices as borrower_offices', 'borrower_offices.id', '=', 'travel_orders.office_id')
-            ->join('offices as source_offices', 'source_offices.id', '=', 'trip_tickets.fuel_source_office_id')
-            ->selectRaw('borrower_offices.office_name as borrower_office_name')
-            ->selectRaw('source_offices.office_name as source_office_name')
-            ->selectRaw("{$fuelTypeExpr} as fuel_type")
-            ->selectRaw('COUNT(trip_tickets.id) as total_tickets')
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status != '{$cancelled}' THEN trip_tickets.liters ELSE 0 END), 0) as estimated_liters")
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
-            ->selectRaw("COALESCE(SUM(CASE WHEN trip_tickets.status = '{$completed}' THEN COALESCE(trip_tickets.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
-            ->groupBy('borrower_offices.office_name', 'source_offices.office_name', DB::raw($fuelTypeExpr))
+            ->select([
+                DB::raw('travel_orders.office_id as borrower_office_id'),
+                'trip_tickets.fuel_source_office_id as source_office_id',
+                DB::raw("COALESCE(NULLIF(fuel_types.name, ''), NULLIF(trip_tickets.fuel_type, ''), 'Unspecified') as resolved_fuel_type"),
+                'trip_tickets.status',
+                'trip_tickets.liters',
+                'trip_tickets.fuel_consumed',
+                'trip_tickets.fuel_cost',
+            ]);
+
+        $borrowedByOffice = DB::query()
+            ->fromSub($borrowedSource, 'borrowed_rows')
+            ->join('offices as borrower_offices', 'borrower_offices.id', '=', 'borrowed_rows.borrower_office_id')
+            ->join('offices as source_offices', 'source_offices.id', '=', 'borrowed_rows.source_office_id')
+            ->selectRaw('borrower_offices.office_name as borrower_office_name, source_offices.office_name as source_office_name, borrowed_rows.resolved_fuel_type as fuel_type')
+            ->selectRaw('COUNT(*) as total_tickets')
+            ->selectRaw("COALESCE(SUM(CASE WHEN borrowed_rows.status != '{$cancelled}' THEN borrowed_rows.liters ELSE 0 END), 0) as estimated_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN borrowed_rows.status = '{$completed}' THEN COALESCE(borrowed_rows.fuel_consumed, 0) ELSE 0 END), 0) as actual_liters")
+            ->selectRaw("COALESCE(SUM(CASE WHEN borrowed_rows.status = '{$completed}' THEN COALESCE(borrowed_rows.fuel_cost, 0) ELSE 0 END), 0) as fuel_cost")
+            ->groupBy('borrower_offices.office_name', 'source_offices.office_name', 'borrowed_rows.resolved_fuel_type')
             ->orderByDesc('fuel_cost')
             ->get();
 

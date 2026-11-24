@@ -242,15 +242,38 @@ test('admin dashboard shows fuel low balance alerts', function () {
     );
 });
 
-test('admin dashboard groups fuel balances by the resolved fuel type expression', function () {
+test('admin dashboard groups fuel balances without raw fuel type columns in group by', function () {
     $admin = fuelMonitoringUser();
-    $queries = [];
+    $office = Office::factory()->create(['office_name' => 'Grouping Office']);
+    $diesel = FuelType::factory()->create(['name' => 'Diesel', 'is_active' => true]);
 
+    FuelAllocation::factory()->create([
+        'office_id' => $office->id,
+        'fuel_type_id' => $diesel->id,
+        'fuel_type' => $diesel->name,
+        'allocated_liters' => 100,
+        'allocated_amount' => 6500,
+        'status' => FuelAllocation::STATUS_ACTIVE,
+    ]);
+    FuelAllocation::factory()->create([
+        'office_id' => $office->id,
+        'fuel_type_id' => null,
+        'fuel_type' => 'Legacy Oil',
+        'allocated_liters' => 25,
+        'allocated_amount' => 1000,
+        'status' => FuelAllocation::STATUS_ACTIVE,
+    ]);
+
+    $queries = [];
     DB::listen(static function ($query) use (&$queries): void {
         $queries[] = $query->sql;
     });
 
-    $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
+    $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('portals/admin/dashboard')
+            ->where('fuelSummary.active_allocations', 2)
+        );
 
     $groupedFuelQueries = array_values(array_filter(
         $queries,
@@ -261,6 +284,7 @@ test('admin dashboard groups fuel balances by the resolved fuel type expression'
     expect($groupedFuelQueries)->not->toBeEmpty();
 
     foreach ($groupedFuelQueries as $sql) {
-        expect($sql)->toMatch('/group by.*COALESCE\(NULLIF\(fuel_types\.name/is');
+        expect($sql)->toContain('resolved_fuel_type');
+        expect($sql)->not->toMatch('/group by.*fuel_types\.name/is');
     }
 });
