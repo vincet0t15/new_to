@@ -6,6 +6,7 @@ use App\Enums\Portal;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
 use App\Services\PortalResolver;
+use App\Support\NotificationUrl;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
@@ -115,7 +116,9 @@ class HandleInertiaRequests extends Middleware
                     'id' => $notification->id,
                     'title' => is_string($data['title'] ?? null) ? $data['title'] : '',
                     'message' => is_string($data['message'] ?? null) ? $data['message'] : '',
-                    'url' => is_string($data['url'] ?? null) ? $data['url'] : null,
+                    'url' => is_string($data['url'] ?? null) && $data['url'] !== ''
+                        ? NotificationUrl::toLocalPath($data['url'])
+                        : null,
                     'read_at' => $notification->read_at?->toIso8601String(),
                     'created_at' => $notification->created_at?->toIso8601String(),
                 ];

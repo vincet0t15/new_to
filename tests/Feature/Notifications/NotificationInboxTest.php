@@ -62,6 +62,29 @@ test('the inbox lists the account notifications newest first', function () {
         );
 });
 
+test('the inbox normalizes stored absolute notification links', function () {
+    $user = User::factory()->create();
+
+    inboxNotice($user, [
+        'data' => [
+            'title' => 'Routed to approvals',
+            'message' => 'Waiting for action.',
+            'kind' => 'routed',
+            'url' => 'http://localhost:8000/approvals/travel-orders/4?tab=details',
+        ],
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('inbox.index'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('notificationItems.data', 1)
+            ->where(
+                'notificationItems.data.0.url',
+                '/approvals/travel-orders/4?tab=details',
+            )
+        );
+});
+
 test('the inbox ignores status filters and lists every notice', function () {
     $user = User::factory()->create();
 

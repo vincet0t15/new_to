@@ -74,3 +74,21 @@ test('the header receives the latest notifications and unread count', function (
             ->where('notifications.0.title', 'Travel order routed to you')
         );
 });
+
+test('the header normalizes stored absolute notification links', function () {
+    $user = User::factory()->create();
+    headerNotice($user, [
+        'data' => [
+            'title' => 'Routed to approvals',
+            'message' => 'Waiting for action.',
+            'url' => 'http://localhost:8000/approvals/travel-orders/4',
+        ],
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('employee.dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('notifications', 1)
+            ->where('notifications.0.url', '/approvals/travel-orders/4')
+        );
+});

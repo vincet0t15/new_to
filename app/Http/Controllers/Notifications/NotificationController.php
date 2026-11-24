@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Notifications;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\NotificationUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -49,9 +50,11 @@ final class NotificationController extends Controller
         $notice = $user->notifications()->whereKey($notification)->firstOrFail();
         $notice->markAsRead();
 
-        $url = $notice->data['url'] ?? null;
-
-        return redirect(is_string($url) && $url !== '' ? $url : route('dashboard'));
+        // A relative Location keeps the Inertia visit on the current origin,
+        // even when APP_URL uses a different local hostname.
+        return new RedirectResponse(
+            NotificationUrl::toLocalPath($notice->data['url'] ?? null)
+        );
     }
 
     /**
@@ -81,7 +84,9 @@ final class NotificationController extends Controller
             'title' => is_string($data['title'] ?? null) ? $data['title'] : __('Notification'),
             'message' => is_string($data['message'] ?? null) ? $data['message'] : '',
             'kind' => is_string($data['kind'] ?? null) ? $data['kind'] : 'general',
-            'url' => is_string($data['url'] ?? null) ? $data['url'] : null,
+            'url' => is_string($data['url'] ?? null) && $data['url'] !== ''
+                ? NotificationUrl::toLocalPath($data['url'])
+                : null,
             'read_at' => $notification->read_at?->toIso8601String(),
             'created_at' => $notification->created_at?->toIso8601String(),
         ];

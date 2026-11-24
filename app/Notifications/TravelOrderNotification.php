@@ -49,7 +49,7 @@ final class TravelOrderNotification extends Notification implements ShouldQueue
             'title' => $this->title,
             'message' => $this->message,
             'kind' => $this->kind,
-            'url' => $this->urlFor($notifiable),
+            'url' => $this->urlFor($notifiable, false),
             'travel_order_id' => $this->order->id,
             'revision_number' => $this->order->revision_number,
         ];
@@ -68,16 +68,18 @@ final class TravelOrderNotification extends Notification implements ShouldQueue
      * The screen this account can actually open for the order.
      *
      * The employee show page is creator-only, so an approver's notification
-     * must point at the shared inbox screen instead.
+     * must point at the shared inbox screen instead. In-app links are relative
+     * so a queued notifier's APP_URL cannot turn an Inertia visit into a
+     * cross-origin redirect; email still needs the absolute URL.
      */
-    private function urlFor(object $notifiable): string
+    private function urlFor(object $notifiable, bool $absolute = true): string
     {
         if (! $notifiable instanceof User) {
-            return route('dashboard');
+            return route('dashboard', [], $absolute);
         }
 
         if ($this->order->created_by === $notifiable->id) {
-            return route('travel-orders.show', $this->order);
+            return route('travel-orders.show', $this->order, $absolute);
         }
 
         if ($notifiable->hasAnyRoleSlug([
@@ -86,13 +88,13 @@ final class TravelOrderNotification extends Notification implements ShouldQueue
             SystemRole::ViceMayor->value,
             SystemRole::Hrmo->value,
         ])) {
-            return route('approvals.travel-orders.show', $this->order);
+            return route('approvals.travel-orders.show', $this->order, $absolute);
         }
 
         if ($notifiable->hasRoleSlug(SystemRole::DepartmentHead->value)) {
-            return route('department-head.travel-orders.show', $this->order);
+            return route('department-head.travel-orders.show', $this->order, $absolute);
         }
 
-        return route('dashboard');
+        return route('dashboard', [], $absolute);
     }
 }
