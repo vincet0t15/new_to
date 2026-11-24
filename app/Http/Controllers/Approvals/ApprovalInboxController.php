@@ -12,6 +12,7 @@ use App\Models\TravelOrderDelivery;
 use App\Models\User;
 use App\Models\WorkflowStep;
 use App\Repositories\Contracts\TravelOrderRepository;
+use App\Services\SignatoryResolver;
 use App\Services\TravelOrderApprovalService;
 use App\Services\TravelOrderRoutePresenter;
 use Illuminate\Http\Request;
@@ -190,7 +191,8 @@ class ApprovalInboxController extends Controller
 
         $travelOrder->load([
             'office',
-            'employee',
+            'employee.position',
+            'employee.office',
             'creator',
             'returnedBy',
             'workflow',
@@ -205,6 +207,9 @@ class ApprovalInboxController extends Controller
             'officialStation',
             'expenseTypes',
             'transportationModes',
+            'itineraries.fromLocation',
+            'itineraries.toLocation',
+            'itineraries.transportationMode',
         ]);
 
         $prefix = $this->portalPrefix($request);
@@ -267,6 +272,9 @@ class ApprovalInboxController extends Controller
                 'assignFundSource' => route("{$prefix}.travel-orders.assign-fund-source", $travelOrder),
                 'record' => route("{$prefix}.travel-orders.record", $travelOrder),
             ],
+            'letterhead' => config('travel-orders.letterhead'),
+            'signatories' => $travelOrder->signatories
+                ?? app(SignatoryResolver::class)->for($travelOrder),
         ]);
     }
 
@@ -279,11 +287,19 @@ class ApprovalInboxController extends Controller
     private function currentStepsFor(Collection $orders): array
     {
         $ids = $orders
-            ->filter(fn (TravelOrder $order): bool => $order->status === TravelOrderStatus::Submitted
-                && $order->current_step_index !== null
-                && is_array($order->routed_steps)
-                && isset($order->routed_steps[$order->current_step_index]))
-            ->map(fn (TravelOrder $order): int => (int) $order->routed_steps[$order->current_step_index])
+            ->map(function (TravelOrder $order): ?int {
+                $index = $order->current_step_index;
+
+                if ($order->status !== TravelOrderStatus::Submitted
+                    || $index === null
+                    || ! is_array($order->routed_steps)
+                    || ! isset($order->routed_steps[$index])) {
+                    return null;
+                }
+
+                return (int) $order->routed_steps[$index];
+            })
+            ->filter(fn (?int $id): bool => $id !== null)
             ->unique()
             ->values()
             ->all();

@@ -11,16 +11,18 @@ import InputError from '@/components/input-error';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
-import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
+import { TravelOrderDocument } from '@/components/travel-orders/print/travel-order-document';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import type {
     ApprovalAbilities,
+    Letterhead,
     TravelOrder,
     TravelOrderDeliveryStatus,
     TravelOrderRevision,
     TravelOrderRouteStep,
+    TravelOrderSignatories,
     TravelOrderTimelineEntry,
 } from '@/types';
 
@@ -37,6 +39,8 @@ type Props = {
     myDeliveryStatus: TravelOrderDeliveryStatus | null;
     forwardCandidates: { id: number; name: string }[];
     fundSources: { id: number; name: string }[];
+    letterhead: Letterhead;
+    signatories: TravelOrderSignatories;
     can: ApprovalAbilities;
     urls: {
         inbox: string;
@@ -60,6 +64,8 @@ export default function ShowApproval({
     myDeliveryStatus,
     forwardCandidates,
     fundSources,
+    letterhead,
+    signatories,
     can,
     urls,
 }: Props) {
@@ -113,7 +119,13 @@ export default function ShowApproval({
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-4 lg:col-span-2">
-                        <TravelOrderDetails travelOrder={travelOrder} />
+                        <section className="overflow-hidden rounded-xl border bg-muted/40 p-3">
+                            <TravelOrderDocument
+                                travelOrder={travelOrder}
+                                letterhead={letterhead}
+                                signatories={signatories}
+                            />
+                        </section>
 
                         <section className="space-y-3 rounded-xl border p-4">
                             <h3 className="text-base font-semibold">
