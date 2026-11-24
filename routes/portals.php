@@ -45,6 +45,7 @@ Route::middleware(['auth', 'verified', 'portal:department-head'])
             Route::get('history', [ApprovalInboxController::class, 'history'])
                 ->name('history');
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
+                ->middleware('document.fallback')
                 ->name('travel-orders.show');
 
             Route::post('travel-orders/{travelOrder}/receive', [TravelOrderActionController::class, 'receive'])
@@ -101,6 +102,7 @@ Route::middleware(['auth', 'verified', 'portal:approvals'])
                     ->name('fuel-allocations.void');
             });
             Route::get('travel-orders/{travelOrder}', [ApprovalInboxController::class, 'show'])
+                ->middleware('document.fallback')
                 ->name('travel-orders.show');
 
             Route::post('travel-orders/{travelOrder}/receive', [TravelOrderActionController::class, 'receive'])

@@ -12,6 +12,10 @@ namespace App\Support;
  */
 final class NotificationUrl
 {
+    public const SOURCE_KEY = 'from';
+
+    public const SOURCE_VALUE = 'notification';
+
     public static function toLocalPath(mixed $url): string
     {
         $fallback = route('dashboard', [], false);
@@ -49,6 +53,28 @@ final class NotificationUrl
         }
 
         return self::safePath($path, $fallback);
+    }
+
+    /**
+     * Mark a document link as coming from the notification inbox.
+     *
+     * The marker lets the document route offer a friendly fallback only when a
+     * stale notification target is opened. A direct visit to the same URL keeps
+     * its normal forbidden/not-found response.
+     */
+    public static function forNotificationOpen(mixed $url): string
+    {
+        $path = self::toLocalPath($url);
+        $fragment = '';
+
+        if (str_contains($path, '#')) {
+            [$path, $fragment] = explode('#', $path, 2);
+            $fragment = '#'.$fragment;
+        }
+
+        $separator = str_contains($path, '?') ? '&' : '?';
+
+        return $path.$separator.self::SOURCE_KEY.'='.self::SOURCE_VALUE.$fragment;
     }
 
     private static function safePath(string $path, string $fallback): string

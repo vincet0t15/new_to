@@ -52,7 +52,14 @@ test('old absolute notification links redirect on the current host', function ()
         ->get(route('inbox.open', $notice->id));
 
     $response->assertRedirect()
-        ->assertHeader('Location', '/approvals/travel-orders/4');
+        ->assertHeader('Location', '/approvals/travel-orders/4?from=notification');
+});
+
+test('notification open markers preserve existing query strings and fragments', function () {
+    expect(NotificationUrl::forNotificationOpen('/travel-orders/1?tab=itinerary#top'))
+        ->toBe('/travel-orders/1?tab=itinerary&from=notification#top')
+        ->and(NotificationUrl::forNotificationOpen('http://localhost:8000/travel-orders/1'))
+        ->toBe('/travel-orders/1?from=notification');
 });
 
 test('notification links never keep a foreign or script scheme', function () {

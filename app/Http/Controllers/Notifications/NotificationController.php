@@ -51,9 +51,10 @@ final class NotificationController extends Controller
         $notice->markAsRead();
 
         // A relative Location keeps the Inertia visit on the current origin,
-        // even when APP_URL uses a different local hostname.
+        // even when APP_URL uses a different local hostname. The marker scopes
+        // the friendly document fallback to notification clicks only.
         return new RedirectResponse(
-            NotificationUrl::toLocalPath($notice->data['url'] ?? null)
+            NotificationUrl::forNotificationOpen($notice->data['url'] ?? null)
         );
     }
 

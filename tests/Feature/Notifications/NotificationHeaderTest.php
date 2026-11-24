@@ -32,7 +32,7 @@ test('opening a notification marks it read and redirects to its screen', functio
 
     $this->actingAs($user)
         ->get(route('inbox.open', $notice->id))
-        ->assertRedirect('/employee/travel-orders/1');
+        ->assertRedirect('/employee/travel-orders/1?from=notification');
 
     expect($notice->fresh()->read_at)->not->toBeNull();
 });
