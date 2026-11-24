@@ -6,6 +6,7 @@ import {
     letterhead,
     makeAbilities,
     makeTravelOrder,
+    makeTripTicket,
     signatories,
 } from '@/test/fixtures';
 import ShowApproval from '@/pages/approvals/show';
@@ -61,6 +62,18 @@ vi.mock('@/components/travel-orders/print/itinerary-document', () => ({
     }) => <div data-testid="itinerary-doc">{lines.certified.name}</div>,
 }));
 
+vi.mock('@/components/travel-orders/print/trip-ticket-document', () => ({
+    TripTicketDocument: ({
+        tripTicket,
+    }: {
+        tripTicket: ReturnType<typeof makeTripTicket>;
+    }) => (
+        <div data-testid="trip-ticket-doc" data-ticket-id={tripTicket.id}>
+            {tripTicket.ticket_no}
+        </div>
+    ),
+}));
+
 vi.mock('@/components/travel-orders/action-timeline', () => ({
     ActionTimeline: () => <div data-testid="timeline" />,
 }));
@@ -81,7 +94,10 @@ const urls = {
     record: '/approvals/1/record',
 };
 
-function renderApproval(approve: boolean) {
+function renderApproval(
+    approve: boolean,
+    tripTickets: ReturnType<typeof makeTripTicket>[] = [],
+) {
     return render(
         <ShowApproval
             travelOrder={makeTravelOrder()}
@@ -95,6 +111,7 @@ function renderApproval(approve: boolean) {
             letterhead={letterhead}
             signatories={signatories}
             itinerarySignatories={itinerarySignatories}
+            tripTickets={tripTickets}
             can={makeAbilities({ approve })}
             urls={urls}
         />,
@@ -129,6 +146,48 @@ describe('approval document preview and actions', () => {
             'Maria Clara Santos',
         );
         expect(screen.queryByTestId('order-doc')).not.toBeInTheDocument();
+    });
+
+    it('switches the shared document preview to the printed trip ticket', async () => {
+        const user = userEvent.setup();
+        renderApproval(false, [makeTripTicket({ ticket_no: 'TT-2026-00007' })]);
+
+        await user.click(screen.getByRole('tab', { name: 'Trip Ticket' }));
+
+        expect(
+            screen.getByRole('tab', { name: 'Trip Ticket' }),
+        ).toHaveAttribute('aria-selected', 'true');
+        expect(screen.getByTestId('trip-ticket-doc')).toHaveTextContent(
+            'TT-2026-00007',
+        );
+        expect(screen.queryByTestId('itinerary-doc')).not.toBeInTheDocument();
+    });
+
+    it('explains when the travel order has no trip ticket yet', async () => {
+        const user = userEvent.setup();
+        renderApproval(false);
+
+        await user.click(screen.getByRole('tab', { name: 'Trip Ticket' }));
+
+        expect(
+            screen.getByText(
+                'No trip ticket has been issued for this travel order yet.',
+            ),
+        ).toBeInTheDocument();
+        expect(screen.queryByTestId('trip-ticket-doc')).not.toBeInTheDocument();
+    });
+
+    it('moves between document tabs with the arrow keys', async () => {
+        const user = userEvent.setup();
+        renderApproval(false, [makeTripTicket()]);
+
+        screen.getByRole('tab', { name: 'Travel Order' }).focus();
+        await user.keyboard('{ArrowRight}');
+
+        expect(screen.getByRole('tab', { name: 'Itinerary' })).toHaveAttribute(
+            'aria-selected',
+            'true',
+        );
     });
 
     it('posts an approval to the approval action URL', async () => {

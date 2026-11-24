@@ -6,7 +6,7 @@ import {
     Inbox,
     RotateCcw,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
@@ -14,6 +14,7 @@ import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { ItineraryDocument } from '@/components/travel-orders/print/itinerary-document';
 import { TravelOrderDocument } from '@/components/travel-orders/print/travel-order-document';
+import { TripTicketDocument } from '@/components/travel-orders/print/trip-ticket-document';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
@@ -27,7 +28,16 @@ import type {
     TravelOrderRouteStep,
     TravelOrderSignatories,
     TravelOrderTimelineEntry,
+    TripTicket,
 } from '@/types';
+
+const documentTabs = [
+    ['order', 'Travel Order'],
+    ['itinerary', 'Itinerary'],
+    ['trip-ticket', 'Trip Ticket'],
+] as const;
+
+type DocumentTab = (typeof documentTabs)[number][0];
 
 type Props = {
     travelOrder: TravelOrder;
@@ -45,6 +55,7 @@ type Props = {
     letterhead: Letterhead;
     signatories: TravelOrderSignatories;
     itinerarySignatories: ItinerarySignatories;
+    tripTickets: TripTicket[];
     can: ApprovalAbilities;
     urls: {
         inbox: string;
@@ -71,12 +82,42 @@ export default function ShowApproval({
     letterhead,
     signatories,
     itinerarySignatories,
+    tripTickets,
     can,
     urls,
 }: Props) {
-    const [documentTab, setDocumentTab] = useState<'order' | 'itinerary'>(
-        'order',
-    );
+    const [documentTab, setDocumentTab] = useState<DocumentTab>('order');
+
+    const selectTab = (key: DocumentTab) => {
+        setDocumentTab(key);
+        document.getElementById(`document-tab-${key}`)?.focus();
+    };
+
+    const onTabKeyDown = (
+        event: KeyboardEvent<HTMLButtonElement>,
+        key: DocumentTab,
+    ) => {
+        const currentIndex = documentTabs.findIndex(
+            ([tabKey]) => tabKey === key,
+        );
+        let nextIndex = currentIndex;
+
+        if (event.key === 'ArrowRight') {
+            nextIndex = (currentIndex + 1) % documentTabs.length;
+        } else if (event.key === 'ArrowLeft') {
+            nextIndex =
+                (currentIndex - 1 + documentTabs.length) % documentTabs.length;
+        } else if (event.key === 'Home') {
+            nextIndex = 0;
+        } else if (event.key === 'End') {
+            nextIndex = documentTabs.length - 1;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+        selectTab(documentTabs[nextIndex][0]);
+    };
     const { data, setData, post, processing, errors, reset } = useForm({
         remarks: '',
         to_user_id: '',
@@ -133,36 +174,34 @@ export default function ShowApproval({
                                 role="tablist"
                                 aria-label="Document preview"
                             >
-                                {(
-                                    [
-                                        ['order', 'Travel Order'],
-                                        ['itinerary', 'Itinerary'],
-                                    ] as const
-                                ).map(([key, label]) => (
+                                {documentTabs.map(([key, label]) => (
                                     <button
                                         key={key}
+                                        id={`document-tab-${key}`}
                                         type="button"
                                         role="tab"
                                         aria-selected={documentTab === key}
+                                        aria-controls="document-tabpanel"
+                                        tabIndex={documentTab === key ? 0 : -1}
                                         className={`rounded-t-md px-3 py-1.5 text-sm font-medium transition-colors ${
                                             documentTab === key
                                                 ? 'bg-muted text-foreground'
                                                 : 'text-muted-foreground hover:text-foreground'
                                         }`}
                                         onClick={() => setDocumentTab(key)}
+                                        onKeyDown={(event) =>
+                                            onTabKeyDown(event, key)
+                                        }
                                     >
                                         {label}
                                     </button>
                                 ))}
                             </div>
                             <div
+                                id="document-tabpanel"
                                 className="p-3"
                                 role="tabpanel"
-                                aria-label={
-                                    documentTab === 'order'
-                                        ? 'Travel Order'
-                                        : 'Itinerary'
-                                }
+                                aria-labelledby={`document-tab-${documentTab}`}
                             >
                                 {documentTab === 'order' ? (
                                     <TravelOrderDocument
@@ -170,7 +209,7 @@ export default function ShowApproval({
                                         letterhead={letterhead}
                                         signatories={signatories}
                                     />
-                                ) : (
+                                ) : documentTab === 'itinerary' ? (
                                     <ItineraryDocument
                                         travelOrder={travelOrder}
                                         letterhead={letterhead}
@@ -178,6 +217,27 @@ export default function ShowApproval({
                                             itinerarySignatories
                                         }
                                     />
+                                ) : tripTickets.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {tripTickets.map((tripTicket) => (
+                                            <TripTicketDocument
+                                                key={tripTicket.id}
+                                                travelOrder={travelOrder}
+                                                tripTicket={tripTicket}
+                                                destination={
+                                                    travelOrder.destination_location
+                                                }
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div
+                                        role="status"
+                                        className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground"
+                                    >
+                                        No trip ticket has been issued for this
+                                        travel order yet.
+                                    </div>
                                 )}
                             </div>
                         </section>

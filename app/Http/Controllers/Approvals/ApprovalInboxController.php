@@ -212,6 +212,9 @@ class ApprovalInboxController extends Controller
             'itineraries.fromLocation',
             'itineraries.toLocation',
             'itineraries.transportationMode',
+            'tripTickets.driver',
+            'tripTickets.creator',
+            'tripTickets.fuelTypeRecord',
         ]);
 
         $prefix = $this->portalPrefix($request);
@@ -278,6 +281,7 @@ class ApprovalInboxController extends Controller
             'signatories' => $travelOrder->signatories
                 ?? app(SignatoryResolver::class)->for($travelOrder),
             'itinerarySignatories' => $this->itinerarySignatories->for($travelOrder),
+            'tripTickets' => $travelOrder->tripTickets->all(),
         ]);
     }
 

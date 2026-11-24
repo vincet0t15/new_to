@@ -4,6 +4,7 @@ import type {
     Letterhead,
     TravelOrder,
     TravelOrderSignatories,
+    TripTicket,
 } from '@/types/travel-order';
 
 export function makeTravelOrder(
@@ -65,6 +66,50 @@ export function makeTravelOrder(
         reassign_candidates: [
             { id: 8, name: 'Tomas Aquino', username: 'deputy.engineer' },
         ],
+        ...overrides,
+    };
+}
+
+export function makeTripTicket(
+    overrides: Partial<TripTicket> = {},
+): TripTicket {
+    return {
+        id: 9,
+        travel_order_id: 1,
+        status: 'issued',
+        vehicle_plate_no: 'ABC-1234',
+        vehicle_type: 'Van',
+        driver_id: 3,
+        fuel_type_id: 2,
+        fuel_type: 'Diesel',
+        fuel_source_office_id: null,
+        fuel_efficiency: '10.00',
+        distance_km: '42.00',
+        round_trip: true,
+        odometer_start: '1000.00',
+        odometer_end: null,
+        liters: '8.40',
+        fuel_price_per_liter: '60.00',
+        fuel_cost: '504.00',
+        fuel_station: null,
+        fuel_receipt_no: null,
+        fuel_receipt_path: null,
+        fuel_receipt_url: null,
+        fuel_consumed: null,
+        remarks: null,
+        ticket_no: 'TT-2026-00009',
+        created_by: 3,
+        completed_at: null,
+        completed_by: null,
+        cancelled_at: null,
+        cancel_reason: null,
+        created_at: '2026-11-24T00:30:00.000Z',
+        updated_at: '2026-11-24T00:30:00.000Z',
+        driver: { id: 3, full_name: 'Maria Clara Santos' },
+        fuel_type_record: { id: 2, name: 'Diesel' },
+        fuel_source_office: null,
+        creator: { id: 3, name: 'Maria Clara Santos' },
+        completer: null,
         ...overrides,
     };
 }
