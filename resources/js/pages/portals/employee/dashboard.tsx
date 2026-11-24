@@ -5,6 +5,7 @@ import {
     CheckCircle2,
     FilePenLine,
     FileText,
+    Inbox,
     MapPin,
     Plus,
     RotateCcw,
@@ -31,6 +32,7 @@ import {
 import { formatDate, formatDateTime } from '@/lib/date-format';
 import travelOrdersRoutes from '@/routes/travel-orders';
 import employee from '@/routes/employee';
+import inbox from '@/routes/inbox';
 import type { DashboardTravelOrderItem, PersonalDashboardStats } from '@/types';
 
 type Props = {
@@ -39,7 +41,7 @@ type Props = {
 };
 
 export default function EmployeeDashboard({ stats, recentOrders }: Props) {
-    const { auth } = usePage().props;
+    const { auth, unreadNotificationsCount } = usePage().props;
     const today = new Date().toLocaleDateString(undefined, {
         weekday: 'long',
         month: 'long',
@@ -52,7 +54,7 @@ export default function EmployeeDashboard({ stats, recentOrders }: Props) {
             <Head title="Employee Dashboard" />
 
             <div className="flex h-full flex-1 flex-col bg-muted/30">
-                <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-8 p-4 sm:p-6 lg:p-8">
+                <div className="flex w-full flex-1 flex-col gap-8 p-4 sm:p-6 lg:p-8">
                     <DashboardHeader
                         eyebrow="Employee portal"
                         title={`Welcome back, ${auth.user.name}`}
@@ -133,7 +135,7 @@ export default function EmployeeDashboard({ stats, recentOrders }: Props) {
                             <StatCard
                                 label="In progress"
                                 value={stats.submitted}
-                                description="Moving through approval"
+                                description="Submitted & awaiting approval"
                                 href={
                                     travelOrdersRoutes.index({
                                         query: { status: 'submitted' },
@@ -333,6 +335,14 @@ export default function EmployeeDashboard({ stats, recentOrders }: Props) {
                                                 .url,
                                             icon: RotateCcw,
                                             badge: stats.returned,
+                                        },
+                                        {
+                                            title: 'Notifications',
+                                            description:
+                                                'Updates on your travel orders and returned requests.',
+                                            href: inbox.index().url,
+                                            icon: Inbox,
+                                            badge: unreadNotificationsCount,
                                         },
                                     ]}
                                 />

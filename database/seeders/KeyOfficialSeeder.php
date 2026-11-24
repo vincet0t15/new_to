@@ -47,7 +47,7 @@ class KeyOfficialSeeder extends Seeder
      */
     private const PEOPLE = [
         [
-            'username' => 'mayor.ramir',
+            'username' => 'ramir',
             'email' => 'ramir.pablico@example.com',
             'first_name' => 'Ramir',
             'middle_name' => 'R.',
@@ -58,7 +58,7 @@ class KeyOfficialSeeder extends Seeder
             'roles' => [SystemRole::Employee, SystemRole::Mayor],
         ],
         [
-            'username' => 'budget.xherluck',
+            'username' => 'xherluck',
             'email' => 'xherluck.loriega@example.com',
             'first_name' => 'Xherluck',
             'middle_name' => null,
@@ -69,7 +69,7 @@ class KeyOfficialSeeder extends Seeder
             'roles' => [SystemRole::Employee, SystemRole::BudgetOfficer],
         ],
         [
-            'username' => 'hrmo.maribel',
+            'username' => 'marible',
             'email' => 'maribel.ubadillo@example.com',
             'first_name' => 'Maribel',
             'middle_name' => 'P.',
@@ -80,7 +80,7 @@ class KeyOfficialSeeder extends Seeder
             'roles' => [SystemRole::Employee, SystemRole::Hrmo],
         ],
         [
-            'username' => 'programmer.zyrus',
+            'username' => 'zyrus',
             'email' => 'zyrus.famini@example.com',
             'first_name' => 'Zyrus Vince',
             'middle_name' => 'B.',
@@ -195,9 +195,9 @@ class KeyOfficialSeeder extends Seeder
     private function seedDesignations(array $employees): void
     {
         $designations = [
-            ['office' => 'MBO', 'step' => 'Budget Review', 'username' => 'budget.xherluck'],
-            ['office' => 'MO', 'step' => 'Mayor Approval', 'username' => 'mayor.ramir'],
-            ['office' => 'HRMO', 'step' => 'HRMO Review', 'username' => 'hrmo.maribel'],
+            ['office' => 'MBO', 'step' => 'Budget Review', 'username' => 'xherluck'],
+            ['office' => 'MO', 'step' => 'Mayor Approval', 'username' => 'ramir'],
+            ['office' => 'HRMO', 'step' => 'HRMO Review', 'username' => 'marible'],
             ['office' => 'VMAYOR', 'step' => 'Vice Mayor Approval', 'username' => 'vicemayor.mechie'],
         ];
 

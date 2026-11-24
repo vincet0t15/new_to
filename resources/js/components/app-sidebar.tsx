@@ -96,7 +96,7 @@ function employeeGroups(dashboardUrl: string, unreadCount: number): NavGroup[] {
                     icon: LayoutGrid,
                 },
                 {
-                    title: 'Inbox',
+                    title: 'Notifications',
                     href: inbox.index().url,
                     icon: Inbox,
                     badge: unreadCount,

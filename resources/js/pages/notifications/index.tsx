@@ -52,10 +52,10 @@ function kindVariant(
 export default function NotificationsIndex({ notificationItems }: Props) {
     return (
         <>
-            <Head title="Inbox" />
+            <Head title="Notifications" />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Heading
-                    title="Inbox"
+                    title="Notifications"
                     description="Travel order updates addressed to your account."
                 />
 
@@ -122,5 +122,5 @@ export default function NotificationsIndex({ notificationItems }: Props) {
 }
 
 NotificationsIndex.layout = {
-    breadcrumbs: [{ title: 'Inbox', href: inbox.index().url }],
+    breadcrumbs: [{ title: 'Notifications', href: inbox.index().url }],
 };

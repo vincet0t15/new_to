@@ -94,7 +94,7 @@ export function AppSidebarHeader({
                                 href={inboxRoutes.index().url}
                                 className="block px-4 py-2 text-center text-sm font-medium text-primary hover:bg-muted/50"
                             >
-                                Open inbox
+                                Open notifications
                             </Link>
                         </DropdownMenuContent>
                     </DropdownMenu>
