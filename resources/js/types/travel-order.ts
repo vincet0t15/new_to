@@ -168,6 +168,7 @@ export type TravelOrder = {
     routed_steps: number[] | null;
     current_step_index: number | null;
     recipient_user_id: number | null;
+    reassign_candidates?: { id: number; name: string; username: string }[];
     submitted_at: string | null;
     created_at: string | null;
     updated_at: string | null;

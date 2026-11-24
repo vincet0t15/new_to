@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SystemRole;
 use App\Enums\TravelOrderChangeType;
 use App\Enums\TravelOrderDeliveryStatus;
 use App\Enums\TravelOrderStatus;
@@ -363,6 +364,103 @@ final class TravelOrderApprovalService
 
             return $order->refresh();
         });
+    }
+
+    /**
+     * Re-route the open delivery at the current step to a new holder.
+     *
+     * Used by administrators to rescue a document whose original holder can no
+     * longer act (changed designation, departed staff). The document does not
+     * advance: it stays at the same step, only the person holding it changes.
+     * The audit trail records who reassigned it and from whom.
+     */
+    public function reassignCurrentStep(TravelOrder $order, User $actor, User $target, ?string $remarks = null): TravelOrder
+    {
+        return DB::transaction(function () use ($order, $actor, $target, $remarks): TravelOrder {
+            $order = $this->lock($order);
+
+            $this->ensureSubmitted($order);
+
+            $step = $this->currentStep($order);
+
+            if ($step === null) {
+                throw TravelOrderRoutingException::staleAction();
+            }
+
+            $index = (int) $order->current_step_index;
+
+            $fromUserId = $order->recipient_user_id;
+
+            $this->closeOpenDeliveries($order);
+
+            $order->deliveries()->create([
+                'step_index' => $index,
+                'step_type_id' => $step->workflow_step_type_id,
+                'user_id' => $target->id,
+                'status' => TravelOrderDeliveryStatus::Pending,
+            ]);
+
+            $order->forceFill(['recipient_user_id' => $target->id])->save();
+
+            $this->audit->record(
+                $order,
+                WorkflowEvent::Reassigned,
+                $actor,
+                $step,
+                $index,
+                $remarks,
+                [
+                    'from_user_id' => $fromUserId,
+                    'to_user_id' => $target->id,
+                ],
+            );
+
+            $this->notifier->routed($order, $target, $step);
+
+            return $order->refresh();
+        });
+    }
+
+    /**
+     * The people an administrator may reassign the current step to.
+     *
+     * Prefers the holders the step currently names (so a reassignment follows
+     * the configured workflow). When none are configured, falls back to every
+     * account that holds an approver role, so a stranded document can still be
+     * rescued instead of being stuck forever.
+     *
+     * @return BaseCollection<int, User>
+     */
+    public function reassignCandidates(TravelOrder $order): BaseCollection
+    {
+        $step = $this->currentStep($order);
+
+        if ($step === null || $order->office === null || $order->status !== TravelOrderStatus::Submitted) {
+            return new Collection;
+        }
+
+        $candidateIds = $this->routes->recipientsFor($step, $order->office, $order->created_by)->pluck('id');
+
+        if ($candidateIds->isEmpty()) {
+            $candidateIds = User::query()
+                ->whereHas('roles', fn ($query) => $query->whereIn('slug', [
+                    SystemRole::DepartmentHead->value,
+                    SystemRole::BudgetOfficer->value,
+                    SystemRole::Mayor->value,
+                    SystemRole::ViceMayor->value,
+                    SystemRole::Hrmo->value,
+                    SystemRole::Admin->value,
+                    SystemRole::SuperAdmin->value,
+                ]))
+                ->orderBy('name')
+                ->pluck('id');
+        }
+
+        return User::query()
+            ->whereIn('id', $candidateIds)
+            ->with('roles')
+            ->orderBy('name')
+            ->get();
     }
 
     /**

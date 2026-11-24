@@ -13,6 +13,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import { formatDate } from '@/lib/date-format';
 import type { ProcessingDashboardStats } from '@/types';
 import type { PaginatedDataResponse } from '@/types/pagination';
@@ -24,18 +25,13 @@ type Props = {
     portal: string;
 };
 
-export default function ApprovalInbox({ deliveries, stats, portal }: Props) {
-    const title =
-        portal === 'department-head'
-            ? 'Department Head Inbox'
-            : 'Approvals Inbox';
-
+export default function ApprovalInbox({ deliveries, stats }: Props) {
     return (
         <>
-            <Head title={title} />
+            <Head title={APPROVAL_INBOX_LABEL} />
             <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
                 <Heading
-                    title={title}
+                    title={APPROVAL_INBOX_LABEL}
                     description="Travel orders currently waiting for your action."
                 />
 
@@ -150,5 +146,5 @@ export default function ApprovalInbox({ deliveries, stats, portal }: Props) {
 }
 
 ApprovalInbox.layout = {
-    breadcrumbs: [{ title: 'Approval Inbox', href: '#' }],
+    breadcrumbs: [{ title: APPROVAL_INBOX_LABEL, href: '#' }],
 };

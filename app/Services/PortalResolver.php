@@ -134,14 +134,17 @@ class PortalResolver
     }
 
     /**
-     * The portal options shared with the frontend switcher and workspace tabs.
+     * The portal options shared with the frontend switcher.
      *
-     * @return array<int, array{key: string, label: string, url: string, inboxUrl: string|null, isCurrent: bool}>
+     * The pending count is computed once by the caller from the delivery-based
+     * live queue and attached to every portal that owns a processing inbox.
+     *
+     * @return array<int, array{key: string, label: string, url: string, inboxUrl: string|null, pendingCount: int|null, isCurrent: bool}>
      */
-    public function optionsFor(User $user, ?Portal $current = null): array
+    public function optionsFor(User $user, ?Portal $current = null, int $pendingInboxCount = 0): array
     {
         return array_map(
-            function (Portal $portal) use ($current): array {
+            function (Portal $portal) use ($current, $pendingInboxCount): array {
                 $inboxRoute = $portal->inboxRouteName();
 
                 return [
@@ -150,6 +153,9 @@ class PortalResolver
                     'url' => $this->dashboardUrl($portal),
                     'inboxUrl' => $inboxRoute !== null
                         ? route($inboxRoute, absolute: false)
+                        : null,
+                    'pendingCount' => $inboxRoute !== null
+                        ? $pendingInboxCount
                         : null,
                     'isCurrent' => $portal === $current,
                 ];

@@ -176,9 +176,11 @@ test('shared props list every portal the account may switch to', function () {
             ->has('portals', 2)
             ->where('portals.0.key', Portal::DepartmentHead->value)
             ->where('portals.0.url', '/department-head/dashboard')
+            ->where('portals.0.pendingCount', 0)
             ->where('portals.0.isCurrent', true)
             ->where('portals.1.key', Portal::Employee->value)
             ->where('portals.1.url', '/employee/dashboard')
+            ->where('portals.1.pendingCount', null)
             ->where('portals.1.isCurrent', false)
         );
 });

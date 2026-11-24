@@ -31,6 +31,13 @@ interface TravelOrderRepository
     public function paginateInbox(User $user, int $perPage = 15): LengthAwarePaginator;
 
     /**
+     * How many travel orders are waiting for this account's action right now.
+     * Uses the same live-queue query as the inbox so the badge and the listing
+     * cannot drift apart.
+     */
+    public function pendingInboxCount(User $user): int;
+
+    /**
      * Every travel order that was ever delivered to this account, newest
      * activity first. Unlike the inbox this keeps documents after they were
      * acted on, so the account can always find what passed through it.

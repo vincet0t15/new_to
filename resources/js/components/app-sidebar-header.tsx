@@ -11,9 +11,9 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { PortalSwitcher } from '@/components/portal-switcher';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { UserMenuContent } from '@/components/user-menu-content';
-import { WorkspaceTabs } from '@/components/workspace-tabs';
 import { useAppearance } from '@/hooks/use-appearance';
 import { useInitials } from '@/hooks/use-initials';
 import inboxRoutes from '@/routes/inbox';
@@ -40,6 +40,8 @@ export function AppSidebarHeader({
                 </div>
 
                 <div className="flex items-center gap-1">
+                    <PortalSwitcher />
+
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -141,7 +143,6 @@ export function AppSidebarHeader({
                     </DropdownMenu>
                 </div>
             </div>
-            <WorkspaceTabs />
         </header>
     );
 }

@@ -115,8 +115,10 @@ test('the approvals inbox carries processing counts and portal inbox links', fun
             ->has('portals', 2)
             ->where('portals.0.key', 'approvals')
             ->where('portals.0.inboxUrl', '/approvals/inbox')
+            ->where('portals.0.pendingCount', 1)
             ->where('portals.1.key', 'employee')
             ->where('portals.1.inboxUrl', null)
+            ->where('portals.1.pendingCount', null)
         );
 });
 
@@ -135,6 +137,26 @@ test('an employee-only account has no processing portal or inbox link', function
             ->where('currentPortal', 'employee')
             ->has('portals', 1)
             ->where('portals.0.inboxUrl', null)
+            ->where('portals.0.pendingCount', null)
+        );
+});
+
+test('the employee portal surfaces pending approvals for a multi-role account', function () {
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    app(TravelOrderApprovalService::class)->approve($order, $chain['headUser']);
+
+    $this->actingAs($chain['budgetUser'])
+        ->get(route('employee.dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('portals/employee/dashboard')
+            ->where('currentPortal', 'employee')
+            ->where('portals.0.key', 'approvals')
+            ->where('portals.0.pendingCount', 1)
+            ->where('portals.1.key', 'employee')
+            ->where('portals.1.pendingCount', null)
         );
 });
 

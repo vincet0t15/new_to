@@ -65,6 +65,9 @@ enum WorkflowEvent: string
     /** HRMO recorded series/control number and release details. */
     case Recorded = 'recorded';
 
+    /** An administrator re-routed a stranded document to a new holder at its current step. */
+    case Reassigned = 'reassigned';
+
     public function label(): string
     {
         return match ($this) {
@@ -84,6 +87,7 @@ enum WorkflowEvent: string
             self::Earmarked => 'Earmarked',
             self::FundSourceAssigned => 'Fund Source Assigned',
             self::Recorded => 'Recorded',
+            self::Reassigned => 'Reassigned',
         };
     }
 }

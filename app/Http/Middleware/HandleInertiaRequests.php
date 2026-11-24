@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Enums\Portal;
 use App\Models\User;
+use App\Repositories\Contracts\TravelOrderRepository;
 use App\Services\PortalResolver;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -10,8 +12,10 @@ use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
 {
-    public function __construct(private readonly PortalResolver $portals)
-    {
+    public function __construct(
+        private readonly PortalResolver $portals,
+        private readonly TravelOrderRepository $orders,
+    ) {
         //
     }
 
@@ -53,6 +57,14 @@ class HandleInertiaRequests extends Middleware
                 ?? $this->portals->defaultFor($user);
         }
 
+        $portals = $user instanceof User
+            ? $this->portals->availableFor($user)
+            : [];
+
+        $pendingInboxCount = $user instanceof User && $this->hasProcessingPortal($portals)
+            ? $this->orders->pendingInboxCount($user)
+            : 0;
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -62,7 +74,7 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => $request->user()?->getAllPermissions()->pluck('name')->values()->all() ?? [],
             ],
             'portals' => $user instanceof User
-                ? $this->portals->optionsFor($user, $current)
+                ? $this->portals->optionsFor($user, $current, $pendingInboxCount)
                 : [],
             'currentPortal' => $current?->value,
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
@@ -121,5 +133,24 @@ class HandleInertiaRequests extends Middleware
         return $user instanceof User
             ? $user->unreadNotifications()->count()
             : 0;
+    }
+
+    /**
+     * Whether the account may enter a portal that owns a processing inbox.
+     *
+     * Only those accounts need the live-queue count, so employee-only and
+     * administrator-only accounts never pay for the extra query.
+     *
+     * @param  array<int, Portal>  $portals
+     */
+    private function hasProcessingPortal(array $portals): bool
+    {
+        foreach ($portals as $portal) {
+            if ($portal->inboxRouteName() !== null) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

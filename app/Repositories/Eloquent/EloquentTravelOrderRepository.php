@@ -80,6 +80,11 @@ class EloquentTravelOrderRepository implements TravelOrderRepository
             ->withQueryString();
     }
 
+    public function pendingInboxCount(User $user): int
+    {
+        return $this->inboxQuery($user)->count();
+    }
+
     public function countStatusesForCreator(User $user): array
     {
         $counts = TravelOrder::query()

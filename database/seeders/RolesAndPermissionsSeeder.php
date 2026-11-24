@@ -60,6 +60,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'travel-orders.approve',
             'travel-orders.return',
             'travel-orders.forward',
+            'travel-orders.reassign',
             'travel-orders.resubmit',
             'travel-orders.cancel',
             'travel-orders.earmark',

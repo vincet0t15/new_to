@@ -14,6 +14,7 @@ import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import type {
     ApprovalAbilities,
     TravelOrder,
@@ -488,5 +489,5 @@ export default function ShowApproval({
 }
 
 ShowApproval.layout = {
-    breadcrumbs: [{ title: 'Approval Inbox', href: '#' }],
+    breadcrumbs: [{ title: APPROVAL_INBOX_LABEL, href: '#' }],
 };

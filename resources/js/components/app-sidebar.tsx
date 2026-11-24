@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavMain } from '@/components/nav-main';
+import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import {
     Sidebar,
     SidebarContent,
@@ -140,7 +141,7 @@ function departmentHeadGroups(dashboardUrl: string): NavGroup[] {
             label: 'Approvals',
             items: [
                 {
-                    title: 'Approval Inbox',
+                    title: APPROVAL_INBOX_LABEL,
                     href: departmentHead.inbox().url,
                     icon: Inbox,
                     permission: 'travel-orders.view',
@@ -166,7 +167,7 @@ function approvalsGroups(inboxUrl: string): NavGroup[] {
             label: 'Approvals',
             items: [
                 {
-                    title: 'Approval Inbox',
+                    title: APPROVAL_INBOX_LABEL,
                     href: inboxUrl,
                     icon: Inbox,
                     permission: 'travel-orders.view',

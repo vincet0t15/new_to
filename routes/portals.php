@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FuelAllocationController;
 use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\TravelOrderActionController as AdminTravelOrderActionController;
 use App\Http\Controllers\Admin\TravelOrderRegisterController;
 use App\Http\Controllers\Approvals\ApprovalInboxController;
 use App\Http\Controllers\Approvals\FuelMonitoringController;
@@ -139,6 +140,9 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
         Route::middleware('permission:travel-orders.view-all')->group(function () {
             Route::get('travel-orders', [TravelOrderRegisterController::class, 'index'])
                 ->name('travel-orders.index');
+            Route::post('travel-orders/{travelOrder}/reassign', [AdminTravelOrderActionController::class, 'reassign'])
+                ->middleware('permission:travel-orders.reassign')
+                ->name('travel-orders.reassign');
             Route::get('reports', [ReportsController::class, 'index'])
                 ->name('reports.index');
             Route::get('reports/export', [ReportsController::class, 'export'])
