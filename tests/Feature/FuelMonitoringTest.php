@@ -12,6 +12,7 @@ use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -239,4 +240,27 @@ test('admin dashboard shows fuel low balance alerts', function () {
         ->has('fuelSummary')
         ->where('fuelSummary.active_allocations', 1)
     );
+});
+
+test('admin dashboard groups fuel balances by the resolved fuel type expression', function () {
+    $admin = fuelMonitoringUser();
+    $queries = [];
+
+    DB::listen(static function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
+
+    $groupedFuelQueries = array_values(array_filter(
+        $queries,
+        static fn (string $sql): bool => stripos($sql, 'group by') !== false
+            && stripos($sql, 'fuel_types') !== false,
+    ));
+
+    expect($groupedFuelQueries)->not->toBeEmpty();
+
+    foreach ($groupedFuelQueries as $sql) {
+        expect($sql)->toMatch('/group by.*COALESCE\(NULLIF\(fuel_types\.name/is');
+    }
 });

@@ -29,24 +29,30 @@ class DashboardController extends Controller
         $lowLiters = (float) config('travel-orders.fuel.low_balance_liters', 20);
         $lowAmount = (float) config('travel-orders.fuel.low_balance_amount', 1000);
 
+        // Group by the resolved expression, not the `fuel_type` alias: the
+        // alias collides with the legacy string columns and MySQL's
+        // ONLY_FULL_GROUP_BY then rejects fuel_types.name.
+        $allocationFuelTypeExpr = "COALESCE(NULLIF(fuel_types.name, ''), NULLIF(fuel_allocations.fuel_type, ''), 'Unspecified')";
+        $tripFuelTypeExpr = "COALESCE(NULLIF(fuel_types.name, ''), NULLIF(trip_tickets.fuel_type, ''), 'Unspecified')";
+
         $allocated = FuelAllocation::query()
             ->join('offices', 'offices.id', '=', 'fuel_allocations.office_id')
             ->leftJoin('fuel_types', 'fuel_types.id', '=', 'fuel_allocations.fuel_type_id')
             ->where('fuel_allocations.status', FuelAllocation::STATUS_ACTIVE)
-            ->selectRaw('offices.id as office_id, offices.office_name, fuel_allocations.fuel_type_id, COALESCE(NULLIF(fuel_types.name, \'\'), NULLIF(fuel_allocations.fuel_type, \'\'), \'Unspecified\') as fuel_type')
+            ->selectRaw("offices.id as office_id, offices.office_name, fuel_allocations.fuel_type_id, {$allocationFuelTypeExpr} as fuel_type")
             ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_liters),0) as allocated_liters')
             ->selectRaw('COALESCE(SUM(fuel_allocations.allocated_amount),0) as allocated_amount')
-            ->groupBy('offices.id', 'offices.office_name', 'fuel_allocations.fuel_type_id', 'fuel_type')
+            ->groupBy('offices.id', 'offices.office_name', 'fuel_allocations.fuel_type_id', DB::raw($allocationFuelTypeExpr))
             ->get();
 
         $consumed = DB::table('trip_tickets')
             ->join('travel_orders', 'travel_orders.id', '=', 'trip_tickets.travel_order_id')
             ->leftJoin('fuel_types', 'fuel_types.id', '=', 'trip_tickets.fuel_type_id')
             ->where('trip_tickets.status', 'completed')
-            ->selectRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) as office_id, trip_tickets.fuel_type_id, COALESCE(NULLIF(fuel_types.name, \'\'), NULLIF(trip_tickets.fuel_type, \'\'), \'Unspecified\') as fuel_type')
+            ->selectRaw("COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id) as office_id, trip_tickets.fuel_type_id, {$tripFuelTypeExpr} as fuel_type")
             ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_consumed,0)),0) as actual_liters')
             ->selectRaw('COALESCE(SUM(COALESCE(trip_tickets.fuel_cost,0)),0) as fuel_cost')
-            ->groupByRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id), trip_tickets.fuel_type_id, fuel_type')
+            ->groupByRaw('COALESCE(trip_tickets.fuel_source_office_id, travel_orders.office_id), trip_tickets.fuel_type_id, '.$tripFuelTypeExpr)
             ->get();
 
         $consumedByKey = [];
