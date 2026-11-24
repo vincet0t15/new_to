@@ -189,6 +189,7 @@ class TravelOrderTripTicketController extends Controller
         return Inertia::render('trip-tickets/print', [
             'travelOrder' => $this->orderPayload($travelOrder),
             'tripTicket' => $tripTicket,
+            'letterhead' => config('travel-orders.letterhead'),
         ]);
     }
 

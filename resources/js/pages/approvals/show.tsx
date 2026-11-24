@@ -224,6 +224,7 @@ export default function ShowApproval({
                                                 key={tripTicket.id}
                                                 travelOrder={travelOrder}
                                                 tripTicket={tripTicket}
+                                                letterhead={letterhead}
                                                 destination={
                                                     travelOrder.destination_location
                                                 }

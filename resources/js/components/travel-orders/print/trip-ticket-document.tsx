@@ -1,7 +1,12 @@
 import type { ReactNode } from 'react';
+import {
+    PrintLetterhead,
+    PrintPage,
+} from '@/components/travel-orders/print/document';
 import { TripTicketStatusBadge } from '@/components/travel-orders/status-badge';
 import { formatDate } from '@/lib/date-format';
 import type {
+    Letterhead,
     TravelOrder,
     TravelOrderLookupOption,
     TripTicket,
@@ -19,6 +24,7 @@ import type {
 type Props = {
     travelOrder: TravelOrder | TripTicketTravelOrder;
     tripTicket: TripTicket;
+    letterhead: Letterhead;
     destination?: TravelOrderLookupOption | null;
 };
 
@@ -75,6 +81,7 @@ function locationName(
 export function TripTicketDocument({
     travelOrder,
     tripTicket,
+    letterhead,
     destination,
 }: Props) {
     const displayDestination =
@@ -85,17 +92,15 @@ export function TripTicketDocument({
         null;
 
     return (
-        <article className="mx-auto mb-6 w-full max-w-[8.5in] bg-white p-8 shadow-sm print:mb-0 print:max-w-none print:p-0 print:shadow-none">
-            <header className="border-b border-neutral-300 pb-3 text-center">
-                <p className="text-[11px]">Republic of the Philippines</p>
-                <p className="text-[11px]">Province of the Municipality</p>
-                <p className="text-[13px] font-bold tracking-[0.12em] uppercase">
-                    {travelOrder.office?.office_name ?? 'Municipal Government'}
-                </p>
-                <p className="mt-2 text-[12px] font-bold tracking-[0.15em]">
-                    TRIP TICKET
-                </p>
-            </header>
+        <PrintPage>
+            <PrintLetterhead letterhead={letterhead} />
+
+            <p className="text-center text-[13px] font-bold tracking-[0.12em] uppercase">
+                {travelOrder.office?.office_name ?? letterhead.office_name}
+            </p>
+            <p className="mt-2 text-center text-[12px] font-bold tracking-[0.15em]">
+                TRIP TICKET
+            </p>
 
             <div className="mt-4 flex flex-wrap items-start justify-between gap-3">
                 <div className="space-y-1">
@@ -272,6 +277,6 @@ export function TripTicketDocument({
                 />
                 <Signature label="Approved by" />
             </div>
-        </article>
+        </PrintPage>
     );
 }

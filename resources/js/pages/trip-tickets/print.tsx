@@ -3,14 +3,19 @@ import { ArrowLeft, Printer } from 'lucide-react';
 import { TripTicketDocument } from '@/components/travel-orders/print/trip-ticket-document';
 import { Button } from '@/components/ui/button';
 import tripTickets from '@/routes/travel-orders/trip-tickets';
-import type { TripTicket, TripTicketTravelOrder } from '@/types';
+import type { Letterhead, TripTicket, TripTicketTravelOrder } from '@/types';
 
 type Props = {
     travelOrder: TripTicketTravelOrder;
     tripTicket: TripTicket;
+    letterhead: Letterhead;
 };
 
-export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
+export default function PrintTripTicket({
+    travelOrder,
+    tripTicket,
+    letterhead,
+}: Props) {
     return (
         <>
             <Head title={`Print ${tripTicket.ticket_no ?? 'Trip Ticket'}`} />
@@ -39,6 +44,7 @@ export default function PrintTripTicket({ travelOrder, tripTicket }: Props) {
                 <TripTicketDocument
                     travelOrder={travelOrder}
                     tripTicket={tripTicket}
+                    letterhead={letterhead}
                 />
             </div>
         </>

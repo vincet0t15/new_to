@@ -65,10 +65,16 @@ vi.mock('@/components/travel-orders/print/itinerary-document', () => ({
 vi.mock('@/components/travel-orders/print/trip-ticket-document', () => ({
     TripTicketDocument: ({
         tripTicket,
+        letterhead: heading,
     }: {
         tripTicket: ReturnType<typeof makeTripTicket>;
+        letterhead: typeof letterhead;
     }) => (
-        <div data-testid="trip-ticket-doc" data-ticket-id={tripTicket.id}>
+        <div
+            data-testid="trip-ticket-doc"
+            data-ticket-id={tripTicket.id}
+            data-letterhead={heading.republic}
+        >
             {tripTicket.ticket_no}
         </div>
     ),
@@ -159,6 +165,10 @@ describe('approval document preview and actions', () => {
         ).toHaveAttribute('aria-selected', 'true');
         expect(screen.getByTestId('trip-ticket-doc')).toHaveTextContent(
             'TT-2026-00007',
+        );
+        expect(screen.getByTestId('trip-ticket-doc')).toHaveAttribute(
+            'data-letterhead',
+            letterhead.republic,
         );
         expect(screen.queryByTestId('itinerary-doc')).not.toBeInTheDocument();
     });

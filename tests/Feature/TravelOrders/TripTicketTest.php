@@ -310,6 +310,8 @@ it('renders the trip ticket and print pages', function () {
     )->assertInertia(fn (Assert $page): Assert => $page
         ->component('trip-tickets/print')
         ->where('tripTicket.id', $ticket->id)
+        ->where('letterhead.republic', config('travel-orders.letterhead.republic'))
+        ->where('letterhead.municipality', config('travel-orders.letterhead.municipality'))
     );
 });
 
