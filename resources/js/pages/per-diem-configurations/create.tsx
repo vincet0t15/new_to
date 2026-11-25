@@ -125,6 +125,7 @@ export default function PerDiemConfigurationsCreate({
                                 id="effective_from"
                                 name="effective_from"
                                 type="date"
+                                max="9999-12-31"
                                 value={data.effective_from}
                                 onChange={(event) =>
                                     setData(
@@ -146,6 +147,7 @@ export default function PerDiemConfigurationsCreate({
                                 id="effective_until"
                                 name="effective_until"
                                 type="date"
+                                max="9999-12-31"
                                 value={data.effective_until}
                                 onChange={(event) =>
                                     setData(

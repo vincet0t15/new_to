@@ -359,6 +359,7 @@ export default function FuelMonitoringIndex({
                                 <Input
                                     id="date_from"
                                     type="date"
+                                    max="9999-12-31"
                                     value={dateFrom}
                                     onChange={(e) =>
                                         setDateFrom(e.target.value)
@@ -370,6 +371,7 @@ export default function FuelMonitoringIndex({
                                 <Input
                                     id="date_to"
                                     type="date"
+                                    max="9999-12-31"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
                                 />

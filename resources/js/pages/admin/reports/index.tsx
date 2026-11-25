@@ -284,6 +284,7 @@ export default function AdminReportsIndex({
                                 <Input
                                     id="report_date_from"
                                     type="date"
+                                    max="9999-12-31"
                                     value={values.date_from}
                                     onChange={(event) =>
                                         setValues((current) => ({
@@ -301,6 +302,7 @@ export default function AdminReportsIndex({
                                 <Input
                                     id="report_date_to"
                                     type="date"
+                                    max="9999-12-31"
                                     value={values.date_to}
                                     onChange={(event) =>
                                         setValues((current) => ({

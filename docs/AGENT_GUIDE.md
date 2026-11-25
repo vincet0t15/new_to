@@ -89,6 +89,7 @@ Follow the Office slice: migration, model, repository contract + implementation,
 - Default locations are `San Vicente, Palawan` and `Puerto Princesa City, Palawan`; fuel flows use `CustomComboBox`.
 - No native `confirm()`; use `ConfirmDialog`. No raw `JSON.stringify(event.meta)`; use `eventDetailLines()`.
 - Dialog `Content` scrolls at `max-h-[90vh]`; `Combobox` measures viewport/dialog and flips or caps dropdown height.
+- Every `type="date"` input sets `max="9999-12-31"`. Without it, Chromium lets the year segment grow to six digits (for example `202611`), so the visible year no longer matches the `YYYY-MM-DD` value sent to the backend.
 
 ## 6. Verification before finishing
 

@@ -239,6 +239,7 @@ export function TravelOrderHeaderFields({
                             <Input
                                 id="date_from"
                                 type="date"
+                                max="9999-12-31"
                                 value={data.date_from}
                                 onChange={(event) =>
                                     onChange('date_from', event.target.value)
@@ -254,6 +255,7 @@ export function TravelOrderHeaderFields({
                             <Input
                                 id="date_to"
                                 type="date"
+                                max="9999-12-31"
                                 min={data.date_from || undefined}
                                 value={data.date_to}
                                 onChange={(event) =>

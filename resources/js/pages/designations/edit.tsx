@@ -152,6 +152,7 @@ export function EditDesignationDialog({
                                 <Input
                                     id="starts_at"
                                     type="date"
+                                    max="9999-12-31"
                                     value={data.starts_at}
                                     onChange={(e) =>
                                         setData('starts_at', e.target.value)
@@ -164,6 +165,7 @@ export function EditDesignationDialog({
                                 <Input
                                     id="ends_at"
                                     type="date"
+                                    max="9999-12-31"
                                     value={data.ends_at}
                                     onChange={(e) =>
                                         setData('ends_at', e.target.value)

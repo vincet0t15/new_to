@@ -116,6 +116,7 @@ export default function AdminAuditIndex({
                         <Input
                             id="audit_date_from"
                             type="date"
+                            max="9999-12-31"
                             value={dateFrom}
                             onChange={(changeEvent) =>
                                 setDateFrom(changeEvent.target.value)
@@ -127,6 +128,7 @@ export default function AdminAuditIndex({
                         <Input
                             id="audit_date_to"
                             type="date"
+                            max="9999-12-31"
                             value={dateTo}
                             onChange={(changeEvent) =>
                                 setDateTo(changeEvent.target.value)

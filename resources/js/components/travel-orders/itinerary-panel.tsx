@@ -436,6 +436,7 @@ export function TravelOrderItineraryPanel({
                             <Input
                                 id="date_from"
                                 type="date"
+                                max="9999-12-31"
                                 value={form.data.date_from}
                                 onChange={(event) =>
                                     form.setData(
@@ -451,6 +452,7 @@ export function TravelOrderItineraryPanel({
                             <Input
                                 id="date_to"
                                 type="date"
+                                max="9999-12-31"
                                 value={form.data.date_to}
                                 onChange={(event) =>
                                     form.setData('date_to', event.target.value)
