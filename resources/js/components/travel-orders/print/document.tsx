@@ -39,11 +39,12 @@ export function PrintDocument({ children }: { children: ReactNode }) {
  * A single sheet of the document.
  *
  * Sized to 8.5in so the on-screen preview matches the paper the browser
- * paginates to.
+ * paginates to. The paper colors are set here instead of on a wrapper so the
+ * inline approval preview stays readable in dark mode too.
  */
 export function PrintPage({ children }: { children: ReactNode }) {
     return (
-        <article className="mx-auto mb-6 w-full max-w-[8.5in] break-after-page bg-white p-6 shadow-sm last:break-after-auto print:mx-auto print:mb-0 print:max-w-none print:px-6 print:py-8 print:shadow-none">
+        <article className="mx-auto mb-6 w-full max-w-[8.5in] break-after-page bg-white p-6 text-black shadow-sm last:break-after-auto print:mx-auto print:mb-0 print:max-w-none print:px-6 print:py-8 print:shadow-none">
             {children}
         </article>
     );

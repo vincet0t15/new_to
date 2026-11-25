@@ -25,6 +25,8 @@ describe('TripTicketDocument', () => {
         expect(container.querySelector('article')).toHaveClass(
             'break-after-page',
             'last:break-after-auto',
+            'bg-white',
+            'text-black',
         );
     });
 
