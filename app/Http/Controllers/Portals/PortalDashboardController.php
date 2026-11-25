@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portals;
 
+use App\Enums\TravelOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Repositories\Contracts\TravelOrderRepository;
@@ -44,9 +45,27 @@ final class PortalDashboardController extends Controller
                 'updated_at' => $order->updated_at?->toIso8601String(),
             ]);
 
+        $draftOrders = $this->orders->paginateForCreator(
+            $user,
+            null,
+            5,
+            TravelOrderStatus::Draft,
+        )->through(fn ($order) => [
+            'id' => $order->id,
+            'control_no' => $order->control_no,
+            'to_number' => $order->to_number,
+            'purpose' => $order->purpose,
+            'destination' => $order->destination,
+            'date_from' => $order->date_from?->toDateString(),
+            'date_to' => $order->date_to?->toDateString(),
+            'status' => $order->status->value,
+            'updated_at' => $order->updated_at?->toIso8601String(),
+        ]);
+
         return Inertia::render('portals/employee/dashboard', [
             'stats' => $this->orders->countStatusesForCreator($user),
             'recentOrders' => $recentOrders->items(),
+            'draftOrders' => $draftOrders->items(),
         ]);
     }
 

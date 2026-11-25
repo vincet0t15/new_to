@@ -90,7 +90,7 @@ const actionCopy: Record<
     },
     record: {
         title: 'Record and release this travel order?',
-        effect: 'This saves the series and control numbers and the release status on the official record.',
+        effect: 'This saves the release status and recording remarks. The TO and HRMO series numbers are generated automatically.',
         confirmLabel: 'Record & release',
     },
     forward: {
@@ -187,8 +187,6 @@ export default function ShowApproval({
     const { data, setData, post, processing, errors, reset } = useForm({
         remarks: '',
         to_user_id: '',
-        control_no: travelOrder.control_no ?? '',
-        to_number: travelOrder.to_number ?? '',
         distributed: travelOrder.distributed_at !== null,
         fund_source_id: travelOrder.fund_source_id?.toString() ?? '',
         earmark_number: travelOrder.earmark_number ?? '',
@@ -677,56 +675,33 @@ export default function ShowApproval({
                                             </p>
                                             {can.record && (
                                                 <div className="space-y-2">
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="to_number">
-                                                            Series/TO No.
-                                                        </Label>
-                                                        <input
-                                                            id="to_number"
-                                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                            value={
-                                                                data.to_number
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'to_number',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Enter TO number"
-                                                        />
-                                                        <InputError
-                                                            message={
-                                                                errors.to_number
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="control_no">
-                                                            Control No.
-                                                        </Label>
-                                                        <input
-                                                            id="control_no"
-                                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                            value={
-                                                                data.control_no
-                                                            }
-                                                            onChange={(e) =>
-                                                                setData(
-                                                                    'control_no',
-                                                                    e.target
-                                                                        .value,
-                                                                )
-                                                            }
-                                                            placeholder="Enter control number"
-                                                        />
-                                                        <InputError
-                                                            message={
-                                                                errors.control_no
-                                                            }
-                                                        />
-                                                    </div>
+                                                    <dl className="grid gap-2 rounded-md border bg-muted/30 p-3 text-sm sm:grid-cols-2">
+                                                        <div>
+                                                            <dt className="text-xs text-muted-foreground">
+                                                                TO number
+                                                            </dt>
+                                                            <dd className="font-medium">
+                                                                {travelOrder.to_number ??
+                                                                    'Assigned on submission'}
+                                                            </dd>
+                                                        </div>
+                                                        <div>
+                                                            <dt className="text-xs text-muted-foreground">
+                                                                HRMO series
+                                                                number
+                                                            </dt>
+                                                            <dd className="font-medium">
+                                                                {travelOrder.control_no ??
+                                                                    'Generated when you approve'}
+                                                            </dd>
+                                                        </div>
+                                                    </dl>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        Numbers are generated
+                                                        automatically. Recording
+                                                        saves the release status
+                                                        and remarks only.
+                                                    </p>
                                                     <div className="flex items-center gap-2 text-sm">
                                                         <Checkbox
                                                             id="distributed"

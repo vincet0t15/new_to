@@ -115,7 +115,7 @@ export function DocumentStatusDialog({
                                 status={travelOrder.status}
                             />
                             <span className="text-xs text-muted-foreground">
-                                Control No. {documentNumber}
+                                Document No. {documentNumber}
                             </span>
                         </div>
                         <p className="mt-2 text-sm font-medium">

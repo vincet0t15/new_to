@@ -39,6 +39,7 @@ final class TravelOrderApprovalService
         private readonly TravelOrderAudit $audit,
         private readonly TravelOrderChangeDetector $changes,
         private readonly TravelOrderNotifier $notifier,
+        private readonly TravelOrderNumberService $numbers,
     ) {
         //
     }
@@ -181,7 +182,11 @@ final class TravelOrderApprovalService
     }
 
     /**
-     * Record HRMO series number/control and release details.
+     * Record the HRMO release details.
+     *
+     * The filing and series numbers are owned by the numbering service: the
+     * filing number arrives at submission and the series number when HRMO
+     * clears its step. Recording cannot rewrite either one.
      *
      * @param  array<string, mixed>  $data
      */
@@ -197,13 +202,9 @@ final class TravelOrderApprovalService
             }
 
             $index = (int) $order->current_step_index;
-            $controlNo = $this->nullableRemarks($data['control_no'] ?? null);
-            $toNumber = $this->nullableRemarks($data['to_number'] ?? null);
             $remarks = $this->nullableRemarks($data['remarks'] ?? null);
 
             $order->forceFill([
-                'control_no' => $controlNo ?? $order->control_no,
-                'to_number' => $toNumber ?? $order->to_number,
                 'recorded_by_user_id' => $actor->id,
                 'recorded_at' => now(),
                 'recording_remarks' => $remarks,
@@ -253,6 +254,8 @@ final class TravelOrderApprovalService
             $this->claimForAction($order, $actor);
             $this->markActed($order, $actor, 'approve');
 
+            $series = $this->assignHrmoSeries($order, $step);
+
             $this->audit->record(
                 $order,
                 WorkflowEvent::Approved,
@@ -260,7 +263,7 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
-                null,
+                $series === null ? null : ['control_no' => $series],
                 null,
                 $isInternal,
             );
@@ -296,6 +299,8 @@ final class TravelOrderApprovalService
             $this->claimForAction($order, $actor);
             $this->markActed($order, $actor, 'acknowledge');
 
+            $series = $this->assignHrmoSeries($order, $step);
+
             $this->audit->record(
                 $order,
                 WorkflowEvent::Acknowledged,
@@ -303,7 +308,7 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
-                null,
+                $series === null ? null : ['control_no' => $series],
                 null,
                 $isInternal,
             );
@@ -933,6 +938,49 @@ final class TravelOrderApprovalService
         if ($order->status !== TravelOrderStatus::Submitted) {
             throw TravelOrderRoutingException::staleAction();
         }
+    }
+
+    /**
+     * Give the order its HRMO series number when HRMO clears its step.
+     *
+     * Legacy orders filed before automatic numbering may have no filing
+     * number, so one is filled here too. A number already on the order is
+     * never overwritten.
+     */
+    private function assignHrmoSeries(TravelOrder $order, WorkflowStep $step): ?string
+    {
+        if (! $this->isHrmoStep($step)) {
+            return null;
+        }
+
+        $changes = [];
+
+        if (blank($order->to_number)) {
+            $submittedAt = $order->submitted_at;
+
+            $changes['to_number'] = $this->numbers->nextSubmissionNumber(
+                $submittedAt instanceof \DateTimeInterface
+                    ? (int) $submittedAt->format('Y')
+                    : (int) now()->year,
+            );
+        }
+
+        if (blank($order->control_no)) {
+            $changes['control_no'] = $this->numbers->nextSeriesNumber();
+        }
+
+        if ($changes === []) {
+            return null;
+        }
+
+        $order->forceFill($changes)->save();
+
+        return $changes['control_no'] ?? null;
+    }
+
+    private function isHrmoStep(WorkflowStep $step): bool
+    {
+        return in_array($step->stepType->name, ['HRMO Review', 'HRMO'], true);
     }
 
     private function ensureBudgetStepAction(User $actor, WorkflowStep $step, string $permission): void

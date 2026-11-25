@@ -38,9 +38,14 @@ import type { DashboardTravelOrderItem, PersonalDashboardStats } from '@/types';
 type Props = {
     stats: PersonalDashboardStats;
     recentOrders: DashboardTravelOrderItem[];
+    draftOrders: DashboardTravelOrderItem[];
 };
 
-export default function EmployeeDashboard({ stats, recentOrders }: Props) {
+export default function EmployeeDashboard({
+    stats,
+    recentOrders,
+    draftOrders,
+}: Props) {
     const { auth, unreadNotificationsCount } = usePage().props;
     const today = new Date().toLocaleDateString(undefined, {
         weekday: 'long',
@@ -348,6 +353,143 @@ export default function EmployeeDashboard({ stats, recentOrders }: Props) {
                                 />
                             </DashboardPanel>
                         </div>
+
+                        <DashboardPanel
+                            title="Draft travel orders"
+                            description="Requests you have saved but not yet submitted. Continue editing or delete them."
+                            icon={FilePenLine}
+                            action={
+                                <DashboardLink
+                                    href={
+                                        travelOrdersRoutes.index({
+                                            query: { status: 'draft' },
+                                        }).url
+                                    }
+                                >
+                                    All drafts
+                                </DashboardLink>
+                            }
+                            contentClassName="p-0"
+                        >
+                            {draftOrders.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="hover:bg-transparent">
+                                            <TableHead className="pl-5 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Travel order
+                                            </TableHead>
+                                            <TableHead className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Purpose
+                                            </TableHead>
+                                            <TableHead className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Travel dates
+                                            </TableHead>
+                                            <TableHead className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Updated
+                                            </TableHead>
+                                            <TableHead className="pr-5 text-right text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                                                Action
+                                            </TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {draftOrders.map((order) => (
+                                            <TableRow
+                                                key={order.id}
+                                                className="group hover:bg-muted/40"
+                                            >
+                                                <TableCell className="pl-5">
+                                                    <span className="font-medium">
+                                                        {order.control_no ??
+                                                            order.to_number ??
+                                                            `#${order.id}`}
+                                                    </span>
+                                                    <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                                                        <MapPin
+                                                            aria-hidden="true"
+                                                            className="size-3 shrink-0"
+                                                        />
+                                                        <span className="truncate">
+                                                            {order.destination ??
+                                                                'No destination set'}
+                                                        </span>
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="max-w-[260px]">
+                                                    <p
+                                                        className="truncate"
+                                                        title={
+                                                            order.purpose ??
+                                                            undefined
+                                                        }
+                                                    >
+                                                        {order.purpose ??
+                                                            'Not specified'}
+                                                    </p>
+                                                </TableCell>
+                                                <TableCell className="text-sm whitespace-nowrap text-muted-foreground tabular-nums">
+                                                    {formatDate(
+                                                        order.date_from,
+                                                    )}{' '}
+                                                    -{' '}
+                                                    {formatDate(order.date_to)}
+                                                </TableCell>
+                                                <TableCell className="text-sm whitespace-nowrap text-muted-foreground">
+                                                    {formatDateTime(
+                                                        order.updated_at,
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="pr-5 text-right">
+                                                    <Can permission="travel-orders.update">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={
+                                                                    travelOrdersRoutes.edit(
+                                                                        order,
+                                                                    ).url
+                                                                }
+                                                            >
+                                                                <FilePenLine aria-hidden="true" />
+                                                                Continue
+                                                            </Link>
+                                                        </Button>
+                                                    </Can>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <EmptyState
+                                    icon={FilePenLine}
+                                    title="No drafts saved"
+                                    description="Start a new travel order and save it as a draft to continue later."
+                                    action={
+                                        <Can permission="travel-orders.create">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                asChild
+                                            >
+                                                <Link
+                                                    href={
+                                                        travelOrdersRoutes.create()
+                                                            .url
+                                                    }
+                                                >
+                                                    <Plus aria-hidden="true" />
+                                                    Create travel order
+                                                </Link>
+                                            </Button>
+                                        </Can>
+                                    }
+                                />
+                            )}
+                        </DashboardPanel>
                     </Can>
                 </div>
             </div>

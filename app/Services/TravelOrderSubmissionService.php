@@ -29,6 +29,7 @@ final class TravelOrderSubmissionService
         private readonly TravelOrderApprovalService $approvals,
         private readonly TravelOrderAudit $audit,
         private readonly SignatoryResolver $signatories,
+        private readonly TravelOrderNumberService $numbers,
     ) {
         //
     }
@@ -77,6 +78,8 @@ final class TravelOrderSubmissionService
                 ->values()
                 ->all();
 
+            $submittedAt = now();
+
             $order->forceFill([
                 'workflow_id' => $workflow->id,
                 'status' => TravelOrderStatus::Submitted,
@@ -84,7 +87,12 @@ final class TravelOrderSubmissionService
                 'routed_step_review_fields' => $routedStepReviewFields,
                 'current_step_index' => null,
                 'recipient_user_id' => null,
-                'submitted_at' => now(),
+                // The filing number belongs to the year the order was filed.
+                // A returned order keeps it when it is resubmitted.
+                'to_number' => filled($order->to_number)
+                    ? $order->to_number
+                    : $this->numbers->nextSubmissionNumber((int) $submittedAt->year),
+                'submitted_at' => $submittedAt,
             ]);
 
             // The printed signature lines are frozen with the route so a

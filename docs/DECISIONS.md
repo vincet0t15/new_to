@@ -271,6 +271,25 @@ There is no "approve and choose the next recipient" action.
 
 ---
 
+## 21. Travel order filing and HRMO series numbers
+
+**Decision:**
+
+- A travel order receives its filing number the first time it is submitted: `TO-YYYY-NNNN`, where the suffix counts the orders filed in that year. A returned order keeps the same filing number when it is resubmitted.
+- `to_number` holds the filing number. `control_no` holds the HRMO series number.
+- The HRMO series number is `HRMO-TO-YYYY-NNNN` and is assigned when the HRMO step is cleared, whether that step is a signature or a receipt. Its suffix counts the orders HRMO approved in that year, independently of the filing sequence, so a document approved out of order still gets the next HRMO number.
+- An existing `control_no` is never overwritten. A legacy order approved without a filing number receives one first, then the series number.
+- The record/release action no longer accepts caller-supplied numbers. It records only the release status and remarks; both numbers are owned by the numbering service.
+- On the printed travel order, `NUMBER` is the filing number and `SERIES` is the HRMO series number.
+
+**Why:** Filing and HRMO approval are two separate events with two separate yearly sequences. Keeping them in separate columns preserves the filing number for audit and lets the HRMO series stay sequential even when HRMO acts on documents out of filing order.
+
+**Evidence:** `app/Services/TravelOrderNumberService.php`; `app/Services/TravelOrderSubmissionService.php::submit`; `app/Services/TravelOrderApprovalService.php::approve,acknowledge,assignHrmoSeries,record`; `resources/js/components/travel-orders/print/travel-order-document.tsx`; `tests/Feature/TravelOrders/TravelOrderNumberingTest.php`.
+
+**Change control:** **Approval required** for changing the prefixes, the per-year scope, the point at which a number is assigned, or for allowing callers to supply numbers again.
+
+---
+
 ## Change checklist
 
 Before changing a decision above:

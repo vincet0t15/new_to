@@ -97,8 +97,6 @@ class TravelOrderActionController extends Controller
         $actor = $this->actor($request);
 
         $validated = $request->validate([
-            'control_no' => ['nullable', 'string', 'max:40', Rule::unique('travel_orders', 'control_no')->ignore($travelOrder->id)],
-            'to_number' => ['nullable', 'string', 'max:40', Rule::unique('travel_orders', 'to_number')->ignore($travelOrder->id)],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'distributed' => ['sometimes', 'boolean'],
         ]);

@@ -68,12 +68,15 @@ export function TravelOrderDocument({
                 <div className="space-y-0.5">
                     <p>
                         <strong>NUMBER:</strong>{' '}
-                        {travelOrder.control_no ??
-                            travelOrder.to_number ??
+                        {travelOrder.to_number ??
+                            travelOrder.control_no ??
                             `#${travelOrder.id}`}
                     </p>
                     <p>
-                        <strong>SERIES:</strong> ______________
+                        <strong>SERIES:</strong>{' '}
+                        {travelOrder.to_number && travelOrder.control_no
+                            ? travelOrder.control_no
+                            : '______________'}
                     </p>
                 </div>
                 <p className="whitespace-nowrap">DATE: {documentDate}</p>

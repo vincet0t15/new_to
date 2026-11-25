@@ -12,8 +12,8 @@ export function makeTravelOrder(
 ): TravelOrder {
     return {
         id: 1,
-        control_no: 'TO-2026-0001',
-        to_number: null,
+        control_no: null,
+        to_number: 'TO-2026-0001',
         employee_id: 3,
         office_id: 4,
         created_by: 3,

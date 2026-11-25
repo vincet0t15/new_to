@@ -48,7 +48,7 @@ export function TravelOrderDetails({
             <h3 className="text-base font-semibold">Details</h3>
             <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
-                    <dt className="text-muted-foreground">Control No.</dt>
+                    <dt className="text-muted-foreground">Document No.</dt>
                     <Value>
                         {travelOrder.control_no ??
                             travelOrder.to_number ??

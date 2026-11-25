@@ -40,6 +40,7 @@ test('the registry lists vehicles with their assigned drivers', function () {
         'first_name' => 'Juan',
         'middle_name' => null,
         'last_name' => 'Dela Cruz',
+        'suffix' => null,
     ]);
     Vehicle::factory()->create([
         'plate_no' => 'ABC-1234',
