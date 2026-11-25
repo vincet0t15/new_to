@@ -1,16 +1,20 @@
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
+import { Can } from '@/components/can';
 import Heading from '@/components/heading';
 import { Button } from '@/components/ui/button';
 import employees from '@/routes/employees';
-import type { Employee } from '@/types/employee';
+import type { Employee, EmployeeLoginOption } from '@/types/employee';
 import type { EmploymentType } from '@/types/employment-type';
 import type { Office } from '@/types/office';
 import type { Position } from '@/types/position';
 import { EmployeeForm } from './employee-form';
+import { LinkAccountCard } from './link-account';
 
 type EditEmployeeProps = {
     employee: Employee;
+    linkedAccount: EmployeeLoginOption | null;
+    accountOptions: EmployeeLoginOption[];
     offices: Pick<Office, 'id' | 'office_name'>[];
     positions: Pick<Position, 'id' | 'name'>[];
     employmentTypes: Pick<EmploymentType, 'id' | 'name'>[];
@@ -18,6 +22,8 @@ type EditEmployeeProps = {
 
 export default function EditEmployee({
     employee,
+    linkedAccount,
+    accountOptions,
     offices,
     positions,
     employmentTypes,
@@ -48,6 +54,15 @@ export default function EditEmployee({
                     positions={positions}
                     employmentTypes={employmentTypes}
                 />
+
+                <Can permission="accounts.edit">
+                    <LinkAccountCard
+                        key={linkedAccount?.id ?? 'none'}
+                        employee={employee}
+                        linkedAccount={linkedAccount}
+                        accountOptions={accountOptions}
+                    />
+                </Can>
             </div>
         </>
     );

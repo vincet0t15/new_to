@@ -392,3 +392,110 @@ test('deleting an employee requires the delete permission', function () {
 
     $this->assertModelExists($employee);
 });
+
+test('employee edit exposes only accounts available for linking', function () {
+    $employee = Employee::factory()->create();
+    $linked = User::factory()->create();
+    $linked->employee()->associate($employee);
+    $linked->save();
+
+    $unlinked = User::factory()->create();
+    $otherEmployee = Employee::factory()->create();
+    $elsewhere = User::factory()->create();
+    $elsewhere->employee()->associate($otherEmployee);
+    $elsewhere->save();
+
+    $this->actingAs(employeeUser(['employees.update', 'accounts.edit']))
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('employees/edit')
+            ->where('linkedAccount.id', $linked->id)
+            ->where('accountOptions', fn ($options): bool => collect($options)
+                ->contains('id', $linked->id)
+                && collect($options)->contains('id', $unlinked->id)
+                && ! collect($options)->contains('id', $elsewhere->id))
+        );
+});
+
+test('employee edit hides account options without account edit permission', function () {
+    $employee = Employee::factory()->create();
+    $user = User::factory()->create();
+    $user->employee()->associate($employee);
+    $user->save();
+
+    $this->actingAs(employeeUser(['employees.update']))
+        ->get(route('employees.edit', $employee))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('employees/edit')
+            ->where('linkedAccount', null)
+            ->where('accountOptions', []));
+});
+
+test('an account can be linked, replaced, and unlinked from employee edit', function () {
+    $employee = Employee::factory()->create();
+    $first = User::factory()->create();
+    $second = User::factory()->create();
+
+    $actor = employeeUser(['employees.update', 'accounts.edit']);
+
+    $this->actingAs($actor)
+        ->put(route('employees.account.update', $employee), [
+            'user_id' => $first->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($employee->refresh()->user->id)->toBe($first->id);
+
+    $this->actingAs($actor)
+        ->put(route('employees.account.update', $employee), [
+            'user_id' => $second->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($employee->refresh()->user->id)->toBe($second->id)
+        ->and($first->refresh()->employee_id)->toBeNull();
+
+    $this->actingAs($actor)
+        ->put(route('employees.account.update', $employee), [
+            'user_id' => null,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($employee->refresh()->user)->toBeNull()
+        ->and($second->refresh()->employee_id)->toBeNull();
+});
+
+test('an account already linked to another employee cannot be linked from employee edit', function () {
+    $employee = Employee::factory()->create();
+    $otherEmployee = Employee::factory()->create();
+    $user = User::factory()->create();
+    $user->employee()->associate($otherEmployee);
+    $user->save();
+
+    $this->actingAs(employeeUser(['employees.update', 'accounts.edit']))
+        ->put(route('employees.account.update', $employee), [
+            'user_id' => $user->id,
+        ])
+        ->assertSessionHasErrors('user_id');
+
+    expect($user->refresh()->employee_id)->toBe($otherEmployee->id)
+        ->and($employee->refresh()->user)->toBeNull();
+});
+
+test('linking an account from employee edit requires account edit permission', function () {
+    $employee = Employee::factory()->create();
+    $user = User::factory()->create();
+
+    $this->actingAs(employeeUser(['employees.update']))
+        ->put(route('employees.account.update', $employee), [
+            'user_id' => $user->id,
+        ])
+        ->assertForbidden();
+
+    expect($employee->refresh()->user)->toBeNull();
+});

@@ -4,15 +4,18 @@ namespace App\Http\Controllers\Employees;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Employees\StoreEmployeeRequest;
+use App\Http\Requests\Employees\UpdateEmployeeAccountRequest;
 use App\Http\Requests\Employees\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\EmploymentType;
 use App\Models\Office;
 use App\Models\Position;
+use App\Models\User;
 use App\Repositories\Contracts\EmployeeRepository;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -70,12 +73,48 @@ class EmployeeController extends Controller
     /**
      * Show the form for editing the specified employee.
      */
-    public function edit(Employee $employee): Response
+    public function edit(Request $request, Employee $employee): Response
     {
+        $accountData = $request->user()?->can('accounts.edit') === true
+            ? $this->accountOptions($employee)
+            : ['linkedAccount' => null, 'accountOptions' => []];
+
         return Inertia::render('employees/edit', [
             'employee' => $employee,
+            ...$accountData,
             ...$this->lookups(),
         ]);
+    }
+
+    /**
+     * Link, replace, or remove the login attached to an employee.
+     */
+    public function updateAccount(UpdateEmployeeAccountRequest $request, Employee $employee): RedirectResponse
+    {
+        $validatedUserId = $request->validated()['user_id'] ?? null;
+        $userId = is_int($validatedUserId) ? $validatedUserId : null;
+
+        DB::transaction(function () use ($employee, $userId): void {
+            User::query()
+                ->where('employee_id', $employee->getKey())
+                ->when($userId !== null, fn ($query) => $query->whereKeyNot($userId))
+                ->update(['employee_id' => null]);
+
+            if ($userId !== null) {
+                $user = User::query()->findOrFail($userId);
+                $user->employee()->associate($employee);
+                $user->save();
+            }
+        });
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $userId === null
+                ? __('Account link removed.')
+                : __('Account linked to employee.'),
+        ]);
+
+        return back();
     }
 
     /**
@@ -131,6 +170,37 @@ class EmployeeController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Employee deleted.')]);
 
         return back();
+    }
+
+    /**
+     * Accounts that may be attached to this employee: unlinked ones and the
+     * account already attached here.
+     *
+     * @return array{
+     *     linkedAccount: array{id: int, name: string, username: string}|null,
+     *     accountOptions: list<array{id: int, name: string, username: string}>
+     * }
+     */
+    private function accountOptions(Employee $employee): array
+    {
+        $shape = fn (User $user): array => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'username' => $user->username,
+        ];
+
+        $linked = $employee->user;
+
+        $options = User::query()
+            ->whereNull('employee_id')
+            ->orWhere('employee_id', $employee->getKey())
+            ->orderBy('name')
+            ->get(['id', 'name', 'username']);
+
+        return [
+            'linkedAccount' => $linked ? $shape($linked) : null,
+            'accountOptions' => array_values($options->map($shape)->all()),
+        ];
     }
 
     /**

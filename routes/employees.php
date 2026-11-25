@@ -22,6 +22,9 @@ Route::middleware(['auth', 'verified', 'portal:admin', 'permission:administratio
         Route::put('/{employee}', [EmployeeController::class, 'update'])
             ->middleware('permission:employees.update')
             ->name('update');
+        Route::put('/{employee}/account', [EmployeeController::class, 'updateAccount'])
+            ->middleware('permission:accounts.edit')
+            ->name('account.update');
         Route::delete('/{employee}', [EmployeeController::class, 'destroy'])
             ->middleware('permission:employees.delete')
             ->name('destroy');

@@ -38,3 +38,13 @@ export type EmployeeCreateRequest = {
 };
 
 export type EmployeeUpdateRequest = Partial<EmployeeCreateRequest>;
+
+export type EmployeeLoginOption = {
+    id: number;
+    name: string;
+    username: string;
+};
+
+export type EmployeeLoginFormData = {
+    user_id: string;
+};
