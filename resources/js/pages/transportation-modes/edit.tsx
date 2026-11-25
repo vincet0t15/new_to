@@ -76,7 +76,7 @@ export default function TransportationModesEdit({
         <>
             <Head title="Edit Transportation Mode" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Edit Transportation Mode"
                     description="Update the details of this transportation mode and save it again."
@@ -245,6 +245,7 @@ export default function TransportationModesEdit({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
+                                    aria-label={`Remove fare ${index + 1}`}
                                     className="text-red-600 hover:bg-red-50 hover:text-red-700"
                                     onClick={() => removeFare(index)}
                                 >

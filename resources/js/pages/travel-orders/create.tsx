@@ -65,7 +65,7 @@ export default function CreateTravelOrder({
     return (
         <>
             <Head title="New Travel Order" />
-            <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
+            <div className="flex h-full w-full min-w-0 flex-1 flex-col gap-6 rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
                         <Button

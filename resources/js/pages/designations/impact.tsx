@@ -201,6 +201,7 @@ export function DesignationImpactDialog({
                             onValueChange={setToUserId}
                             options={candidates}
                             placeholder="Choose a replacement holder"
+                            ariaLabel="Replacement holder"
                             searchPlaceholder="Search people…"
                             emptyMessage="No candidates found."
                         />

@@ -200,16 +200,31 @@ describe('approval document preview and actions', () => {
         );
     });
 
-    it('posts an approval to the approval action URL', async () => {
+    it('posts an approval only after it is confirmed', async () => {
         const user = userEvent.setup();
         renderApproval(true);
 
         await user.click(screen.getByRole('button', { name: 'Approve' }));
 
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        expect(state.form.post).not.toHaveBeenCalled();
+
+        await user.click(screen.getByRole('button', { name: 'Approve order' }));
+
         expect(state.form.post).toHaveBeenCalledWith(
             urls.approve,
             expect.objectContaining({ preserveScroll: true }),
         );
+    });
+
+    it('does not post an approval when confirmation is cancelled', async () => {
+        const user = userEvent.setup();
+        renderApproval(true);
+
+        await user.click(screen.getByRole('button', { name: 'Approve' }));
+        await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+        expect(state.form.post).not.toHaveBeenCalled();
     });
 
     it('explains that there is nothing to do when no action is allowed', () => {

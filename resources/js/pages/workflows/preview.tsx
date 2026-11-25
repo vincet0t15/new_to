@@ -35,7 +35,7 @@ export default function WorkflowPreviewPage({
     return (
         <>
             <Head title="Route Preview" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Route Preview"
                     description="See the chain an office resolves to, with its current designees."
@@ -43,6 +43,7 @@ export default function WorkflowPreviewPage({
 
                 <div className="flex items-center gap-2">
                     <Combobox
+                        ariaLabel="Office"
                         value={officeId}
                         onValueChange={handleSelect}
                         options={offices.map((office) => ({

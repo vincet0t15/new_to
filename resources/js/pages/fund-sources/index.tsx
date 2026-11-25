@@ -75,7 +75,7 @@ export default function FundSourcesIndex({
         <>
             <Head title="Fund Sources" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Fund Sources"
                     description="Create, update, and manage the funds a travel order can be charged against."

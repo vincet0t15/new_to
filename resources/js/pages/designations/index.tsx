@@ -76,7 +76,7 @@ export default function DesignationsIndex({
     return (
         <>
             <Head title="Designations" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Office Designations"
                     description="Who answers each step for each office. Any active employee may hold a step, including someone acting from another office. When several people hold one step, the first to act claims it."
@@ -91,6 +91,7 @@ export default function DesignationsIndex({
                     </Can>
                     <div className="flex flex-wrap items-center gap-2">
                         <Combobox
+                            ariaLabel="Filter by office"
                             value={officeFilter}
                             onValueChange={setOfficeFilter}
                             options={[
@@ -106,6 +107,7 @@ export default function DesignationsIndex({
                             className="w-[200px]"
                         />
                         <Combobox
+                            ariaLabel="Filter by step type"
                             value={stepFilter}
                             onValueChange={setStepFilter}
                             options={[

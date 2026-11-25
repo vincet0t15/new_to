@@ -15,6 +15,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
@@ -53,7 +61,8 @@ export default function EditTravelOrder({
 }: Props) {
     const [submitting, setSubmitting] = useState(false);
     const [resubmitting, setResubmitting] = useState(false);
-    const { data, setData, put, processing, errors } = useForm({
+    const [confirmUnsaved, setConfirmUnsaved] = useState(false);
+    const { data, setData, put, processing, errors, isDirty } = useForm({
         travel_classification_id: toIdInput(
             travelOrder.travel_classification_id,
         ),
@@ -85,7 +94,7 @@ export default function EditTravelOrder({
         put(travelOrdersRoutes.update(travelOrder).url);
     };
 
-    const submitForApproval = () => {
+    const fileForApproval = () => {
         setSubmitting(true);
         router.post(
             submitUrl,
@@ -95,6 +104,25 @@ export default function EditTravelOrder({
                 onFinish: () => setSubmitting(false),
             },
         );
+    };
+
+    const saveAndFile = () => {
+        setConfirmUnsaved(false);
+        setSubmitting(true);
+        put(travelOrdersRoutes.update(travelOrder).url, {
+            preserveScroll: true,
+            onSuccess: () => fileForApproval(),
+            onError: () => setSubmitting(false),
+        });
+    };
+
+    const submitForApproval = () => {
+        if (isDirty) {
+            setConfirmUnsaved(true);
+            return;
+        }
+
+        fileForApproval();
     };
 
     const resubmitForApproval = () => {
@@ -351,6 +379,40 @@ export default function EditTravelOrder({
                     </aside>
                 </div>
             </div>
+
+            <Dialog open={confirmUnsaved} onOpenChange={setConfirmUnsaved}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unsaved changes</DialogTitle>
+                        <DialogDescription>
+                            You changed this travel order but have not saved it.
+                            Submission files the saved version, so your edits
+                            would be left out.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setConfirmUnsaved(false)}
+                        >
+                            Keep editing
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={saveAndFile}
+                            disabled={submitting}
+                        >
+                            {submitting ? (
+                                <Loader2 className="size-4 animate-spin" />
+                            ) : (
+                                <Save className="size-4" />
+                            )}
+                            Save and submit
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

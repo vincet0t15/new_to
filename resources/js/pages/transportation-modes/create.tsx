@@ -70,7 +70,7 @@ export default function TransportationModesCreate({
         <>
             <Head title="Create Transportation Mode" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Create Transportation Mode"
                     description="Add a new mode of transportation by providing the required details."
@@ -239,6 +239,7 @@ export default function TransportationModesCreate({
                                     type="button"
                                     variant="ghost"
                                     size="icon"
+                                    aria-label={`Remove fare ${index + 1}`}
                                     className="text-red-600 hover:bg-red-50 hover:text-red-700"
                                     onClick={() => removeFare(index)}
                                 >

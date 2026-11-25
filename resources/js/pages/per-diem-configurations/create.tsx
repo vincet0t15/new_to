@@ -71,7 +71,7 @@ export default function PerDiemConfigurationsCreate({
         <>
             <Head title="Create Per Diem Configuration" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Create Per Diem Configuration"
                     description="Define the daily rate, meal breakdown and destination coverage of a per diem."

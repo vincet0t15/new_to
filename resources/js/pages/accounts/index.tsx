@@ -75,7 +75,7 @@ export default function AccountsIndex({
         <>
             <Head title="Accounts" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="User Accounts"
                     description="Create logins and give each account the roles that decide what it can do."

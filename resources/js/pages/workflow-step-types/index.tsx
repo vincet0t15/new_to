@@ -55,7 +55,7 @@ export default function StepTypesIndex({
     return (
         <>
             <Head title="Step Types" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Step Type Management"
                     description="Reusable definitions of what a step means."

@@ -147,7 +147,7 @@ export default function WorkflowEdit({
     return (
         <>
             <Head title={`Workflow: ${workflow.name}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
@@ -333,6 +333,7 @@ export default function WorkflowEdit({
 
                 <div className="flex items-center justify-between">
                     <Heading
+                        level={2}
                         title="Steps"
                         description="Ordered steps in this chain."
                     />

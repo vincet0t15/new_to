@@ -4,7 +4,9 @@ import {
     Check,
     CornerUpRight,
     Inbox,
+    Loader2,
     RotateCcw,
+    type LucideIcon,
 } from 'lucide-react';
 import { useState, type KeyboardEvent } from 'react';
 import Heading from '@/components/heading';
@@ -16,6 +18,14 @@ import { ItineraryDocument } from '@/components/travel-orders/print/itinerary-do
 import { TravelOrderDocument } from '@/components/travel-orders/print/travel-order-document';
 import { TripTicketDocument } from '@/components/travel-orders/print/trip-ticket-document';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import type {
@@ -38,6 +48,56 @@ const documentTabs = [
 ] as const;
 
 type DocumentTab = (typeof documentTabs)[number][0];
+
+type ConfirmableAction =
+    | 'approve'
+    | 'acknowledge'
+    | 'return'
+    | 'earmark'
+    | 'assignFundSource'
+    | 'record'
+    | 'forward';
+
+const actionCopy: Record<
+    ConfirmableAction,
+    { title: string; effect: string; confirmLabel: string }
+> = {
+    approve: {
+        title: 'Approve this travel order?',
+        effect: 'This records your approval and advances the order to the next step.',
+        confirmLabel: 'Approve order',
+    },
+    acknowledge: {
+        title: 'Acknowledge this travel order?',
+        effect: 'This records your acknowledgement at this step.',
+        confirmLabel: 'Acknowledge',
+    },
+    return: {
+        title: 'Return this travel order for revision?',
+        effect: 'This sends the order back to the filing office. Remarks are required and will be shown to the filer.',
+        confirmLabel: 'Return for revision',
+    },
+    earmark: {
+        title: 'Record this earmark?',
+        effect: 'This certifies the earmark number on the order. It does not advance the step.',
+        confirmLabel: 'Record earmark',
+    },
+    assignFundSource: {
+        title: 'Assign this fund source?',
+        effect: 'This attaches the fund source to the order. It does not advance the step.',
+        confirmLabel: 'Assign fund source',
+    },
+    record: {
+        title: 'Record and release this travel order?',
+        effect: 'This saves the series and control numbers and the release status on the official record.',
+        confirmLabel: 'Record & release',
+    },
+    forward: {
+        title: 'Forward this travel order?',
+        effect: 'This passes the order to another person at the same step. It does not approve it.',
+        confirmLabel: 'Forward order',
+    },
+};
 
 type Props = {
     travelOrder: TravelOrder;
@@ -87,6 +147,11 @@ export default function ShowApproval({
     urls,
 }: Props) {
     const [documentTab, setDocumentTab] = useState<DocumentTab>('order');
+    const [pendingAction, setPendingAction] =
+        useState<ConfirmableAction | null>(null);
+    const [activeAction, setActiveAction] = useState<ConfirmableAction | null>(
+        null,
+    );
 
     const selectTab = (key: DocumentTab) => {
         setDocumentTab(key);
@@ -129,13 +194,47 @@ export default function ShowApproval({
     });
 
     const actionError = (errors as Record<string, string | undefined>).action;
+    const documentNumber =
+        travelOrder.control_no ?? travelOrder.to_number ?? `#${travelOrder.id}`;
 
-    const act = (url: string) => {
-        post(url, {
+    const actionUrls: Record<ConfirmableAction, string> = {
+        approve: urls.approve,
+        acknowledge: urls.acknowledge,
+        return: urls.return,
+        earmark: urls.earmark,
+        assignFundSource: urls.assignFundSource,
+        record: urls.record,
+        forward: urls.forward,
+    };
+
+    const act = (key: ConfirmableAction) => {
+        setActiveAction(key);
+        post(actionUrls[key], {
             preserveScroll: true,
             onSuccess: () => reset('remarks', 'to_user_id', 'distributed'),
+            onFinish: () => setActiveAction(null),
         });
     };
+
+    const confirmAction = () => {
+        if (!pendingAction) {
+            return;
+        }
+
+        const action = pendingAction;
+        setPendingAction(null);
+        act(action);
+    };
+
+    const actionBusy = (key: ConfirmableAction) =>
+        activeAction === key && processing;
+
+    const actionIcon = (key: ConfirmableAction, Icon: LucideIcon) =>
+        actionBusy(key) ? (
+            <Loader2 className="size-4 animate-spin" />
+        ) : (
+            <Icon className="size-4" />
+        );
 
     const hasActions =
         can.receive ||
@@ -150,7 +249,7 @@ export default function ShowApproval({
     return (
         <>
             <Head title={`Travel Order #${travelOrder.id}`} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex flex-wrap items-center gap-2">
                     <Button
                         variant="outline"
@@ -396,11 +495,18 @@ export default function ShowApproval({
                                                     variant="secondary"
                                                     disabled={processing}
                                                     onClick={() =>
-                                                        act(urls.earmark)
+                                                        setPendingAction(
+                                                            'earmark',
+                                                        )
                                                     }
                                                 >
-                                                    <Check className="size-4" />
-                                                    Record Earmark
+                                                    {actionIcon(
+                                                        'earmark',
+                                                        Check,
+                                                    )}
+                                                    {actionBusy('earmark')
+                                                        ? 'Recording…'
+                                                        : 'Record Earmark'}
                                                 </Button>
                                             </div>
                                         )}
@@ -408,32 +514,48 @@ export default function ShowApproval({
                                             <Button
                                                 disabled={processing}
                                                 onClick={() =>
-                                                    act(urls.approve)
+                                                    setPendingAction('approve')
                                                 }
                                             >
-                                                <Check className="size-4" />
-                                                Approve
+                                                {actionIcon('approve', Check)}
+                                                {actionBusy('approve')
+                                                    ? 'Approving…'
+                                                    : 'Approve'}
                                             </Button>
                                         )}
                                         {can.acknowledge && (
                                             <Button
                                                 disabled={processing}
                                                 onClick={() =>
-                                                    act(urls.acknowledge)
+                                                    setPendingAction(
+                                                        'acknowledge',
+                                                    )
                                                 }
                                             >
-                                                <Check className="size-4" />
-                                                Acknowledge
+                                                {actionIcon(
+                                                    'acknowledge',
+                                                    Check,
+                                                )}
+                                                {actionBusy('acknowledge')
+                                                    ? 'Acknowledging…'
+                                                    : 'Acknowledge'}
                                             </Button>
                                         )}
                                         {can.return && (
                                             <Button
                                                 variant="outline"
                                                 disabled={processing}
-                                                onClick={() => act(urls.return)}
+                                                onClick={() =>
+                                                    setPendingAction('return')
+                                                }
                                             >
-                                                <RotateCcw className="size-4" />
-                                                Return
+                                                {actionIcon(
+                                                    'return',
+                                                    RotateCcw,
+                                                )}
+                                                {actionBusy('return')
+                                                    ? 'Returning…'
+                                                    : 'Return'}
                                             </Button>
                                         )}
                                     </div>
@@ -480,11 +602,18 @@ export default function ShowApproval({
                                                 variant="secondary"
                                                 disabled={processing}
                                                 onClick={() =>
-                                                    act(urls.assignFundSource)
+                                                    setPendingAction(
+                                                        'assignFundSource',
+                                                    )
                                                 }
                                             >
-                                                <Check className="size-4" />
-                                                Assign Fund Source
+                                                {actionIcon(
+                                                    'assignFundSource',
+                                                    Check,
+                                                )}
+                                                {actionBusy('assignFundSource')
+                                                    ? 'Assigning…'
+                                                    : 'Assign Fund Source'}
                                             </Button>
                                         </div>
                                     )}
@@ -548,10 +677,14 @@ export default function ShowApproval({
                                             <Button
                                                 variant="secondary"
                                                 disabled={processing}
-                                                onClick={() => act(urls.record)}
+                                                onClick={() =>
+                                                    setPendingAction('record')
+                                                }
                                             >
-                                                <Check className="size-4" />{' '}
-                                                Record &amp; Release
+                                                {actionIcon('record', Check)}{' '}
+                                                {actionBusy('record')
+                                                    ? 'Recording…'
+                                                    : 'Record & Release'}
                                             </Button>
                                         </div>
                                     )}
@@ -593,11 +726,16 @@ export default function ShowApproval({
                                                 variant="secondary"
                                                 disabled={processing}
                                                 onClick={() =>
-                                                    act(urls.forward)
+                                                    setPendingAction('forward')
                                                 }
                                             >
-                                                <CornerUpRight className="size-4" />
-                                                Forward
+                                                {actionIcon(
+                                                    'forward',
+                                                    CornerUpRight,
+                                                )}
+                                                {actionBusy('forward')
+                                                    ? 'Forwarding…'
+                                                    : 'Forward'}
                                             </Button>
                                         </div>
                                     )}
@@ -612,6 +750,60 @@ export default function ShowApproval({
                     </div>
                 </div>
             </div>
+
+            <Dialog
+                open={pendingAction !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingAction(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {pendingAction
+                                ? actionCopy[pendingAction].title
+                                : 'Confirm action'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            Travel order {documentNumber}.{' '}
+                            {pendingAction
+                                ? actionCopy[pendingAction].effect
+                                : ''}{' '}
+                            {data.remarks.trim()
+                                ? 'Your remarks will be recorded with this action.'
+                                : 'No remarks have been entered.'}
+                            {pendingAction === 'return' &&
+                                data.remarks.trim() === '' && (
+                                    <span className="mt-2 block font-medium text-destructive">
+                                        Add remarks before returning.
+                                    </span>
+                                )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => setPendingAction(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={confirmAction}
+                            disabled={
+                                processing ||
+                                (pendingAction === 'return' &&
+                                    data.remarks.trim() === '')
+                            }
+                        >
+                            {pendingAction
+                                ? actionCopy[pendingAction].confirmLabel
+                                : 'Confirm'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

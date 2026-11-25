@@ -235,7 +235,7 @@ export default function FuelAllocationsIndex({
     return (
         <>
             <Head title="Fuel Allocations" />
-            <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
+            <div className="flex h-full w-full min-w-0 flex-1 flex-col gap-6 rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <Heading
                         title="Fuel Allocations"
@@ -274,8 +274,11 @@ export default function FuelAllocationsIndex({
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Office</Label>
+                                <Label htmlFor="allocation_office_filter">
+                                    Office
+                                </Label>
                                 <CustomComboBox
+                                    id="allocation_office_filter"
                                     items={[
                                         { value: '', label: 'All offices' },
                                         ...offices.map((office) => ({
@@ -289,8 +292,11 @@ export default function FuelAllocationsIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Fuel type</Label>
+                                <Label htmlFor="allocation_fuel_type_filter">
+                                    Fuel type
+                                </Label>
                                 <CustomComboBox
+                                    id="allocation_fuel_type_filter"
                                     items={[
                                         { value: '', label: 'All fuel types' },
                                         ...fuelTypes.map((ft) => ({
@@ -304,8 +310,11 @@ export default function FuelAllocationsIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Status</Label>
+                                <Label htmlFor="allocation_status_filter">
+                                    Status
+                                </Label>
                                 <CustomComboBox
+                                    id="allocation_status_filter"
                                     items={[
                                         { value: '', label: 'All statuses' },
                                         { value: 'active', label: 'Active' },
@@ -515,6 +524,7 @@ export default function FuelAllocationsIndex({
                                                                 <Button
                                                                     variant="outline"
                                                                     size="sm"
+                                                                    aria-label={`Edit allocation ${allocation.reference_no || `#${allocation.id}`}`}
                                                                     onClick={() =>
                                                                         openEdit(
                                                                             allocation,
@@ -543,6 +553,7 @@ export default function FuelAllocationsIndex({
                                                             <Button
                                                                 variant="outline"
                                                                 size="sm"
+                                                                aria-label={`Void allocation ${allocation.reference_no || `#${allocation.id}`}`}
                                                                 onClick={() => {
                                                                     voidForm.reset();
                                                                     voidForm.clearErrors();
@@ -618,8 +629,11 @@ export default function FuelAllocationsIndex({
                     <form onSubmit={submitAllocation} className="space-y-4">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <div className="space-y-2">
-                                <Label>Record type *</Label>
+                                <Label htmlFor="allocation_type">
+                                    Record type *
+                                </Label>
                                 <CustomComboBox
+                                    id="allocation_type"
                                     items={[
                                         {
                                             value: 'allocation',
@@ -645,8 +659,11 @@ export default function FuelAllocationsIndex({
                             </div>
                             {form.data.type === 'transfer' && (
                                 <div className="space-y-2">
-                                    <Label>Source office (galing) *</Label>
+                                    <Label htmlFor="allocation_source_office">
+                                        Source office (galing) *
+                                    </Label>
                                     <CustomComboBox
+                                        id="allocation_source_office"
                                         items={offices
                                             .filter(
                                                 (o) =>
@@ -673,12 +690,13 @@ export default function FuelAllocationsIndex({
                                 </div>
                             )}
                             <div className="space-y-2">
-                                <Label>
+                                <Label htmlFor="allocation_office">
                                     {form.data.type === 'transfer'
                                         ? 'Receiving office (papunta) *'
                                         : 'Office *'}
                                 </Label>
                                 <CustomComboBox
+                                    id="allocation_office"
                                     items={offices
                                         .filter(
                                             (o) =>
@@ -736,8 +754,11 @@ export default function FuelAllocationsIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Fuel type</Label>
+                                <Label htmlFor="allocation_fuel_type">
+                                    Fuel type
+                                </Label>
                                 <CustomComboBox
+                                    id="allocation_fuel_type"
                                     items={fuelTypes.map((ft) => ({
                                         value: String(ft.id),
                                         label: ft.name,

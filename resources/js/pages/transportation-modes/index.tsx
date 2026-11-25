@@ -168,7 +168,7 @@ export default function TransportationModesIndex({
         <>
             <Head title="Transportation Modes" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Transportation Mode Management"
                     description="Create, update, and manage the modes of transportation available on travel orders."

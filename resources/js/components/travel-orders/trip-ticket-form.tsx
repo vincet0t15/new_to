@@ -194,8 +194,9 @@ export function TripTicketForm({
                             <InputError message={form.errors.driver_id} />
                         </div>
                         <div className="space-y-2">
-                            <Label>Fuel type</Label>
+                            <Label htmlFor="fuel_type_id">Fuel type</Label>
                             <Combobox
+                                id="fuel_type_id"
                                 value={form.data.fuel_type_id}
                                 onValueChange={(value) => {
                                     const selected = fuelTypes.find(
@@ -223,8 +224,11 @@ export function TripTicketForm({
                             />
                         </div>
                         <div className="space-y-2 sm:col-span-2">
-                            <Label>Fuel source office</Label>
+                            <Label htmlFor="fuel_source_office_id">
+                                Fuel source office
+                            </Label>
                             <Combobox
+                                id="fuel_source_office_id"
                                 value={form.data.fuel_source_office_id}
                                 onValueChange={(value) =>
                                     form.setData('fuel_source_office_id', value)

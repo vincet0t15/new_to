@@ -111,7 +111,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
         <>
             <Head title={tripTicket.ticket_no ?? 'Trip Ticket'} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
                         <Button asChild variant="outline" size="sm">

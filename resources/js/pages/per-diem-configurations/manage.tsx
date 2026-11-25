@@ -40,7 +40,7 @@ export default function ManagePerDiemConfiguration({
         <>
             <Head title={`Meal Rules — ${perDiemConfiguration.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title={`${perDiemConfiguration.name} — Meal Rules`}
                     description="Define the meal breakdown and cutoff times used to compute the per diem claim."

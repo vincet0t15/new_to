@@ -198,8 +198,11 @@ export function TripTicketDialog({
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Fuel type</Label>
+                                    <Label htmlFor="tt_fuel_type_id">
+                                        Fuel type
+                                    </Label>
                                     <Combobox
+                                        id="tt_fuel_type_id"
                                         value={form.data.fuel_type_id}
                                         onValueChange={(value) => {
                                             const selected = fuelTypes.find(
@@ -228,8 +231,11 @@ export function TripTicketDialog({
                                     />
                                 </div>
                                 <div className="space-y-2 sm:col-span-2">
-                                    <Label>Fuel source office</Label>
+                                    <Label htmlFor="tt_fuel_source_office_id">
+                                        Fuel source office
+                                    </Label>
                                     <Combobox
+                                        id="tt_fuel_source_office_id"
                                         value={form.data.fuel_source_office_id}
                                         onValueChange={(value) =>
                                             form.setData(

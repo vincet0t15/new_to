@@ -125,7 +125,7 @@ export default function ItinerarySignatoryGroupsIndex({
         <>
             <Head title="Itinerary Signatory Groups" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Itinerary Signatory Groups"
                     description="Reusable sets of the Itinerary of Travel's signatories. Name a group, pick its certified and approved signers, and tick the offices that print it, then reuse it instead of re-picking names on every order."

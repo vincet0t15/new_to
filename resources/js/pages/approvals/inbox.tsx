@@ -29,7 +29,7 @@ export default function ApprovalInbox({ deliveries, stats }: Props) {
     return (
         <>
             <Head title={APPROVAL_INBOX_LABEL} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title={APPROVAL_INBOX_LABEL}
                     description="Travel orders currently waiting for your action."

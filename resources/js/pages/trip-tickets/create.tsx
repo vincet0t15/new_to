@@ -22,7 +22,7 @@ export default function CreateTripTicket({
         <>
             <Head title="New Trip Ticket" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="New trip ticket"
                     description="Prepare the ticket for a travel order that uses a government vehicle. It is numbered as soon as it is saved."

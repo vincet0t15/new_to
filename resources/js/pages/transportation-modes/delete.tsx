@@ -31,7 +31,7 @@ export default function TransportationModesDelete({
         <>
             <Head title="Delete Transportation Mode" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Delete Transportation Mode"
                     description="This cannot be undone."

@@ -92,7 +92,7 @@ export default function PerDiemConfigurationsIndex({
         <>
             <Head title="Per Diem Configurations" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Per Diem Configurations"
                     description="Configure the daily rate, meal breakdown with cutoffs, and destination coverage of per diems."

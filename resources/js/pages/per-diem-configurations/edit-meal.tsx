@@ -74,7 +74,7 @@ export default function PerDiemMealRulesEdit({
         <>
             <Head title="Edit Meal Rule" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title={`Edit Meal Rule — ${perDiemConfiguration.name}`}
                     description="Update the amount, cutoff time and order of this meal."

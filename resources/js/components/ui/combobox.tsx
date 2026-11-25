@@ -1,5 +1,13 @@
 import { CheckIcon, ChevronDownIcon, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+    useRef,
+    useState,
+    type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -21,6 +29,7 @@ type ComboboxProps = {
     contentClassName?: string;
     disabled?: boolean;
     id?: string;
+    ariaLabel?: string;
 };
 
 export function Combobox({
@@ -35,11 +44,16 @@ export function Combobox({
     contentClassName,
     disabled = false,
     id,
+    ariaLabel,
 }: ComboboxProps) {
+    const generatedId = useId();
+    const listId = `${generatedId}-list`;
+    const optionId = (index: number) => `${generatedId}-option-${index}`;
     const containerRef = useRef<HTMLDivElement | null>(null);
     const buttonRef = useRef<HTMLButtonElement | null>(null);
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [activeIndex, setActiveIndex] = useState(0);
     const [dropUp, setDropUp] = useState(false);
     const [listMaxHeight, setListMaxHeight] = useState(288);
     const [positioned, setPositioned] = useState(false);
@@ -64,7 +78,11 @@ export function Combobox({
         ) {
             const overflowY = getComputedStyle(node).overflowY;
 
-            if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'hidden') {
+            if (
+                overflowY === 'auto' ||
+                overflowY === 'scroll' ||
+                overflowY === 'hidden'
+            ) {
                 const rect = node.getBoundingClientRect();
                 topBoundary = Math.max(topBoundary, rect.top);
                 bottomBoundary = Math.min(bottomBoundary, rect.bottom);
@@ -89,6 +107,7 @@ export function Combobox({
     useEffect(() => {
         if (!open) {
             setSearch('');
+            setActiveIndex(0);
             setPositioned(false);
             return;
         }
@@ -121,6 +140,7 @@ export function Combobox({
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 setOpen(false);
+                buttonRef.current?.focus();
             }
         };
 
@@ -140,6 +160,10 @@ export function Combobox({
         };
     }, [open, positionDropdown]);
 
+    useEffect(() => {
+        setActiveIndex(0);
+    }, [search]);
+
     const selectedOption = useMemo(
         () => options.find((option) => option.value === value),
         [options, value],
@@ -157,10 +181,69 @@ export function Combobox({
         );
     }, [options, search]);
 
+    const safeActiveIndex = filteredOptions.length
+        ? Math.min(activeIndex, filteredOptions.length - 1)
+        : 0;
+
     const handleSelect = (nextValue: string) => {
         onValueChange(nextValue);
         setOpen(false);
         setSearch('');
+        buttonRef.current?.focus();
+    };
+
+    const handleTriggerKeyDown = (
+        event: ReactKeyboardEvent<HTMLButtonElement>,
+    ) => {
+        if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+            return;
+        }
+
+        event.preventDefault();
+
+        if (!open) {
+            setActiveIndex(0);
+            setOpen(true);
+        }
+    };
+
+    const handleSearchKeyDown = (
+        event: ReactKeyboardEvent<HTMLInputElement>,
+    ) => {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setActiveIndex((previous) =>
+                Math.min(previous + 1, Math.max(0, filteredOptions.length - 1)),
+            );
+            return;
+        }
+
+        if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setActiveIndex((previous) => Math.max(0, previous - 1));
+            return;
+        }
+
+        if (event.key === 'Home') {
+            event.preventDefault();
+            setActiveIndex(0);
+            return;
+        }
+
+        if (event.key === 'End') {
+            event.preventDefault();
+            setActiveIndex(Math.max(0, filteredOptions.length - 1));
+            return;
+        }
+
+        if (event.key === 'Enter' && filteredOptions.length > 0) {
+            const option = filteredOptions[safeActiveIndex];
+
+            if (option && !option.disabled) {
+                event.preventDefault();
+                handleSelect(option.value);
+            }
+        }
     };
 
     return (
@@ -169,9 +252,13 @@ export function Combobox({
                 ref={buttonRef}
                 id={id}
                 type="button"
+                role="combobox"
                 disabled={disabled}
                 aria-expanded={open}
                 aria-haspopup="listbox"
+                aria-controls={open && positioned ? listId : undefined}
+                aria-label={id ? undefined : ariaLabel}
+                onKeyDown={handleTriggerKeyDown}
                 onClick={() => setOpen((previous) => !previous)}
                 className={cn(
                     'border-input bg-background text-foreground flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm shadow-xs transition-colors outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50',
@@ -203,9 +290,21 @@ export function Combobox({
                             <input
                                 autoFocus
                                 value={search}
+                                aria-label={
+                                    ariaLabel
+                                        ? `${ariaLabel} search`
+                                        : searchPlaceholder
+                                }
+                                aria-controls={listId}
+                                aria-activedescendant={
+                                    filteredOptions.length > 0
+                                        ? optionId(safeActiveIndex)
+                                        : undefined
+                                }
                                 onChange={(event) =>
                                     setSearch(event.target.value)
                                 }
+                                onKeyDown={handleSearchKeyDown}
                                 placeholder={searchPlaceholder}
                                 className="border-input bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border py-1.5 pr-2 pl-8 text-sm outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                             />
@@ -214,20 +313,34 @@ export function Combobox({
 
                     {filteredOptions.length > 0 ? (
                         <div
+                            id={listId}
+                            role="listbox"
+                            aria-label={ariaLabel ?? placeholder}
                             className="overflow-y-auto p-1"
                             style={{ maxHeight: listMaxHeight }}
                         >
-                            {filteredOptions.map((option) => {
+                            {filteredOptions.map((option, index) => {
                                 const isSelected = option.value === value;
 
                                 return (
-                                    <button
+                                    <div
                                         key={option.value}
-                                        type="button"
-                                        disabled={option.disabled}
-                                        onClick={() => handleSelect(option.value)}
+                                        id={optionId(index)}
+                                        role="option"
+                                        aria-selected={isSelected}
+                                        aria-disabled={option.disabled || undefined}
+                                        onClick={() => {
+                                            if (!option.disabled) {
+                                                handleSelect(option.value);
+                                            }
+                                        }}
+                                        onMouseEnter={() => {
+                                            if (!option.disabled) {
+                                                setActiveIndex(index);
+                                            }
+                                        }}
                                         className={cn(
-                                            'hover:bg-accent hover:text-accent-foreground relative flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-2 text-left text-sm transition-colors',
+                                            'hover:bg-accent hover:text-accent-foreground relative flex w-full cursor-pointer items-center justify-between rounded-sm px-2 py-2 text-left text-sm transition-colors select-none',
                                             isSelected && 'bg-accent text-accent-foreground',
                                             option.disabled && 'cursor-not-allowed opacity-50',
                                         )}
@@ -236,12 +349,17 @@ export function Combobox({
                                         {isSelected && (
                                             <CheckIcon className="size-4 shrink-0" />
                                         )}
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>
                     ) : (
-                        <div className="text-muted-foreground px-3 py-3 text-sm">
+                        <div
+                            id={listId}
+                            role="listbox"
+                            aria-label={ariaLabel ?? placeholder}
+                            className="text-muted-foreground px-3 py-3 text-sm"
+                        >
                             {emptyMessage}
                         </div>
                     )}

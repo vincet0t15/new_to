@@ -45,7 +45,7 @@ export default function FuelTypeIndex({ fuelTypes, filters }: Props) {
     return (
         <>
             <Head title="Fuel Types" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                     <Heading
                         title="Fuel Types"
@@ -131,6 +131,7 @@ export default function FuelTypeIndex({ fuelTypes, filters }: Props) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        aria-label={`Edit ${item.name}`}
                                                         onClick={() => {
                                                             setSelected(item);
                                                             setIsEditOpen(true);
@@ -143,6 +144,7 @@ export default function FuelTypeIndex({ fuelTypes, filters }: Props) {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
+                                                        aria-label={`Delete ${item.name}`}
                                                         disabled={
                                                             item.usage_count > 0
                                                         }

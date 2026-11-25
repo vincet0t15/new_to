@@ -44,7 +44,7 @@ export default function ApprovalHistory({ historyItems, portal }: Props) {
     return (
         <>
             <Head title={title} />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title={title}
                     description="Every travel order that reached your inbox, including the ones you already acted on."

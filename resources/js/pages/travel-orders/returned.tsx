@@ -41,7 +41,7 @@ export default function TravelOrdersReturned({ travelOrders, filters }: Props) {
     return (
         <>
             <Head title="Returned for Revision" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="flex items-center gap-2">
                     <Button
                         variant="outline"

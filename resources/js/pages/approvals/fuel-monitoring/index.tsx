@@ -202,7 +202,7 @@ export default function FuelMonitoringIndex({
     return (
         <>
             <Head title="Fuel Monitoring" />
-            <div className="flex h-full w-full flex-1 flex-col gap-6 overflow-x-auto rounded-xl p-4 sm:p-6">
+            <div className="flex h-full w-full min-w-0 flex-1 flex-col gap-6 rounded-xl p-4 sm:p-6">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <Heading
                         title="Fuel Monitoring"
@@ -294,8 +294,11 @@ export default function FuelMonitoringIndex({
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label>Office</Label>
+                                <Label htmlFor="fuel_office_filter">
+                                    Office
+                                </Label>
                                 <CustomComboBox
+                                    id="fuel_office_filter"
                                     items={[
                                         { value: '', label: 'All offices' },
                                         ...offices.map((office) => ({
@@ -309,8 +312,11 @@ export default function FuelMonitoringIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Fuel type</Label>
+                                <Label htmlFor="fuel_type_filter">
+                                    Fuel type
+                                </Label>
                                 <CustomComboBox
+                                    id="fuel_type_filter"
                                     items={[
                                         { value: '', label: 'All fuel types' },
                                         ...fuelTypes.map((ft) => ({
@@ -324,8 +330,11 @@ export default function FuelMonitoringIndex({
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Status</Label>
+                                <Label htmlFor="fuel_status_filter">
+                                    Status
+                                </Label>
                                 <CustomComboBox
+                                    id="fuel_status_filter"
                                     items={[
                                         { value: '', label: 'All statuses' },
                                         { value: 'issued', label: 'Issued' },

@@ -132,7 +132,7 @@ export default function SignatoryGroupsIndex({
         <>
             <Head title="Travel Order Signatories" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
                 <Heading
                     title="Travel Order Signatories"
                     description="Reusable sets of the travel order's signatories. Name a group, pick its three signers, and tick the offices that print it, then reuse it instead of re-picking names on every order."
