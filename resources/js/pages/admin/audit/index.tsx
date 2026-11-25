@@ -85,11 +85,11 @@ export default function AdminAuditIndex({
                             <Input
                                 id="audit_search"
                                 className="pl-9"
-                                placeholder="Event or remarks..."
                                 value={search}
                                 onChange={(changeEvent) =>
                                     setSearch(changeEvent.target.value)
                                 }
+                                placeholder="Search audits..."
                             />
                         </div>
                     </div>
@@ -121,6 +121,7 @@ export default function AdminAuditIndex({
                             onChange={(changeEvent) =>
                                 setDateFrom(changeEvent.target.value)
                             }
+                            placeholder="YYYY-MM-DD"
                         />
                     </div>
                     <div className="space-y-2">
@@ -133,6 +134,7 @@ export default function AdminAuditIndex({
                             onChange={(changeEvent) =>
                                 setDateTo(changeEvent.target.value)
                             }
+                            placeholder="YYYY-MM-DD"
                         />
                     </div>
                     <div className="flex items-end gap-2 sm:col-span-2 xl:col-span-5">

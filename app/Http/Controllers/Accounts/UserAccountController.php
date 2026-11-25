@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounts;
 use App\Enums\SystemRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounts\StoreUserAccountRequest;
+use App\Http\Requests\Accounts\UpdateUserAccountStatusRequest;
 use App\Http\Requests\Accounts\UpdateUserEmployeeRequest;
 use App\Http\Requests\Accounts\UpdateUserRolesRequest;
 use App\Models\Employee;
@@ -64,6 +65,7 @@ class UserAccountController extends Controller
                     ->values()
                     ->all(),
                 'created_at' => $account->created_at?->toDateString(),
+                'is_active' => $account->is_active,
                 'is_self' => $account->id === $currentUserId,
             ]);
 
@@ -98,6 +100,7 @@ class UserAccountController extends Controller
             'username' => Str::lower($validated['username']),
             'email' => $validated['email'] ?? null,
             'password' => $validated['password'],
+            'is_active' => $validated['is_active'] ?? true,
         ]);
 
         $account->syncRoles($roles);
@@ -158,6 +161,52 @@ class UserAccountController extends Controller
         $user->syncRoles($roles);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Account roles updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Activate or deactivate a login account.
+     */
+    public function updateStatus(UpdateUserAccountStatusRequest $request, User $user): RedirectResponse
+    {
+        $actor = $request->user();
+
+        if (! $actor instanceof User) {
+            abort(403);
+        }
+
+        $isActive = (bool) $request->validated()['is_active'];
+
+        // Self-deactivation and deactivating the last administrator would
+        // strand the system with nobody able to restore access.
+        if (! $isActive && $user->is($actor)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('You cannot deactivate your own account.'),
+            ]);
+
+            return back();
+        }
+
+        if (! $isActive && $this->isLastActiveAdministrator($user)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('This is the last active administrator account. Activate another administrator first.'),
+            ]);
+
+            return back();
+        }
+
+        $user->is_active = $isActive;
+        $user->save();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $isActive
+                ? __('Account activated.')
+                : __('Account deactivated.'),
+        ]);
 
         return back();
     }
@@ -307,6 +356,26 @@ class UserAccountController extends Controller
 
         return ! User::query()
             ->whereKeyNot($user->getKey())
+            ->whereHas('roles', fn ($query) => $query->whereIn('slug', $administratorSlugs))
+            ->exists();
+    }
+
+    /**
+     * Whether deactivating this account would leave no active administrator.
+     */
+    private function isLastActiveAdministrator(User $user): bool
+    {
+        $administratorSlugs = $this->administratorSlugs();
+
+        if (! $user->is_active
+            || ! $user->roles()->whereIn('slug', $administratorSlugs)->exists()
+        ) {
+            return false;
+        }
+
+        return ! User::query()
+            ->whereKeyNot($user->getKey())
+            ->where('is_active', true)
             ->whereHas('roles', fn ($query) => $query->whereIn('slug', $administratorSlugs))
             ->exists();
     }

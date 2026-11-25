@@ -379,7 +379,7 @@ export default function FuelAllocationsIndex({
                                         onChange={(e) =>
                                             setSearch(e.target.value)
                                         }
-                                        placeholder="Office, reference, fuel type, remarks..."
+                                        placeholder="Search..."
                                     />
                                 </div>
                             </div>
@@ -445,6 +445,7 @@ export default function FuelAllocationsIndex({
                                     onChange={(e) =>
                                         setDateFrom(e.target.value)
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -455,6 +456,7 @@ export default function FuelAllocationsIndex({
                                     max="9999-12-31"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
                             <div className="flex items-end gap-2 xl:col-span-6">
@@ -815,6 +817,7 @@ export default function FuelAllocationsIndex({
                                             e.target.value,
                                         )
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                                 <InputError
                                     message={form.errors.allocation_date}
@@ -833,6 +836,7 @@ export default function FuelAllocationsIndex({
                                             e.target.value,
                                         )
                                     }
+                                    placeholder="e.g., FA-2026-0001"
                                 />
                                 <InputError
                                     message={form.errors.reference_no}
@@ -884,6 +888,7 @@ export default function FuelAllocationsIndex({
                                             e.target.value,
                                         )
                                     }
+                                    placeholder="e.g., 50"
                                 />
                                 <InputError
                                     message={form.errors.allocated_liters}
@@ -905,6 +910,7 @@ export default function FuelAllocationsIndex({
                                             e.target.value,
                                         )
                                     }
+                                    placeholder="e.g., 2500.00"
                                 />
                                 <InputError
                                     message={form.errors.allocated_amount}
@@ -920,6 +926,7 @@ export default function FuelAllocationsIndex({
                                 onChange={(e) =>
                                     form.setData('remarks', e.target.value)
                                 }
+                                placeholder="Add remarks (optional)"
                             />
                             <InputError message={form.errors.remarks} />
                         </div>
@@ -982,6 +989,7 @@ export default function FuelAllocationsIndex({
                                         e.target.value,
                                     )
                                 }
+                                placeholder="e.g., Incorrect allocation"
                             />
                             <InputError message={voidForm.errors.void_reason} />
                         </div>

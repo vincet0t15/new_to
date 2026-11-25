@@ -26,4 +26,6 @@ export type AuthLayoutProps = {
     name?: string;
     title?: string;
     description?: string;
+    /** Widen the card for forms with more than a couple of fields. */
+    wide?: boolean;
 };

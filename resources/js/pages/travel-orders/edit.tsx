@@ -253,7 +253,7 @@ export default function EditTravelOrder({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Add any note that may help approvers"
+                                    placeholder="Add optional submission notes"
                                 />
                                 <InputError message={errors.submission_notes} />
                             </CardContent>
@@ -333,7 +333,7 @@ export default function EditTravelOrder({
                                                             event.target.value,
                                                         )
                                                     }
-                                                    placeholder="Describe what changed"
+                                                    placeholder="Describe the requested revision"
                                                 />
                                                 <InputError
                                                     message={

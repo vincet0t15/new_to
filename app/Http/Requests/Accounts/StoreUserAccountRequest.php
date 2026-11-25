@@ -28,6 +28,7 @@ class StoreUserAccountRequest extends FormRequest
                 Rule::exists('employees', 'id'),
                 Rule::unique('users', 'employee_id'),
             ],
+            'is_active' => ['sometimes', 'boolean'],
             'roles' => ['required', 'array', 'min:1'],
             'roles.*' => ['integer', Rule::exists('roles', 'id')],
         ];

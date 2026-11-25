@@ -75,6 +75,7 @@ export function EditRoleDialog({
                                 }
                                 required
                                 disabled={role.is_system}
+                                placeholder="e.g., Approver"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -87,6 +88,7 @@ export function EditRoleDialog({
                                 onChange={(event) =>
                                     setData('description', event.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

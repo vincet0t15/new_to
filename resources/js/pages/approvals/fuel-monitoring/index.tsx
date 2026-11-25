@@ -292,7 +292,7 @@ export default function FuelMonitoringIndex({
                                         onChange={(event) =>
                                             setSearch(event.target.value)
                                         }
-                                        placeholder="Ticket, plate, purpose, receipt, fuel type..."
+                                        placeholder="Search..."
                                     />
                                 </div>
                             </div>
@@ -365,6 +365,7 @@ export default function FuelMonitoringIndex({
                                     onChange={(e) =>
                                         setDateFrom(e.target.value)
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -375,6 +376,7 @@ export default function FuelMonitoringIndex({
                                     max="9999-12-31"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
                             <div className="flex items-end gap-2 xl:col-span-6">

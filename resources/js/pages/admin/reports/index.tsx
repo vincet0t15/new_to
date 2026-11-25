@@ -228,8 +228,8 @@ export default function AdminReportsIndex({
                                                 search: event.target.value,
                                             }))
                                         }
-                                        placeholder="Purpose, destination, TO or control no."
                                         className="pl-8"
+                                        placeholder="Search reports..."
                                     />
                                     <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
                                 </div>
@@ -292,6 +292,7 @@ export default function AdminReportsIndex({
                                             date_from: event.target.value,
                                         }))
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
 
@@ -310,6 +311,7 @@ export default function AdminReportsIndex({
                                             date_to: event.target.value,
                                         }))
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                             </div>
                         </div>

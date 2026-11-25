@@ -1,5 +1,12 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Link2, Plus, Search, ShieldCheck } from 'lucide-react';
+import {
+    Link2,
+    Plus,
+    Search,
+    ShieldCheck,
+    UserCheck,
+    UserX,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
@@ -95,13 +102,13 @@ export default function AccountsIndex({
                         </Label>
                         <Input
                             id="search"
-                            placeholder="Search name, username, email..."
                             className="w-full pl-8"
                             value={data.search}
                             onChange={(event) =>
                                 setData('search', event.target.value)
                             }
                             onKeyDown={handleSearchKeyDown}
+                            placeholder="Search..."
                         />
                         <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
                     </div>
@@ -114,6 +121,7 @@ export default function AccountsIndex({
                                 <TableHead>Account</TableHead>
                                 <TableHead>Employee</TableHead>
                                 <TableHead>Roles</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Created</TableHead>
                                 <TableHead className="text-right">
                                     Actions
@@ -188,6 +196,19 @@ export default function AccountsIndex({
                                                 )}
                                             </div>
                                         </TableCell>
+                                        <TableCell>
+                                            <Badge
+                                                variant={
+                                                    account.is_active
+                                                        ? 'default'
+                                                        : 'outline'
+                                                }
+                                            >
+                                                {account.is_active
+                                                    ? 'Active'
+                                                    : 'Inactive'}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell className="text-sm text-muted-foreground">
                                             {account.created_at ?? '—'}
                                         </TableCell>
@@ -235,6 +256,50 @@ export default function AccountsIndex({
                                                         <Link2 />
                                                         Employee
                                                     </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={
+                                                            account.is_active
+                                                                ? 'text-amber-600 hover:bg-amber-50 hover:text-amber-700'
+                                                                : 'text-green-600 hover:bg-green-50 hover:text-green-700'
+                                                        }
+                                                        onClick={() =>
+                                                            router.put(
+                                                                accounts.status.update(
+                                                                    account.id,
+                                                                ).url,
+                                                                {
+                                                                    is_active:
+                                                                        !account.is_active,
+                                                                },
+                                                                {
+                                                                    preserveScroll: true,
+                                                                },
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            account.is_self &&
+                                                            account.is_active
+                                                        }
+                                                        title={
+                                                            account.is_self &&
+                                                            account.is_active
+                                                                ? 'You cannot deactivate your own account'
+                                                                : account.is_active
+                                                                  ? 'Deactivate account'
+                                                                  : 'Activate account'
+                                                        }
+                                                    >
+                                                        {account.is_active ? (
+                                                            <UserX />
+                                                        ) : (
+                                                            <UserCheck />
+                                                        )}
+                                                        {account.is_active
+                                                            ? 'Deactivate'
+                                                            : 'Activate'}
+                                                    </Button>
                                                 </Can>
                                             </div>
                                         </TableCell>
@@ -243,7 +308,7 @@ export default function AccountsIndex({
                             ) : (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={5}
+                                        colSpan={6}
                                         className="h-24 text-center text-muted-foreground"
                                     >
                                         No accounts found.

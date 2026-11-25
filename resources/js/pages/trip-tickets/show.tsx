@@ -431,6 +431,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                         event.target.value,
                                     )
                                 }
+                                placeholder="e.g., 12500"
                             />
                             <InputError
                                 message={completeForm.errors.odometer_end}
@@ -453,6 +454,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., 12.5"
                                 />
                                 <InputError
                                     message={completeForm.errors.fuel_consumed}
@@ -476,6 +478,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., 55.00"
                                 />
                                 <InputError
                                     message={
@@ -497,6 +500,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., 687.50"
                                 />
                                 <InputError
                                     message={completeForm.errors.fuel_cost}
@@ -515,6 +519,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Petron Puerto Princesa"
                                 />
                                 <InputError
                                     message={completeForm.errors.fuel_station}
@@ -533,6 +538,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., OR-123456"
                                 />
                                 <InputError
                                     message={
@@ -592,6 +598,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                         event.target.value,
                                     )
                                 }
+                                placeholder="Add remarks (optional)"
                             />
                             <InputError message={completeForm.errors.remarks} />
                         </div>
@@ -639,6 +646,7 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                         event.target.value,
                                     )
                                 }
+                                placeholder="e.g., Trip cancelled by request"
                             />
                             <InputError
                                 message={cancelForm.errors.cancel_reason}

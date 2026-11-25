@@ -411,7 +411,7 @@ export default function ShowApproval({
                                                     event.target.value,
                                                 )
                                             }
-                                            placeholder="Optional for approve or forward; required when returning."
+                                            placeholder="Add remarks (optional)"
                                         />
                                         <InputError message={errors.remarks} />
                                     </div>
@@ -546,7 +546,6 @@ export default function ShowApproval({
                                                                     .value,
                                                             )
                                                         }
-                                                        placeholder="Enter earmark number"
                                                     />
                                                     <InputError
                                                         message={
@@ -667,6 +666,7 @@ export default function ShowApproval({
                                                                         .value,
                                                                 )
                                                             }
+                                                            placeholder="Enter TO number"
                                                         />
                                                         <InputError
                                                             message={
@@ -691,6 +691,7 @@ export default function ShowApproval({
                                                                         .value,
                                                                 )
                                                             }
+                                                            placeholder="Enter control number"
                                                         />
                                                         <InputError
                                                             message={

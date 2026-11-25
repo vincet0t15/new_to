@@ -38,6 +38,7 @@ export type AccountRecord = {
     employee: AccountEmployee | null;
     roles: RoleSummary[];
     created_at: string | null;
+    is_active: boolean;
     is_self: boolean;
 };
 
@@ -55,6 +56,7 @@ export type AccountFormData = {
     password_confirmation: string;
     employee_id: string;
     roles: number[];
+    is_active: boolean;
 };
 
 export type AccountRolesFormData = {

@@ -79,13 +79,13 @@ export function CreateSignatoryGroupDialog({
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="e.g., Sangguniang Bayan Signatories"
                                 value={data.name}
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -127,7 +127,6 @@ export function CreateSignatoryGroupDialog({
                                 </Label>
                                 <Input
                                     id="certified_signatory_title"
-                                    placeholder="e.g., Acting Municipal Budget Officer"
                                     value={data.certified_signatory_title}
                                     onChange={(event) =>
                                         setData(
@@ -135,6 +134,7 @@ export function CreateSignatoryGroupDialog({
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Municipal Mayor"
                                 />
                                 <InputError
                                     message={errors.certified_signatory_title}
@@ -165,7 +165,6 @@ export function CreateSignatoryGroupDialog({
                                 </Label>
                                 <Input
                                     id="approved_signatory_title"
-                                    placeholder="e.g., Acting Municipal Mayor"
                                     value={data.approved_signatory_title}
                                     onChange={(event) =>
                                         setData(
@@ -173,6 +172,7 @@ export function CreateSignatoryGroupDialog({
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Department Head"
                                 />
                                 <InputError
                                     message={errors.approved_signatory_title}
@@ -200,7 +200,6 @@ export function CreateSignatoryGroupDialog({
                                 </Label>
                                 <Input
                                     id="oic_signatory_title"
-                                    placeholder="e.g., Officer-in-Charge"
                                     value={data.oic_signatory_title}
                                     onChange={(event) =>
                                         setData(
@@ -208,6 +207,7 @@ export function CreateSignatoryGroupDialog({
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Officer-in-Charge"
                                 />
                                 <InputError
                                     message={errors.oic_signatory_title}

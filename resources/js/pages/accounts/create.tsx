@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Combobox } from '@/components/ui/combobox';
 import {
     Dialog,
@@ -49,6 +50,7 @@ export function CreateAccountDialog({
             password_confirmation: '',
             employee_id: '',
             roles: employeeRole ? [employeeRole.id] : [],
+            is_active: true,
         });
 
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -86,6 +88,7 @@ export function CreateAccountDialog({
                                     }
                                     required
                                     autoFocus
+                                    placeholder="e.g., Juan Dela Cruz"
                                 />
                                 <InputError message={errors.name} />
                             </div>
@@ -98,8 +101,8 @@ export function CreateAccountDialog({
                                     onChange={(event) =>
                                         setData('username', event.target.value)
                                     }
-                                    placeholder="e.g., jdelacruz"
                                     required
+                                    placeholder="Enter username"
                                 />
                                 <InputError message={errors.username} />
                             </div>
@@ -114,7 +117,7 @@ export function CreateAccountDialog({
                                 onChange={(event) =>
                                     setData('email', event.target.value)
                                 }
-                                placeholder="Optional contact email"
+                                placeholder="e.g., name@example.com"
                             />
                             <InputError message={errors.email} />
                         </div>
@@ -130,6 +133,7 @@ export function CreateAccountDialog({
                                         setData('password', event.target.value)
                                     }
                                     required
+                                    placeholder="Enter password"
                                 />
                                 <InputError message={errors.password} />
                             </div>
@@ -149,6 +153,7 @@ export function CreateAccountDialog({
                                         )
                                     }
                                     required
+                                    placeholder="Confirm password"
                                 />
                             </div>
                         </div>
@@ -204,6 +209,26 @@ export function CreateAccountDialog({
                                 canManageAdmins={can('accounts.manage-admins')}
                             />
                             <InputError message={errors.roles} />
+                        </div>
+
+                        <div className="flex items-start gap-2">
+                            <Checkbox
+                                id="is_active"
+                                checked={data.is_active}
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
+                                }
+                            />
+                            <div className="space-y-1">
+                                <Label htmlFor="is_active">
+                                    Active account
+                                </Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Inactive accounts cannot sign in. You can
+                                    change this later from the accounts list.
+                                </p>
+                                <InputError message={errors.is_active} />
+                            </div>
                         </div>
                     </div>
 

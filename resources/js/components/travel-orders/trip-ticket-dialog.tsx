@@ -175,7 +175,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., Van, pickup, motorcycle"
+                                        placeholder="e.g., Toyota HiAce"
                                     />
                                     <InputError
                                         message={form.errors.vehicle_type}
@@ -285,7 +285,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., 120.00"
+                                        placeholder="e.g., 120.5"
                                     />
                                     <InputError
                                         message={form.errors.distance_km}
@@ -307,7 +307,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., 45210.50"
+                                        placeholder="e.g., 12500"
                                     />
                                     <InputError
                                         message={form.errors.odometer_start}
@@ -329,7 +329,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., 10.00"
+                                        placeholder="e.g., 10.5"
                                     />
                                     <InputError
                                         message={form.errors.fuel_efficiency}
@@ -366,7 +366,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., 65.00"
+                                        placeholder="e.g., 55.00"
                                     />
                                     <InputError
                                         message={
@@ -413,7 +413,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="e.g., Petron San Vicente"
+                                        placeholder="e.g., Petron Puerto Princesa"
                                     />
                                     <InputError
                                         message={form.errors.fuel_station}
@@ -432,7 +432,7 @@ export function TripTicketDialog({
                                                 event.target.value,
                                             )
                                         }
-                                        placeholder="Optional receipt or invoice number"
+                                        placeholder="e.g., OR-123456"
                                     />
                                     <InputError
                                         message={form.errors.fuel_receipt_no}

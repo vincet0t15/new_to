@@ -62,13 +62,13 @@ export function EditLocationDialog({
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="e.g., El Nido"
                                 value={data.name}
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -78,12 +78,12 @@ export function EditLocationDialog({
                             <Textarea
                                 id="description"
                                 name="description"
-                                placeholder="e.g., Northernmost town of Palawan"
                                 rows={3}
                                 value={data.description}
                                 onChange={(event) =>
                                     setData('description', event.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

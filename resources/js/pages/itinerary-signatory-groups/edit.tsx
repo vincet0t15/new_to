@@ -84,13 +84,13 @@ export function EditItinerarySignatoryGroupDialog({
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="e.g., Engineering Office Itinerary Signatories"
                                 value={data.name}
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -129,7 +129,6 @@ export function EditItinerarySignatoryGroupDialog({
                                 </Label>
                                 <Input
                                     id="certified_title"
-                                    placeholder="e.g., Municipal Accountant"
                                     value={data.certified_title}
                                     onChange={(event) =>
                                         setData(
@@ -137,6 +136,7 @@ export function EditItinerarySignatoryGroupDialog({
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Municipal Mayor"
                                 />
                                 <InputError message={errors.certified_title} />
                             </div>
@@ -164,7 +164,6 @@ export function EditItinerarySignatoryGroupDialog({
                                 </Label>
                                 <Input
                                     id="approved_title"
-                                    placeholder="e.g., Acting Municipal Mayor"
                                     value={data.approved_title}
                                     onChange={(event) =>
                                         setData(
@@ -172,6 +171,7 @@ export function EditItinerarySignatoryGroupDialog({
                                             event.target.value,
                                         )
                                     }
+                                    placeholder="e.g., Department Head"
                                 />
                                 <InputError message={errors.approved_title} />
                             </div>

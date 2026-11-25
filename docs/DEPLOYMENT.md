@@ -66,6 +66,10 @@ Production seeding refuses to run unless the required passwords are set. Existin
 | `KEY_OFFICIAL_SEED_PASSWORD` | `KeyOfficialSeeder` | Required if you seed named officials (`:20`).                                 |
 | `SEED_FORCE_PASSWORD_CHANGE` | All seeders         | Optional `true`/`false`; defaults off in `local`/`testing`, on elsewhere.     |
 
+### Registration throttling
+
+Public `POST /register` is limited per IP address to 5 attempts per 60 seconds by default. Override the limit with `REGISTRATION_RATE_LIMIT_ATTEMPTS` and `REGISTRATION_RATE_LIMIT_DECAY_SECONDS` (`config/fortify.php`). Requests over the limit receive HTTP 429 with a `Retry-After` header.
+
 `DatabaseSeeder` seeds roles, the super administrator, offices, and reference data. It does **not** seed demo or key-official accounts; run those seeders explicitly if needed:
 
 ```bash

@@ -97,13 +97,13 @@ export default function PerDiemConfigurationsCreate({
                         <Input
                             id="name"
                             name="name"
-                            placeholder="e.g., Regular Provincial Travel"
                             value={data.name}
                             onChange={(event) =>
                                 setData('name', event.target.value)
                             }
                             required
                             autoFocus
+                            placeholder="Enter name"
                         />
                     </Field>
 
@@ -134,6 +134,7 @@ export default function PerDiemConfigurationsCreate({
                                     )
                                 }
                                 required
+                                placeholder="YYYY-MM-DD"
                             />
                         </Field>
 
@@ -155,6 +156,7 @@ export default function PerDiemConfigurationsCreate({
                                         event.target.value,
                                     )
                                 }
+                                placeholder="YYYY-MM-DD"
                             />
                         </Field>
                     </div>

@@ -69,13 +69,13 @@ export function EditPositionDialog({
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="e.g., Administrative Officer"
                                 value={data.name ?? ''}
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -123,11 +123,11 @@ export function EditPositionDialog({
                                 id="description"
                                 rows={4}
                                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                placeholder="e.g., Handles administrative records"
                                 value={data.description ?? ''}
                                 onChange={(event) =>
                                     setData('description', event.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

@@ -32,6 +32,33 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
+test('inactive accounts cannot authenticate', function () {
+    $user = User::factory()->create(['is_active' => false]);
+
+    $this->post(route('login.store'), [
+        'username' => $user->username,
+        'password' => 'password',
+    ])->assertSessionHasErrors('username');
+
+    $this->assertGuest();
+});
+
+test('a deactivated account is signed out on the next request', function () {
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertRedirect();
+
+    $user->update(['is_active' => false]);
+
+    $this->get(route('dashboard'))
+        ->assertRedirect(route('login'))
+        ->assertSessionHas('status');
+
+    $this->assertGuest();
+});
+
 test('users can not authenticate with an unknown username', function () {
     User::factory()->create();
 

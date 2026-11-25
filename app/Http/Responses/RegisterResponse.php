@@ -12,8 +12,9 @@ use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 /**
  * Sends a newly registered account into its primary portal.
  *
- * Registration creates a plain account, so this always resolves to the
- * baseline employee portal until an administrator grants another role.
+ * Registration creates an employee and its basic login, but grants no role,
+ * so this always resolves to the baseline employee portal until an
+ * administrator grants another role.
  */
 class RegisterResponse implements RegisterResponseContract
 {

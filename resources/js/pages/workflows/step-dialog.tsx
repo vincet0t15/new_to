@@ -129,7 +129,7 @@ export function StepDialog({
                                 onChange={(e) =>
                                     setData('label', e.target.value)
                                 }
-                                placeholder="Override the step type name"
+                                placeholder="e.g., Budget Review"
                             />
                             <InputError message={errors.label} />
                         </div>
@@ -183,6 +183,7 @@ export function StepDialog({
                                     )
                                 }
                                 required
+                                placeholder="e.g., 1"
                             />
                             <InputError message={errors.sort_order} />
                         </div>

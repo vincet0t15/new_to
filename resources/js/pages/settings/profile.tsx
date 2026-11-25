@@ -46,7 +46,7 @@ export default function Profile() {
                                     name="name"
                                     required
                                     autoComplete="name"
-                                    placeholder="Full name"
+                                    placeholder="Enter name"
                                 />
 
                                 <InputError
@@ -66,7 +66,7 @@ export default function Profile() {
                                     name="username"
                                     required
                                     autoComplete="username"
-                                    placeholder="Username"
+                                    placeholder="Enter username"
                                 />
 
                                 <InputError

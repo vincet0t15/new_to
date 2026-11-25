@@ -63,6 +63,7 @@ export function CreateFuelTypeDialog({ isOpen, onClose }: Props) {
                                     setData('name', e.target.value)
                                 }
                                 required
+                                placeholder="e.g., Diesel"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -74,6 +75,7 @@ export function CreateFuelTypeDialog({ isOpen, onClose }: Props) {
                                 onChange={(e) =>
                                     setData('description', e.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

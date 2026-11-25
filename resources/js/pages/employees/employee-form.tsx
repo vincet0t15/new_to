@@ -287,7 +287,7 @@ export function EmployeeForm({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="First Name"
+                                    placeholder="e.g., Juan"
                                 />
                             </Field>
 
@@ -306,7 +306,7 @@ export function EmployeeForm({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Middle Name"
+                                    placeholder="e.g., Santos"
                                 />
                             </Field>
                         </div>
@@ -324,7 +324,7 @@ export function EmployeeForm({
                                     onChange={(event) =>
                                         setData('last_name', event.target.value)
                                     }
-                                    placeholder="Last Name"
+                                    placeholder="e.g., Dela Cruz"
                                 />
                             </Field>
 
@@ -340,7 +340,7 @@ export function EmployeeForm({
                                     onChange={(event) =>
                                         setData('suffix', event.target.value)
                                     }
-                                    placeholder="e.g., Jr., III"
+                                    placeholder="e.g., Jr."
                                 />
                             </Field>
                         </div>
@@ -399,7 +399,7 @@ export function EmployeeForm({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="e.g., 0917 123 4567"
+                                    placeholder="e.g., 09123456789"
                                 />
                             </Field>
 

@@ -100,7 +100,24 @@ test('a super admin can create an account and link it to an employee', function 
     expect($account->name)->toBe('Juan Dela Cruz')
         ->and($account->hasRoleSlug(SystemRole::Employee->value))->toBeTrue()
         ->and($account->employee_id)->toBe($employee->id)
+        ->and($account->is_active)->toBeTrue()
         ->and(Hash::check('secret-password', $account->password))->toBeTrue();
+});
+
+test('an administrator can create an inactive account', function () {
+    $this->actingAs(accountScreenAdmin())
+        ->post(route('accounts.store'), [
+            'name' => 'Inactive User',
+            'username' => 'inactiveuser',
+            'password' => 'secret-password',
+            'password_confirmation' => 'secret-password',
+            'is_active' => false,
+            'roles' => [accountRole(SystemRole::Employee)->id],
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect(User::query()->where('username', 'inactiveuser')->sole()->is_active)->toBeFalse();
 });
 
 test('an administrator can create a non-administrator account', function () {
@@ -208,6 +225,71 @@ test('an administrator cannot strip another administrator', function () {
         ->assertSessionHasErrors('roles');
 
     expect($target->refresh()->hasRoleSlug(SystemRole::Admin->value))->toBeTrue();
+});
+
+test("an account's active status can be toggled", function () {
+    $target = User::factory()->create();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.status.update', $target), ['is_active' => false])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($target->refresh()->is_active)->toBeFalse();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.status.update', $target), ['is_active' => true])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($target->refresh()->is_active)->toBeTrue();
+});
+
+test('an administrator cannot deactivate their own account', function () {
+    $actor = accountScreenAdmin();
+
+    $this->actingAs($actor)
+        ->put(route('accounts.status.update', $actor), ['is_active' => false])
+        ->assertRedirect();
+
+    expect($actor->refresh()->is_active)->toBeTrue();
+});
+
+test('the last active administrator cannot be deactivated', function () {
+    $target = accountScreenAdmin();
+    $actor = accountScreenAdmin();
+
+    // Keep the actor's loaded role for authorization, but remove it from the
+    // database so the target is genuinely the last active administrator.
+    $actor->load('roles');
+    $actor->roles()->detach();
+
+    $this->actingAs($actor)
+        ->put(route('accounts.status.update', $target), ['is_active' => false])
+        ->assertRedirect();
+
+    expect($target->refresh()->is_active)->toBeTrue();
+});
+
+test('the accounts list exposes each account active status', function () {
+    User::factory()->create(['name' => 'AAA Active Account', 'is_active' => true]);
+    User::factory()->create(['name' => 'ZZZ Inactive Account', 'is_active' => false]);
+
+    $this->actingAs(accountScreenAdmin())
+        ->get(route('accounts.index', ['search' => 'AAA Active Account']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('accounts.data', 1)
+            ->where('accounts.data.0.is_active', true)
+        );
+
+    $this->actingAs(accountScreenAdmin())
+        ->get(route('accounts.index', ['search' => 'ZZZ Inactive Account']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('accounts.data', 1)
+            ->where('accounts.data.0.is_active', false)
+        );
 });
 
 test('an administrator can link an unlinked account to an employee', function () {

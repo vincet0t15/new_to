@@ -72,6 +72,7 @@ export function CreateWorkflowDialog({ isOpen, onClose }: Props) {
                                 }}
                                 required
                                 autoFocus
+                                placeholder="e.g., Standard travel order"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -84,6 +85,7 @@ export function CreateWorkflowDialog({ isOpen, onClose }: Props) {
                                     setData('slug', e.target.value)
                                 }
                                 required
+                                placeholder="e.g., standard-travel-order"
                             />
                             <InputError message={errors.slug} />
                         </div>
@@ -97,6 +99,7 @@ export function CreateWorkflowDialog({ isOpen, onClose }: Props) {
                                 onChange={(e) =>
                                     setData('description', e.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

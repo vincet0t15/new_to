@@ -120,6 +120,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Registration Rate Limit
+    |--------------------------------------------------------------------------
+    |
+    | Public registration is throttled per IP address by a web middleware.
+    | These values can be tuned without changing code when abuse patterns
+    | change.
+    |
+    */
+
+    'registration_rate_limit' => [
+        'attempts' => (int) env('REGISTRATION_RATE_LIMIT_ATTEMPTS', 5),
+        'decay_seconds' => (int) env('REGISTRATION_RATE_LIMIT_DECAY_SECONDS', 60),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Register View Routes
     |--------------------------------------------------------------------------
     |

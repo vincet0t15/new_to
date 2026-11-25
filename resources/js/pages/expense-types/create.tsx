@@ -66,13 +66,13 @@ export function CreateExpenseTypeDialog({
                             <Input
                                 id="name"
                                 name="name"
-                                placeholder="e.g., Hotel Accommodation"
                                 value={data.name}
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -82,12 +82,12 @@ export function CreateExpenseTypeDialog({
                             <Textarea
                                 id="description"
                                 name="description"
-                                placeholder="e.g., Lodging for official travel"
                                 rows={3}
                                 value={data.description}
                                 onChange={(event) =>
                                     setData('description', event.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

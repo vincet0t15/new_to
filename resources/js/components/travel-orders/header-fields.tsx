@@ -141,7 +141,7 @@ export function TravelOrderHeaderFields({
                             onChange={(event) =>
                                 onChange('purpose', event.target.value)
                             }
-                            placeholder="State the purpose of the travel"
+                            placeholder="State the purpose of travel"
                         />
                         <InputError message={errors.purpose} />
                     </div>
@@ -244,6 +244,7 @@ export function TravelOrderHeaderFields({
                                 onChange={(event) =>
                                     onChange('date_from', event.target.value)
                                 }
+                                placeholder="YYYY-MM-DD"
                             />
                             <InputError message={errors.date_from} />
                         </div>
@@ -261,6 +262,7 @@ export function TravelOrderHeaderFields({
                                 onChange={(event) =>
                                     onChange('date_to', event.target.value)
                                 }
+                                placeholder="YYYY-MM-DD"
                             />
                             <InputError message={errors.date_to} />
                         </div>
@@ -380,7 +382,7 @@ export function TravelOrderHeaderFields({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="Describe the other expenses"
+                                placeholder="e.g., 500.00"
                             />
                             <InputError message={errors.other_expenses} />
                         </div>

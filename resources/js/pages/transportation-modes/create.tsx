@@ -91,13 +91,13 @@ export default function TransportationModesCreate({
                         <Input
                             id="name"
                             name="name"
-                            placeholder="e.g., Van"
                             value={data.name}
                             onChange={(event) =>
                                 setData('name', event.target.value)
                             }
                             required
                             autoFocus
+                            placeholder="Enter name"
                         />
                         <InputError message={errors.name} />
                     </div>
@@ -107,12 +107,12 @@ export default function TransportationModesCreate({
                         <Textarea
                             id="description"
                             name="description"
-                            placeholder="e.g., Rental van for official travel"
                             rows={3}
                             value={data.description}
                             onChange={(event) =>
                                 setData('description', event.target.value)
                             }
+                            placeholder="Optional description"
                         />
                         <InputError message={errors.description} />
                     </div>
@@ -125,11 +125,11 @@ export default function TransportationModesCreate({
                             type="number"
                             step="0.01"
                             min="0"
-                            placeholder="e.g., 500.00"
                             value={data.fix_cost}
                             onChange={(event) =>
                                 setData('fix_cost', event.target.value)
                             }
+                            placeholder="e.g., 1500.00"
                         />
                         <p className="text-xs text-muted-foreground">
                             Fallback only. Used when the destination has no

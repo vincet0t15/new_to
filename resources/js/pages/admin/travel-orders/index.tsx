@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowRightLeft, Search } from 'lucide-react';
+import { ArrowRightLeft, Eye, Search } from 'lucide-react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
 
@@ -137,11 +137,11 @@ export default function AdminTravelOrdersIndex({
                         </Label>
                         <Input
                             id="search"
-                            placeholder="Search..."
                             className="w-full pl-8"
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             onKeyDown={handleSearchKeyDown}
+                            placeholder="Search..."
                         />
                         <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
                     </div>
@@ -184,6 +184,22 @@ export default function AdminTravelOrdersIndex({
                                             />
                                         </TableCell>
                                         <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-blue-600"
+                                                onClick={() =>
+                                                    router.visit(
+                                                        admin.travelOrders.document(
+                                                            order.id,
+                                                        ).url,
+                                                    )
+                                                }
+                                                title="View document"
+                                                aria-label={`View document ${order.control_no ?? order.to_number ?? `#${order.id}`}`}
+                                            >
+                                                <Eye className="size-4" />
+                                            </Button>
                                             {order.status === 'submitted' &&
                                                 (order.reassign_candidates
                                                     ?.length ?? 0) > 0 && (
@@ -270,7 +286,7 @@ export default function AdminTravelOrdersIndex({
                                     onChange={(event) =>
                                         setRemarks(event.target.value)
                                     }
-                                    placeholder="Reason for reassignment"
+                                    placeholder="Add reassignment remarks"
                                 />
                             </div>
                         </div>

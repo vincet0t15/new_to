@@ -205,6 +205,39 @@ There is no "approve and choose the next recipient" action.
 
 ---
 
+## 17. Account status and registration throttling
+
+**Decision:**
+
+- `users.is_active` defaults to `true` and is the only account-level switch. New registrations and admin-created accounts start active unless explicitly unchecked.
+- A deactivated account is refused during the Fortify login pipeline and signed out on its next web request; roles and employee links are unchanged.
+- Only administrators with `accounts.edit` can toggle status. Self-deactivation and deactivating the last active administrator are refused.
+- Public `POST /register` is throttled per IP address (default 5 attempts per 60 seconds) and returns HTTP 429 with `Retry-After`.
+
+**Why:** Disabling access must not delete or rewrite people, roles, employee links, or workflow history. Per-IP throttling slows bulk fake registrations without blocking legitimate shared networks longer than a minute.
+
+**Evidence:** `database/migrations/2026_11_25_000001_add_is_active_to_users_table.php`; `app/Actions/Fortify/RejectInactiveAccount.php`; `app/Http/Middleware/EnsureAccountIsActive.php`; `app/Http/Middleware/ThrottleRegistration.php`; `config/fortify.php:117`; `routes/accounts.php:23`; `app/Http/Controllers/Accounts/UserAccountController.php`.
+
+**Change control:** **Approval required** for changing who may deactivate accounts or for removing the login enforcement; threshold tuning alone is low risk.
+
+---
+
+## 18. Public registration mirrors employee creation
+
+**Decision:**
+
+- Public `/register` collects the same fields as employee create: first/middle/last name, suffix, position, office, employment type, contact number, monthly salary, and active status. Photo upload is intentionally excluded; it stays on the Employee screen.
+- Submitting the form creates an `Employee` record and a linked `User` in one database transaction. The login's `name` comes from the employee's computed `full_name`; no name columns are added to `users`.
+- Self-registration still grants **no role or permission**. Administrator-managed account creation keeps its existing Full Name and optional existing-employee link.
+
+**Why:** The user wants the outside registration to match employee creation so a registrant has employee details immediately and there is no duplicate name data on `users`. Creating both records together keeps the login and its employee details consistent and linked.
+
+**Evidence:** `app/Actions/Fortify/CreateNewUser.php`; `app/Providers/FortifyServiceProvider.php::registerView`; `resources/js/pages/auth/register.tsx`; `tests/Feature/Auth/RegistrationTest.php`.
+
+**Change control:** **Approval required** for adding name columns to `users`, granting roles during public registration, or removing the transaction that links both records.
+
+---
+
 ## Change checklist
 
 Before changing a decision above:

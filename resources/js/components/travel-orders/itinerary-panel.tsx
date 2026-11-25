@@ -444,6 +444,7 @@ export function TravelOrderItineraryPanel({
                                         event.target.value,
                                     )
                                 }
+                                placeholder="YYYY-MM-DD"
                             />
                             <InputError message={form.errors.date_from} />
                         </div>
@@ -457,6 +458,7 @@ export function TravelOrderItineraryPanel({
                                 onChange={(event) =>
                                     form.setData('date_to', event.target.value)
                                 }
+                                placeholder="YYYY-MM-DD"
                             />
                             <InputError message={form.errors.date_to} />
                         </div>
@@ -474,6 +476,7 @@ export function TravelOrderItineraryPanel({
                                         event.target.value,
                                     )
                                 }
+                                placeholder="HH:MM"
                             />
                             <InputError message={form.errors.departure_time} />
                         </div>
@@ -489,6 +492,7 @@ export function TravelOrderItineraryPanel({
                                         event.target.value,
                                     )
                                 }
+                                placeholder="HH:MM"
                             />
                             <InputError message={form.errors.arrival_time} />
                         </div>
@@ -531,7 +535,7 @@ export function TravelOrderItineraryPanel({
                                 onChange={(event) =>
                                     form.setData('activity', event.target.value)
                                 }
-                                placeholder="e.g., Attend the municipal planning session"
+                                placeholder="Describe the activity"
                             />
                             <InputError message={form.errors.activity} />
                         </div>
@@ -544,7 +548,7 @@ export function TravelOrderItineraryPanel({
                                 onChange={(event) =>
                                     form.setData('reason', event.target.value)
                                 }
-                                placeholder="Optional reason for this leg"
+                                placeholder="State the reason"
                             />
                             <InputError message={form.errors.reason} />
                         </div>
@@ -661,7 +665,7 @@ export function TravelOrderItineraryPanel({
                                         event.target.value,
                                     )
                                 }
-                                placeholder="0.00"
+                                placeholder="e.g., 500.00"
                             />
                             <InputError
                                 message={form.errors.registration_fee}

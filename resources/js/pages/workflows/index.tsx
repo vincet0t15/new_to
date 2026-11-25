@@ -75,13 +75,13 @@ export default function WorkflowsIndex({
                         </Label>
                         <Input
                             id="search"
-                            placeholder="Search workflows..."
                             className="w-full pl-8"
                             value={data.search}
                             onChange={(event) =>
                                 setData('search', event.target.value)
                             }
                             onKeyDown={handleSearchKeyDown}
+                            placeholder="Search..."
                         />
                         <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
                     </div>

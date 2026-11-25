@@ -69,9 +69,9 @@ export function CreateRoleDialog({
                                 onChange={(event) =>
                                     setData('name', event.target.value)
                                 }
-                                placeholder="e.g., Records Officer"
                                 required
                                 autoFocus
+                                placeholder="Enter name"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -84,7 +84,7 @@ export function CreateRoleDialog({
                                 onChange={(event) =>
                                     setData('description', event.target.value)
                                 }
-                                placeholder="What this role is for"
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>

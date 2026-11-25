@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminTravelOrderDocumentController;
 use App\Http\Controllers\Admin\AuditLogController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\FuelAllocationController;
@@ -142,6 +143,8 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
         Route::middleware('permission:travel-orders.view-all')->group(function () {
             Route::get('travel-orders', [TravelOrderRegisterController::class, 'index'])
                 ->name('travel-orders.index');
+            Route::get('travel-orders/{travelOrder}/document', [AdminTravelOrderDocumentController::class, 'show'])
+                ->name('travel-orders.document');
             Route::post('travel-orders/reassign-bulk', [AdminTravelOrderActionController::class, 'reassignBulk'])
                 ->middleware('permission:travel-orders.reassign')
                 ->name('travel-orders.reassign-bulk');

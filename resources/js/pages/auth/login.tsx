@@ -38,7 +38,7 @@ export default function Login({ status }: Props) {
                                     autoFocus
                                     tabIndex={1}
                                     autoComplete="username"
-                                    placeholder="Enter your username"
+                                    placeholder="Enter username"
                                 />
                                 <InputError message={errors.username} />
                             </div>

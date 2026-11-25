@@ -145,7 +145,7 @@ export default function CreateTravelOrder({
                                             event.target.value,
                                         )
                                     }
-                                    placeholder="Add any note that may help approvers"
+                                    placeholder="Add optional submission notes"
                                 />
                                 <InputError message={errors.submission_notes} />
                             </CardContent>

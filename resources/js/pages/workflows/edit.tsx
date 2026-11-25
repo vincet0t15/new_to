@@ -212,6 +212,7 @@ export default function WorkflowEdit({
                                     setData('name', e.target.value)
                                 }
                                 required
+                                placeholder="e.g., Standard travel order"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -224,6 +225,7 @@ export default function WorkflowEdit({
                                     setData('slug', e.target.value)
                                 }
                                 required
+                                placeholder="e.g., standard-travel-order"
                             />
                             <InputError message={errors.slug} />
                         </div>
@@ -238,6 +240,7 @@ export default function WorkflowEdit({
                             onChange={(e) =>
                                 setData('description', e.target.value)
                             }
+                            placeholder="Optional description"
                         />
                         <InputError message={errors.description} />
                     </div>

@@ -92,6 +92,9 @@ Follow the Office slice: migration, model, repository contract + implementation,
 - Dialog `Content` scrolls at `max-h-[90vh]`; `Combobox` measures viewport/dialog and flips or caps dropdown height.
 - Every `type="date"` input sets `max="9999-12-31"`. Without it, Chromium lets the year segment grow to six digits (for example `202611`), so the visible year no longer matches the `YYYY-MM-DD` value sent to the backend.
 - `PrintPage` keeps `bg-white text-black` on the sheet itself so shared documents stay readable in the inline dark-mode preview and still print black on white.
+- `users.is_active` defaults to `true`; deactivated accounts are refused at login and signed out on the next web request. Admin toggles live in Accounts, and self-deactivation or deactivating the last active administrator is refused.
+- Public `/register` mirrors employee create: first/middle/last name, suffix, position, office, employment type, contact, salary, and active status. It creates and links an Employee in one transaction; photo upload stays on the Employee screen. Self-registration grants no role or permission.
+- Public registration is throttled per IP by `ThrottleRegistration` on `POST /register`; tune attempts and decay in `config/fortify.php`, do not remove the middleware.
 
 ## 6. Verification before finishing
 

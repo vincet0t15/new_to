@@ -1,10 +1,13 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsurePasswordChange;
 use App\Http\Middleware\EnsurePortalAccess;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectInaccessibleDocument;
+use App\Http\Middleware\ThrottleRegistration;
+use Illuminate\Auth\Middleware\RedirectIfAuthenticated;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -23,12 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
- $middleware->trustProxies(at: '*');
+        $middleware->trustProxies(at: '*');
         $middleware->web(append: [
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
             EnsurePasswordChange::class,
+            EnsureAccountIsActive::class,
+            ThrottleRegistration::class,
         ]);
 
         $middleware->alias([
@@ -44,6 +49,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prependToPriorityList(
             SubstituteBindings::class,
             RedirectInaccessibleDocument::class,
+        );
+
+        // Count registration attempts before the guest middleware redirects
+        // an already signed-in browser away from the registration form.
+        $middleware->prependToPriorityList(
+            RedirectIfAuthenticated::class,
+            ThrottleRegistration::class,
         );
     })
     ->withExceptions(function (Exceptions $exceptions): void {

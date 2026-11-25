@@ -157,6 +157,7 @@ export function EditDesignationDialog({
                                     onChange={(e) =>
                                         setData('starts_at', e.target.value)
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                                 <InputError message={errors.starts_at} />
                             </div>
@@ -170,6 +171,7 @@ export function EditDesignationDialog({
                                     onChange={(e) =>
                                         setData('ends_at', e.target.value)
                                     }
+                                    placeholder="YYYY-MM-DD"
                                 />
                                 <InputError message={errors.ends_at} />
                             </div>

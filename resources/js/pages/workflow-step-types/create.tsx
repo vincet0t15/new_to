@@ -62,6 +62,7 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                                 }
                                 required
                                 autoFocus
+                                placeholder="e.g., Mayor"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -75,6 +76,7 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                                 onChange={(e) =>
                                     setData('signature_label', e.target.value)
                                 }
+                                placeholder="e.g., Approved by"
                             />
                             <InputError message={errors.signature_label} />
                         </div>
@@ -88,6 +90,7 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                                 onChange={(e) =>
                                     setData('signature_title', e.target.value)
                                 }
+                                placeholder="e.g., Department Head"
                             />
                             <InputError message={errors.signature_title} />
                         </div>
@@ -105,6 +108,7 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                                     )
                                 }
                                 required
+                                placeholder="e.g., 1"
                             />
                             <InputError message={errors.sort_order} />
                         </div>

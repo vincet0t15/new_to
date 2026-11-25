@@ -59,13 +59,13 @@ export function EditOfficeDialog({
                             <Input
                                 id="office_name"
                                 name="office_name"
-                                placeholder="e.g., Main Office"
                                 value={data.office_name}
                                 onChange={(event) =>
                                     setData('office_name', event.target.value)
                                 }
                                 required
                                 autoFocus
+                                placeholder="e.g., Municipal Planning Office"
                             />
                             <InputError message={errors.office_name} />
                         </div>
@@ -75,11 +75,11 @@ export function EditOfficeDialog({
                             <Input
                                 id="office_code"
                                 name="office_code"
-                                placeholder="e.g., MO-01"
                                 value={data.office_code ?? ''}
                                 onChange={(event) =>
                                     setData('office_code', event.target.value)
                                 }
+                                placeholder="e.g., MPO"
                             />
                             <p className="text-xs text-muted-foreground">
                                 Optional. A short code used on reports and

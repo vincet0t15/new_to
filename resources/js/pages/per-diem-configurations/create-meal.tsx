@@ -123,13 +123,13 @@ export default function PerDiemMealRulesCreate({
                             type="number"
                             min="0"
                             step="0.01"
-                            placeholder="e.g., 100.00"
                             value={data.amount}
                             onChange={(event) =>
                                 setData('amount', event.target.value)
                             }
                             required
                             autoFocus
+                            placeholder="e.g., 250.00"
                         />
                         <p className="text-xs text-muted-foreground">
                             Amount deducted from the per diem for this meal.
@@ -148,6 +148,7 @@ export default function PerDiemMealRulesCreate({
                                 onChange={(event) =>
                                     setData('cutoff_time', event.target.value)
                                 }
+                                placeholder="HH:MM"
                             />
                             <p className="text-xs text-muted-foreground">
                                 Deducted when the traveler departs the trip
@@ -166,12 +167,12 @@ export default function PerDiemMealRulesCreate({
                             type="number"
                             min="0"
                             step="1"
-                            placeholder="e.g., 1"
                             value={data.sort_order}
                             onChange={(event) =>
                                 setData('sort_order', event.target.value)
                             }
                             required
+                            placeholder="e.g., 1"
                         />
                         <p className="text-xs text-muted-foreground">
                             Determines display order (lowest first).

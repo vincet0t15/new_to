@@ -59,6 +59,7 @@ export function EditFuelTypeDialog({ isOpen, onClose, fuelType }: Props) {
                                     setData('name', e.target.value)
                                 }
                                 required
+                                placeholder="e.g., Diesel"
                             />
                             <InputError message={errors.name} />
                         </div>
@@ -70,6 +71,7 @@ export function EditFuelTypeDialog({ isOpen, onClose, fuelType }: Props) {
                                 onChange={(e) =>
                                     setData('description', e.target.value)
                                 }
+                                placeholder="Optional description"
                             />
                             <InputError message={errors.description} />
                         </div>
