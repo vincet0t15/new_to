@@ -6,11 +6,13 @@ import type {
     TripTicket,
     TripTicketDriver,
     TripTicketTravelOrder,
+    VehicleOption,
 } from '@/types';
 
 type Props = {
     travelOrder: TripTicketTravelOrder;
     tripTicket: TripTicket;
+    vehicles: VehicleOption[];
     drivers: TripTicketDriver[];
     offices: { id: number; office_name: string }[];
     fuelTypes: { id: number; name: string }[];
@@ -19,6 +21,7 @@ type Props = {
 export default function EditTripTicket({
     travelOrder,
     tripTicket,
+    vehicles,
     drivers,
     offices,
     fuelTypes,
@@ -35,6 +38,7 @@ export default function EditTripTicket({
 
                 <TripTicketForm
                     travelOrder={travelOrder}
+                    vehicles={vehicles}
                     drivers={drivers}
                     offices={offices}
                     fuelTypes={fuelTypes}

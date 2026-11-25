@@ -26,6 +26,7 @@ import {
     Route,
     ShieldCheck,
     Tag,
+    Truck,
     UserCog,
     Users,
 } from 'lucide-react';
@@ -62,6 +63,7 @@ import signatoryGroups from '@/routes/signatory-groups';
 import travelOrders from '@/routes/travel-orders';
 import transportationModes from '@/routes/transportation-modes';
 import travelClassifications from '@/routes/travel-classifications';
+import vehicles from '@/routes/vehicles';
 import workflowStepTypes from '@/routes/workflow-step-types';
 import workflows from '@/routes/workflows';
 import type { NavGroup } from '@/types';
@@ -287,6 +289,12 @@ function adminGroups(dashboardUrl: string): NavGroup[] {
                     href: transportationModes.index().url,
                     icon: Car,
                     permission: 'transportation-modes.view',
+                },
+                {
+                    title: 'Vehicles',
+                    href: vehicles.index().url,
+                    icon: Truck,
+                    permission: 'vehicles.view',
                 },
                 {
                     title: 'Expenses Authorized',

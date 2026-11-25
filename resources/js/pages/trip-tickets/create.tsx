@@ -3,10 +3,15 @@ import Heading from '@/components/heading';
 import { TripTicketForm } from '@/components/travel-orders/trip-ticket-form';
 import travelOrders from '@/routes/travel-orders';
 import tripTickets from '@/routes/travel-orders/trip-tickets';
-import type { TripTicketDriver, TripTicketTravelOrder } from '@/types';
+import type {
+    TripTicketDriver,
+    TripTicketTravelOrder,
+    VehicleOption,
+} from '@/types';
 
 type Props = {
     travelOrder: TripTicketTravelOrder;
+    vehicles: VehicleOption[];
     drivers: TripTicketDriver[];
     offices: { id: number; office_name: string }[];
     fuelTypes: { id: number; name: string }[];
@@ -14,6 +19,7 @@ type Props = {
 
 export default function CreateTripTicket({
     travelOrder,
+    vehicles,
     drivers,
     offices,
     fuelTypes,
@@ -30,6 +36,7 @@ export default function CreateTripTicket({
 
                 <TripTicketForm
                     travelOrder={travelOrder}
+                    vehicles={vehicles}
                     drivers={drivers}
                     offices={offices}
                     fuelTypes={fuelTypes}

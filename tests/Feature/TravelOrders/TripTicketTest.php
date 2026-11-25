@@ -2,11 +2,13 @@
 
 use App\Enums\SystemRole;
 use App\Enums\TravelOrderStatus;
+use App\Models\Employee;
 use App\Models\Office;
 use App\Models\TransportationMode;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\TripTicketService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -94,6 +96,7 @@ it('renders the trip ticket create page for the order creator', function () {
     )->assertInertia(fn (Assert $page): Assert => $page
         ->component('trip-tickets/create')
         ->where('travelOrder.id', $context['order']->id)
+        ->has('vehicles')
         ->has('drivers')
     );
 });
@@ -132,6 +135,76 @@ it('refuses a second ticket for the same plate on one order', function () {
     )->assertSessionHasErrors('vehicle_plate_no');
 
     $this->assertDatabaseCount('trip_tickets', 1);
+});
+
+it('copies the registered vehicle plate, type and assigned driver onto a new ticket', function () {
+    $context = tripTicketOrder();
+    $driver = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create([
+        'plate_no' => 'FLEET-01',
+        'vehicle_type' => 'Coaster',
+        'driver_id' => $driver->id,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload([
+            'vehicle_id' => $vehicle->id,
+            'vehicle_plate_no' => 'IGNORED-1',
+            'vehicle_type' => '',
+            'driver_id' => null,
+        ]),
+    )->assertRedirect();
+
+    $ticket = $context['order']->tripTickets()->sole();
+
+    expect($ticket->vehicle_id)->toBe($vehicle->id)
+        ->and($ticket->vehicle_plate_no)->toBe('FLEET-01')
+        ->and($ticket->vehicle_type)->toBe('Coaster')
+        ->and($ticket->driver_id)->toBe($driver->id);
+});
+
+it('allows the assigned driver to be overridden for one trip', function () {
+    $context = tripTicketOrder();
+    $assigned = Employee::factory()->create();
+    $actual = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create([
+        'plate_no' => 'FLEET-02',
+        'driver_id' => $assigned->id,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload([
+            'vehicle_id' => $vehicle->id,
+            'vehicle_plate_no' => 'IGNORED-2',
+            'driver_id' => $actual->id,
+        ]),
+    )->assertRedirect();
+
+    $ticket = $context['order']->tripTickets()->sole();
+
+    expect($ticket->driver_id)->toBe($actual->id)
+        ->and($ticket->vehicle_plate_no)->toBe('FLEET-02');
+});
+
+it('still accepts a manual plate when no registered vehicle is selected', function () {
+    $context = tripTicketOrder();
+
+    $this->actingAs($context['user'])->post(
+        route('travel-orders.trip-tickets.store', $context['order']),
+        tripTicketPayload([
+            'vehicle_id' => null,
+            'vehicle_plate_no' => 'MANUAL-99',
+        ]),
+    )->assertRedirect();
+
+    $ticket = $context['order']->tripTickets()->sole();
+
+    expect($ticket->vehicle_id)->toBeNull()
+        ->and($ticket->vehicle_plate_no)->toBe('MANUAL-99');
 });
 
 it('completes an issued ticket with the post-trip figures', function () {

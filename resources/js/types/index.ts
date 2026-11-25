@@ -11,4 +11,5 @@ export type * from './portal';
 export type * from './position';
 export type * from './travel-order';
 export type * from './ui';
+export type * from './vehicle';
 export type * from './workflow';

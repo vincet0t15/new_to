@@ -79,6 +79,7 @@ export function makeTripTicket(
         status: 'issued',
         vehicle_plate_no: 'ABC-1234',
         vehicle_type: 'Van',
+        vehicle_id: null,
         driver_id: 3,
         fuel_type_id: 2,
         fuel_type: 'Diesel',

@@ -16,6 +16,7 @@ class SaveTripTicketRequest extends FormRequest
         return [
             'vehicle_plate_no' => ['required', 'string', 'max:30'],
             'vehicle_type' => ['nullable', 'string', 'max:100'],
+            'vehicle_id' => ['nullable', 'integer', Rule::exists('vehicles', 'id')],
             'driver_id' => ['nullable', 'integer', Rule::exists('employees', 'id')],
             'fuel_type_id' => ['nullable', 'integer', Rule::exists('fuel_types', 'id')],
             'fuel_type' => ['nullable', 'string', 'max:50'],

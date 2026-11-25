@@ -12,6 +12,7 @@ use App\Models\Office;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\TripTicketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -51,6 +52,7 @@ class TravelOrderTripTicketController extends Controller
 
         return Inertia::render('trip-tickets/create', [
             'travelOrder' => $this->orderPayload($travelOrder),
+            'vehicles' => $this->vehicleOptions(),
             'drivers' => $this->driverOptions(),
             'offices' => $this->officeOptions(),
             'fuelTypes' => $this->fuelTypeOptions(),
@@ -103,6 +105,7 @@ class TravelOrderTripTicketController extends Controller
         return Inertia::render('trip-tickets/edit', [
             'travelOrder' => $this->orderPayload($travelOrder),
             'tripTicket' => $tripTicket->load(['fuelSourceOffice:id,office_name', 'fuelTypeRecord:id,name']),
+            'vehicles' => $this->vehicleOptions(),
             'drivers' => $this->driverOptions(),
             'offices' => $this->officeOptions(),
             'fuelTypes' => $this->fuelTypeOptions(),
@@ -229,6 +232,26 @@ class TravelOrderTripTicketController extends Controller
                 'to_location' => $entry->toLocation?->only(['id', 'name']),
             ])->values()->all(),
         ];
+    }
+
+    /**
+     * @return array<int, array{id: int, plate_no: string, vehicle_type: string|null, model: string|null, capacity: int|null, driver_id: int|null}>
+     */
+    private function vehicleOptions(): array
+    {
+        return Vehicle::query()
+            ->active()
+            ->orderBy('plate_no')
+            ->get(['id', 'plate_no', 'vehicle_type', 'model', 'capacity', 'driver_id'])
+            ->map(fn (Vehicle $vehicle): array => [
+                'id' => $vehicle->id,
+                'plate_no' => $vehicle->plate_no,
+                'vehicle_type' => $vehicle->vehicle_type,
+                'model' => $vehicle->model,
+                'capacity' => $vehicle->capacity,
+                'driver_id' => $vehicle->driver_id,
+            ])
+            ->all();
     }
 
     /**

@@ -238,6 +238,23 @@ There is no "approve and choose the next recipient" action.
 
 ---
 
+## 19. Vehicle registry and trip-ticket selection
+
+**Decision:**
+
+- A `vehicles` registry holds plate number (unique), type, model, seating capacity, one assigned active employee as driver, and an active flag. Only administrators with `vehicles.*` permissions manage it; there is no separate fleet portal.
+- `trip_tickets.vehicle_id` is nullable and points at the registry entry chosen while preparing the ticket. The plate, type and driver are still copied onto the ticket as a **snapshot** so a printed or filed ticket survives a vehicle being edited, deactivated or deleted.
+- Selecting a registered vehicle on the trip-ticket form fills in its plate, type and assigned driver. The preparer may override the type and driver for that trip, and may enter a plate manually for legacy vehicles. When a registered vehicle is selected, the registry plate wins so the duplicate-plate rule and the printed ticket agree.
+- A vehicle already referenced by a trip ticket cannot be deleted; administrators should set it inactive instead.
+
+**Why:** The system previously stored vehicle details only inside each trip ticket, so the same plate had to be retyped and there was no reliable answer to "which driver usually drives this vehicle". A registry removes that repetition while the snapshot preserves audit and print fidelity.
+
+**Evidence:** `database/migrations/2026_11_25_000002_create_vehicles_table.php`; `database/migrations/2026_11_25_000003_add_vehicle_id_to_trip_tickets_table.php`; `app/Services/TripTicketService.php::applyVehicle`; `app/Http/Controllers/Vehicles/VehicleController.php`; `resources/js/components/travel-orders/trip-ticket-form.tsx`.
+
+**Change control:** **Approval required** for making the registry link mandatory, removing the snapshot fields, or letting non-admins manage vehicles.
+
+---
+
 ## Change checklist
 
 Before changing a decision above:

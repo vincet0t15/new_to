@@ -14,9 +14,10 @@ use Illuminate\Support\Facades\Storage;
 /**
  * The trip ticket prepared for a travel order that uses a government vehicle.
  *
- * The vehicle details live on this row rather than in a fleet registry: the
- * plate, type, fuel and efficiency are exactly what the printed ticket needs,
- * and the driver is an employee record. The liters are the estimated
+ * A ticket may point at a registered vehicle, but it also copies the plate,
+ * type and driver onto this row. Those copies are what the printed ticket
+ * needs and keep a filed ticket intact if the registry changes later. The
+ * liters are the estimated
  * requirement, computed from the one-way distance, the round-trip flag and the
  * efficiency on file.
  *
@@ -25,6 +26,7 @@ use Illuminate\Support\Facades\Storage;
  * @property TripTicketStatus $status
  * @property string $vehicle_plate_no
  * @property string|null $vehicle_type
+ * @property int|null $vehicle_id
  * @property int|null $driver_id
  * @property string|null $fuel_type
  * @property int|null $fuel_source_office_id
@@ -59,6 +61,7 @@ use Illuminate\Support\Facades\Storage;
     'status',
     'vehicle_plate_no',
     'vehicle_type',
+    'vehicle_id',
     'driver_id',
     'fuel_type_id',
     'fuel_type',
@@ -95,6 +98,7 @@ class TripTicket extends Model
     {
         return [
             'status' => TripTicketStatus::class,
+            'vehicle_id' => 'integer',
             'round_trip' => 'boolean',
             'fuel_efficiency' => 'decimal:2',
             'distance_km' => 'decimal:2',
@@ -115,6 +119,18 @@ class TripTicket extends Model
     public function travelOrder(): BelongsTo
     {
         return $this->belongsTo(TravelOrder::class);
+    }
+
+    /**
+     * The registered vehicle selected when the ticket was prepared. The plate
+     * and type on this row remain the printed snapshot, so this link is
+     * informational once the ticket is issued.
+     *
+     * @return BelongsTo<Vehicle, $this>
+     */
+    public function vehicle(): BelongsTo
+    {
+        return $this->belongsTo(Vehicle::class, 'vehicle_id');
     }
 
     /**

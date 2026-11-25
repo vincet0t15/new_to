@@ -17,6 +17,7 @@ use App\Models\TransportationMode;
 use App\Models\TravelClassification;
 use App\Models\TravelOrder;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Repositories\Contracts\TravelOrderRepository;
 use App\Services\ItinerarySignatoryResolver;
 use App\Services\SignatoryResolver;
@@ -374,6 +375,11 @@ class TravelOrderController extends Controller
                 'transportationModes' => TransportationMode::query()
                     ->orderBy('name')
                     ->get(['id', 'name', 'is_active', 'is_government'])
+                    ->toArray(),
+                'vehicles' => Vehicle::query()
+                    ->active()
+                    ->orderBy('plate_no')
+                    ->get(['id', 'plate_no', 'vehicle_type', 'model', 'capacity', 'driver_id'])
                     ->toArray(),
                 'drivers' => Employee::query()
                     ->where('is_active', true)

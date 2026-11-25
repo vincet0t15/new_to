@@ -13,11 +13,12 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import travelOrders from '@/routes/travel-orders';
-import type { TravelOrder, TripTicketDriver } from '@/types';
+import type { TravelOrder, TripTicketDriver, VehicleOption } from '@/types';
 
 type Props = {
     travelOrder: TravelOrder;
     canCreate: boolean;
+    vehicles: VehicleOption[];
     drivers: TripTicketDriver[];
     offices: { id: number; office_name: string }[];
     fuelTypes: { id: number; name: string }[];
@@ -36,6 +37,7 @@ function formatDistance(value: string, roundTrip: boolean): string {
 export function TravelOrderTripTicketPanel({
     travelOrder,
     canCreate,
+    vehicles,
     drivers,
     offices,
     fuelTypes,
@@ -174,6 +176,7 @@ export function TravelOrderTripTicketPanel({
 
             <TripTicketDialog
                 travelOrder={travelOrder}
+                vehicles={vehicles}
                 drivers={drivers}
                 offices={offices}
                 fuelTypes={fuelTypes}

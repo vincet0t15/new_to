@@ -17,10 +17,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatDate } from '@/lib/date-format';
 import travelOrders from '@/routes/travel-orders';
-import type { TravelOrder, TripTicketDriver } from '@/types';
+import type { TravelOrder, TripTicketDriver, VehicleOption } from '@/types';
 
 type Props = {
     travelOrder: TravelOrder;
+    vehicles: VehicleOption[];
     drivers: TripTicketDriver[];
     offices: { id: number; office_name: string }[];
     fuelTypes: { id: number; name: string }[];
@@ -29,6 +30,7 @@ type Props = {
 };
 
 type TripTicketFormData = {
+    vehicle_id: string;
     vehicle_plate_no: string;
     vehicle_type: string;
     driver_id: string;
@@ -56,6 +58,7 @@ function formatDateRange(from: string | null, to: string | null): string {
 
 export function TripTicketDialog({
     travelOrder,
+    vehicles,
     drivers,
     offices,
     fuelTypes,
@@ -67,6 +70,7 @@ export function TripTicketDialog({
         : '';
 
     const form = useForm<TripTicketFormData>({
+        vehicle_id: '',
         vehicle_plate_no: '',
         vehicle_type: '',
         driver_id: '',
@@ -96,6 +100,34 @@ export function TripTicketDialog({
         value: String(driver.id),
         label: driver.full_name,
     }));
+
+    const vehicleChoices = vehicles.map((vehicle) => ({
+        value: String(vehicle.id),
+        label: `${vehicle.plate_no}${vehicle.vehicle_type ? ` · ${vehicle.vehicle_type}` : ''}`,
+    }));
+
+    const selectVehicle = (value: string) => {
+        const selected = vehicles.find(
+            (vehicle) => String(vehicle.id) === value,
+        );
+
+        form.setData((data) => ({
+            ...data,
+            vehicle_id: value,
+            vehicle_plate_no: selected?.plate_no ?? data.vehicle_plate_no,
+            vehicle_type:
+                selected?.vehicle_type !== null &&
+                selected?.vehicle_type !== undefined &&
+                selected.vehicle_type !== ''
+                    ? selected.vehicle_type
+                    : data.vehicle_type,
+            driver_id:
+                selected?.driver_id !== null &&
+                selected?.driver_id !== undefined
+                    ? String(selected.driver_id)
+                    : data.driver_id,
+        }));
+    };
 
     const efficiency = Number(form.data.fuel_efficiency || 0);
     const distance = Number(form.data.distance_km || 0);
@@ -143,6 +175,28 @@ export function TripTicketDialog({
                         <section className="space-y-4 rounded-xl border p-4">
                             <h3 className="text-base font-semibold">Vehicle</h3>
                             <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="space-y-2 sm:col-span-2">
+                                    <Label htmlFor="tt_vehicle_id">
+                                        Registered vehicle
+                                    </Label>
+                                    <Combobox
+                                        id="tt_vehicle_id"
+                                        value={form.data.vehicle_id}
+                                        onValueChange={selectVehicle}
+                                        options={vehicleChoices}
+                                        placeholder="Select a registered vehicle (optional)"
+                                        searchPlaceholder="Search vehicle..."
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Selecting a vehicle fills in its plate,
+                                        type and assigned driver. You may still
+                                        edit the type and driver below for this
+                                        trip.
+                                    </p>
+                                    <InputError
+                                        message={form.errors.vehicle_id}
+                                    />
+                                </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="tt_vehicle_plate_no">
                                         Plate number *
@@ -151,10 +205,12 @@ export function TripTicketDialog({
                                         id="tt_vehicle_plate_no"
                                         value={form.data.vehicle_plate_no}
                                         onChange={(event) =>
-                                            form.setData(
-                                                'vehicle_plate_no',
-                                                event.target.value,
-                                            )
+                                            form.setData((data) => ({
+                                                ...data,
+                                                vehicle_plate_no:
+                                                    event.target.value,
+                                                vehicle_id: '',
+                                            }))
                                         }
                                         placeholder="e.g., ABC-1234"
                                     />

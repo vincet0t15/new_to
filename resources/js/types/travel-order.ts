@@ -1,3 +1,4 @@
+import type { VehicleOption } from './vehicle';
 import type { WorkflowPreview } from './workflow';
 
 export type TravelOrderStatus =
@@ -93,6 +94,7 @@ export type TripTicket = {
     status: TripTicketStatus;
     vehicle_plate_no: string;
     vehicle_type: string | null;
+    vehicle_id: number | null;
     driver_id: number | null;
     fuel_type_id: number | null;
     fuel_type: string | null;
@@ -372,6 +374,7 @@ export type TripTicketDriver = {
 export type TravelOrderShowOptions = {
     locations: TravelOrderLookupOption[];
     transportationModes: TravelOrderLookupOption[];
+    vehicles: VehicleOption[];
     drivers: TripTicketDriver[];
     offices: { id: number; office_name: string }[];
     fuelTypes: { id: number; name: string }[];

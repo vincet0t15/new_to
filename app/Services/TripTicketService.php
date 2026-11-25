@@ -7,6 +7,7 @@ use App\Models\FuelType;
 use App\Models\TravelOrder;
 use App\Models\TripTicket;
 use App\Models\User;
+use App\Models\Vehicle;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,7 @@ class TripTicketService
     {
         $this->ensureOrderAllowsTicket($order);
 
+        $data = $this->applyVehicle($data);
         $plate = trim((string) $data['vehicle_plate_no']);
 
         $duplicate = $order->tripTickets()
@@ -75,6 +77,7 @@ class TripTicketService
     {
         $this->ensureEditable($ticket);
 
+        $data = $this->applyVehicle($data);
         $plate = trim((string) $data['vehicle_plate_no']);
 
         $duplicate = $ticket->travelOrder->tripTickets()
@@ -173,6 +176,42 @@ class TripTicketService
     }
 
     /**
+     * Resolve a registered vehicle into the printed snapshot on the ticket.
+     *
+     * The plate always comes from the registry when a vehicle is selected, so
+     * the duplicate check and the printed ticket agree. Type and driver are
+     * defaults the preparer may still override on the form.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function applyVehicle(array $data): array
+    {
+        $vehicleId = $data['vehicle_id'] ?? null;
+
+        if ($vehicleId === null || $vehicleId === '') {
+            $data['vehicle_id'] = null;
+
+            return $data;
+        }
+
+        $vehicle = Vehicle::query()->whereKey($vehicleId)->firstOrFail();
+
+        $data['vehicle_id'] = $vehicle->id;
+        $data['vehicle_plate_no'] = $vehicle->plate_no;
+
+        if ($vehicle->vehicle_type !== null && $vehicle->vehicle_type !== '') {
+            $data['vehicle_type'] = $vehicle->vehicle_type;
+        }
+
+        if (empty($data['driver_id'])) {
+            $data['driver_id'] = $vehicle->driver_id;
+        }
+
+        return $data;
+    }
+
+    /**
      * The editable figures, with the fuel requirement derived from them.
      *
      * @param  array<string, mixed>  $data
@@ -203,6 +242,7 @@ class TripTicketService
 
         return [
             'vehicle_type' => $this->text($data['vehicle_type'] ?? null),
+            'vehicle_id' => $data['vehicle_id'] ?? null,
             'driver_id' => $data['driver_id'] ?? null,
             'fuel_type_id' => $fuelTypeId !== '' ? $fuelTypeId : null,
             'fuel_type' => $fuelTypeName,

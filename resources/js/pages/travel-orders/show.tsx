@@ -177,6 +177,7 @@ export default function ShowTravelOrder({
                     <TravelOrderTripTicketPanel
                         travelOrder={travelOrder}
                         canCreate={can.createTripTicket}
+                        vehicles={options.vehicles}
                         drivers={options.drivers}
                         offices={options.offices}
                         fuelTypes={options.fuelTypes}
