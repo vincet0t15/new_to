@@ -3,24 +3,32 @@
 namespace App\Repositories\Eloquent;
 
 use App\Models\OfficeDesignation;
+use App\Models\WorkflowStep;
 use App\Repositories\Contracts\OfficeDesignationRepository;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class EloquentOfficeDesignationRepository implements OfficeDesignationRepository
 {
+    /**
+     * The relations every designation view needs, kept in one place so the
+     * list and the per-step view cannot drift apart.
+     */
+    private const RELATIONS = [
+        'office:id,office_name',
+        'stepType:id,name,is_signatory',
+        'employee:id,first_name,middle_name,last_name,suffix,office_id',
+        'employee.office:id,office_name',
+        'employee.user:id,employee_id',
+    ];
+
     public function paginate(
         ?int $officeId,
         ?int $stepTypeId,
         int $perPage = 50,
     ): LengthAwarePaginator {
         return OfficeDesignation::query()
-            ->with([
-                'office:id,office_name',
-                'stepType:id,name,is_signatory',
-                'employee:id,first_name,middle_name,last_name,suffix,office_id',
-                'employee.office:id,office_name',
-                'employee.user:id,employee_id',
-            ])
+            ->with(self::RELATIONS)
             ->when($officeId !== null, fn ($query) => $query->where('office_id', $officeId))
             ->when($stepTypeId !== null, fn ($query) => $query->where('workflow_step_type_id', $stepTypeId))
             ->orderBy('office_id')
@@ -29,6 +37,21 @@ class EloquentOfficeDesignationRepository implements OfficeDesignationRepository
             ->orderBy('id')
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    public function forStep(WorkflowStep $step): Collection
+    {
+        return OfficeDesignation::query()
+            ->with(self::RELATIONS)
+            ->where('workflow_step_type_id', $step->workflow_step_type_id)
+            ->when(
+                $step->office_id !== null,
+                fn ($query) => $query->where('office_id', $step->office_id),
+            )
+            ->orderBy('office_id')
+            ->orderBy('is_deputy')
+            ->orderBy('id')
+            ->get();
     }
 
     public function create(array $data): OfficeDesignation

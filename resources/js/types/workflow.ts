@@ -177,6 +177,18 @@ export type DesignationImpactOrder = {
     step: string;
 };
 
+export type StepDesignees = {
+    step: {
+        id: number;
+        label: string;
+        step_type: { id: number; name: string };
+        office: { id: number; office_name: string } | null;
+    };
+    offices: { id: number; office_name: string }[];
+    designations: OfficeDesignation[];
+    employees: DesignationEmployeeOption[];
+};
+
 export type DesignationImpact = {
     designation: {
         id: number;

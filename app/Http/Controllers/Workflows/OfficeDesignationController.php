@@ -8,6 +8,8 @@ use App\Http\Requests\OfficeDesignations\UpdateOfficeDesignationRequest;
 use App\Models\Employee;
 use App\Models\Office;
 use App\Models\OfficeDesignation;
+use App\Models\Workflow;
+use App\Models\WorkflowStep;
 use App\Repositories\Contracts\OfficeDesignationRepository;
 use App\Repositories\Contracts\WorkflowStepTypeRepository;
 use App\Services\TravelOrderApprovalService;
@@ -47,6 +49,42 @@ class OfficeDesignationController extends Controller
                 ->orderBy('office_name')
                 ->get(['id', 'office_name']),
             'stepTypes' => $this->stepTypes->allForSelection(),
+            'employees' => $this->employeeOptions(),
+        ]);
+    }
+
+    /**
+     * Who answers one workflow step, for the step-scoped assignment dialog.
+     *
+     * The designations are matched by step type and, when the step names a
+     * target office, by that office too. A step without a target office follows
+     * the filing office, so its step type is matched across offices. Nothing
+     * here changes routing: it only reads the same rows the engine reads.
+     */
+    public function forStep(Workflow $workflow, WorkflowStep $step): JsonResponse
+    {
+        abort_unless($step->workflow_id === $workflow->id, 404);
+
+        $step->load(['stepType:id,name', 'office:id,office_name']);
+
+        $offices = $step->office_id === null
+            ? Office::query()->orderBy('office_name')->get(['id', 'office_name'])
+            : Office::query()->whereKey($step->office_id)->get(['id', 'office_name']);
+
+        return response()->json([
+            'step' => [
+                'id' => $step->id,
+                'label' => $step->displayLabel(),
+                'step_type' => [
+                    'id' => $step->stepType->id,
+                    'name' => $step->stepType->name,
+                ],
+                'office' => $step->office === null
+                    ? null
+                    : ['id' => $step->office->id, 'office_name' => $step->office->office_name],
+            ],
+            'offices' => $offices->values(),
+            'designations' => $this->designations->forStep($step),
             'employees' => $this->employeeOptions(),
         ]);
     }

@@ -17,7 +17,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import designationsRoutes from '@/routes/designations';
 import workflowsRoutes from '@/routes/workflows';
 import type { WorkflowOfficeOption } from '@/types/office';
 import type {
@@ -27,6 +26,7 @@ import type {
     WorkflowUpdateRequest,
 } from '@/types/workflow';
 import type { FormEvent } from 'react';
+import { StepAssigneesDialog } from './step-assignees-dialog';
 import { StepDialog } from './step-dialog';
 
 type Props = {
@@ -49,6 +49,9 @@ export default function WorkflowEdit({
     const [workflow, setWorkflow] = useState(initial);
     const [stepOpen, setStepOpen] = useState(false);
     const [editingStep, setEditingStep] = useState<WorkflowStep | null>(null);
+    const [assigningStep, setAssigningStep] = useState<WorkflowStep | null>(
+        null,
+    );
 
     const { data, setData, put, errors, processing } =
         useForm<WorkflowUpdateRequest>({
@@ -385,23 +388,7 @@ export default function WorkflowEdit({
                                                     size="icon"
                                                     className="h-8 w-8"
                                                     onClick={() =>
-                                                        router.visit(
-                                                            designationsRoutes.index(
-                                                                {
-                                                                    query: {
-                                                                        workflow_step_type_id:
-                                                                            step.workflow_step_type_id,
-                                                                        ...(step.office_id ===
-                                                                        null
-                                                                            ? {}
-                                                                            : {
-                                                                                  office_id:
-                                                                                      step.office_id,
-                                                                              }),
-                                                                    },
-                                                                },
-                                                            ).url,
-                                                        )
+                                                        setAssigningStep(step)
                                                     }
                                                     title="Assign employees for this step"
                                                     aria-label="Assign employees for this step"
@@ -490,6 +477,14 @@ export default function WorkflowEdit({
                         offices={offices}
                         reviewableFields={reviewableFields}
                         step={editingStep ?? undefined}
+                    />
+                )}
+
+                {assigningStep && (
+                    <StepAssigneesDialog
+                        workflow={workflow}
+                        step={assigningStep}
+                        onClose={() => setAssigningStep(null)}
                     />
                 )}
             </div>
