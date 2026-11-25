@@ -1,6 +1,7 @@
 import { router, useForm } from '@inertiajs/react';
 import { Clock, MapPin, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -141,6 +142,8 @@ export function TravelOrderItineraryPanel({
     const itineraries = travelOrder.itineraries ?? [];
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState<TravelOrderItinerary | null>(null);
+    const [pendingRemove, setPendingRemove] =
+        useState<TravelOrderItinerary | null>(null);
 
     const form = useForm<ItineraryFormData>(emptyForm(travelOrder));
 
@@ -191,11 +194,13 @@ export function TravelOrderItineraryPanel({
         });
     };
 
-    const destroy = (entry: TravelOrderItinerary) => {
-        if (!window.confirm('Remove this itinerary entry?')) {
+    const confirmRemove = () => {
+        if (!pendingRemove) {
             return;
         }
 
+        const entry = pendingRemove;
+        setPendingRemove(null);
         router.delete(
             travelOrders.itineraries.destroy([travelOrder.id, entry.id]).url,
             { preserveScroll: true },
@@ -346,7 +351,7 @@ export function TravelOrderItineraryPanel({
                                                     size="icon"
                                                     className="h-8 w-8 text-destructive"
                                                     onClick={() =>
-                                                        destroy(entry)
+                                                        setPendingRemove(entry)
                                                     }
                                                     title="Remove"
                                                 >
@@ -676,6 +681,20 @@ export function TravelOrderItineraryPanel({
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={pendingRemove !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingRemove(null);
+                    }
+                }}
+                title="Remove itinerary entry?"
+                description="The entry will be removed from this travel order. This cannot be undone."
+                confirmLabel="Remove entry"
+                destructive
+                onConfirm={confirmRemove}
+            />
         </section>
     );
 }

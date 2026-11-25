@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Download, Eye, Fuel, Printer, Search } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import Heading from '@/components/heading';
+import Pagination from '@/components/pagination';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -13,6 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CustomComboBox } from '@/components/CustomComboBox';
+import { TableEmptyState } from '@/components/table-empty-state';
 import {
     Table,
     TableBody,
@@ -784,48 +786,17 @@ export default function FuelMonitoringIndex({
                                             </TableRow>
                                         ))
                                     ) : (
-                                        <TableRow>
-                                            <TableCell
-                                                colSpan={8}
-                                                className="h-24 text-center text-muted-foreground"
-                                            >
-                                                No fuel records found for the
-                                                selected filters.
-                                            </TableCell>
-                                        </TableRow>
+                                        <TableEmptyState
+                                            colSpan={8}
+                                            icon={Fuel}
+                                            title="No fuel records found"
+                                            description="Try a different search or clear the selected filters."
+                                        />
                                     )}
                                 </TableBody>
                             </Table>
 
-                            {tickets.links?.length > 3 && (
-                                <div className="mt-4 flex flex-wrap gap-2">
-                                    {tickets.links.map((link, index) => (
-                                        <Button
-                                            key={`${link.label}-${index}`}
-                                            variant={
-                                                link.active
-                                                    ? 'default'
-                                                    : 'outline'
-                                            }
-                                            size="sm"
-                                            disabled={!link.url}
-                                            onClick={() =>
-                                                link.url &&
-                                                router.visit(link.url, {
-                                                    preserveScroll: true,
-                                                    preserveState: true,
-                                                })
-                                            }
-                                        >
-                                            <span
-                                                dangerouslySetInnerHTML={{
-                                                    __html: link.label,
-                                                }}
-                                            />
-                                        </Button>
-                                    ))}
-                                </div>
-                            )}
+                            <Pagination data={tickets} />
                         </CardContent>
                     </Card>
                 </div>

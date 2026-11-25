@@ -3,6 +3,7 @@ import { Landmark, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
+import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +24,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CustomComboBox } from '@/components/CustomComboBox';
+import { TableEmptyState } from '@/components/table-empty-state';
 import {
     Table,
     TableBody,
@@ -103,6 +105,114 @@ function money(value: string | number | null | undefined) {
 
 function liters(value: string | number | null | undefined) {
     return `${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L`;
+}
+
+const eventMetaLabels: Record<string, string> = {
+    allocated_liters: 'Allocated fuel',
+    allocated_amount: 'Allocated amount',
+    fuel_type: 'Fuel type',
+    fuel_type_id: 'Fuel type',
+    office_id: 'Office',
+    source_office_id: 'Source office',
+    allocation_date: 'Date',
+    reference_no: 'Reference',
+    remarks: 'Remarks',
+    related_allocation_id: 'Linked allocation',
+    related_to: 'Linked allocation',
+    to_office_id: 'Transferred to',
+    from_office_id: 'Transferred from',
+    liters: 'Liters',
+    amount: 'Amount',
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function eventValueLabel(
+    key: string,
+    value: unknown,
+    offices: OfficeOption[],
+    fuelTypes: FuelTypeOption[],
+): string {
+    if (
+        value === null ||
+        value === undefined ||
+        value === '' ||
+        (typeof value !== 'string' && typeof value !== 'number')
+    ) {
+        return '—';
+    }
+
+    const scalar = value;
+
+    if (key === 'office_id' || key.endsWith('_office_id')) {
+        return (
+            offices.find((office) => office.id === Number(scalar))
+                ?.office_name ?? `#${scalar}`
+        );
+    }
+
+    if (key === 'fuel_type_id') {
+        return (
+            fuelTypes.find((type) => type.id === Number(scalar))?.name ??
+            `#${scalar}`
+        );
+    }
+
+    if (key === 'allocated_liters' || key === 'liters') {
+        return liters(scalar);
+    }
+
+    if (key === 'allocated_amount' || key === 'amount') {
+        return money(scalar);
+    }
+
+    return String(scalar);
+}
+
+function eventDetailLines(
+    meta: Record<string, unknown> | null,
+    offices: OfficeOption[],
+    fuelTypes: FuelTypeOption[],
+): string[] {
+    if (!meta) {
+        return [];
+    }
+
+    const { before, after } = meta;
+
+    if (isRecord(before) && isRecord(after)) {
+        return Object.keys(after)
+            .filter((key) => key in before)
+            .map((key) => {
+                const label = eventMetaLabels[key] ?? key;
+                const previous = eventValueLabel(
+                    key,
+                    before[key],
+                    offices,
+                    fuelTypes,
+                );
+                const current = eventValueLabel(
+                    key,
+                    after[key],
+                    offices,
+                    fuelTypes,
+                );
+
+                return previous === current
+                    ? null
+                    : `${label}: ${previous} → ${current}`;
+            })
+            .filter((line): line is string => line !== null);
+    }
+
+    return Object.entries(meta)
+        .filter(([key]) => key !== 'before' && key !== 'after')
+        .map(
+            ([key, value]) =>
+                `${eventMetaLabels[key] ?? key}: ${eventValueLabel(key, value, offices, fuelTypes)}`,
+        );
 }
 
 export default function FuelAllocationsIndex({
@@ -570,44 +680,16 @@ export default function FuelAllocationsIndex({
                                         </TableRow>
                                     ))
                                 ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={9}
-                                            className="h-24 text-center text-muted-foreground"
-                                        >
-                                            No fuel allocations found.
-                                        </TableCell>
-                                    </TableRow>
+                                    <TableEmptyState
+                                        colSpan={9}
+                                        icon={Landmark}
+                                        title="No fuel allocations found"
+                                        description="Adjust the filters or record a new allocation or transfer."
+                                    />
                                 )}
                             </TableBody>
                         </Table>
-                        {allocations.links?.length > 3 && (
-                            <div className="mt-4 flex flex-wrap gap-2">
-                                {allocations.links.map((link, i) => (
-                                    <Button
-                                        key={`${link.label}-${i}`}
-                                        variant={
-                                            link.active ? 'default' : 'outline'
-                                        }
-                                        size="sm"
-                                        disabled={!link.url}
-                                        onClick={() =>
-                                            link.url &&
-                                            router.visit(link.url, {
-                                                preserveScroll: true,
-                                                preserveState: true,
-                                            })
-                                        }
-                                    >
-                                        <span
-                                            dangerouslySetInnerHTML={{
-                                                __html: link.label,
-                                            }}
-                                        />
-                                    </Button>
-                                ))}
-                            </div>
-                        )}
+                        <Pagination data={allocations} />
                     </CardContent>
                 </Card>
             </div>
@@ -934,40 +1016,52 @@ export default function FuelAllocationsIndex({
                     </DialogHeader>
                     <div className="max-h-[60vh] space-y-3 overflow-y-auto">
                         {history?.events?.length ? (
-                            history.events.map((event) => (
-                                <div
-                                    key={event.id}
-                                    className="rounded-md border p-3 text-sm"
-                                >
-                                    <div className="flex items-center justify-between gap-2">
-                                        <span className="font-medium">
-                                            {event.event}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {event.created_at
-                                                ? formatDate(event.created_at)
-                                                : '—'}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">
-                                        By: {event.actor?.name ?? 'System'}
-                                    </p>
-                                    {event.remarks && (
-                                        <p className="mt-1 text-xs">
-                                            Remarks: {event.remarks}
+                            history.events.map((event) => {
+                                const detailLines = eventDetailLines(
+                                    event.meta,
+                                    offices,
+                                    fuelTypes,
+                                );
+
+                                return (
+                                    <div
+                                        key={event.id}
+                                        className="rounded-md border p-3 text-sm"
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="font-medium">
+                                                {event.event}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground">
+                                                {event.created_at
+                                                    ? formatDate(
+                                                          event.created_at,
+                                                      )
+                                                    : '—'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            By: {event.actor?.name ?? 'System'}
                                         </p>
-                                    )}
-                                    {event.meta && (
-                                        <pre className="mt-2 overflow-x-auto rounded bg-muted p-2 text-[11px]">
-                                            {JSON.stringify(
-                                                event.meta,
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    )}
-                                </div>
-                            ))
+                                        {event.remarks && (
+                                            <p className="mt-1 text-xs">
+                                                Remarks: {event.remarks}
+                                            </p>
+                                        )}
+                                        {detailLines.length > 0 && (
+                                            <ul className="mt-2 space-y-1 rounded bg-muted p-2 text-[11px]">
+                                                {detailLines.map(
+                                                    (line, index) => (
+                                                        <li key={index}>
+                                                            {line}
+                                                        </li>
+                                                    ),
+                                                )}
+                                            </ul>
+                                        )}
+                                    </div>
+                                );
+                            })
                         ) : (
                             <p className="text-sm text-muted-foreground">
                                 No history yet.

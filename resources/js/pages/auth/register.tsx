@@ -26,6 +26,12 @@ export default function Register({ passwordRules }: Props) {
             >
                 {({ processing, errors }) => (
                     <>
+                        <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                            Self-registration creates a basic employee account.
+                            Approving roles are assigned by an administrator,
+                            and an employee record must be linked before you can
+                            file a travel order.
+                        </p>
                         <div className="grid gap-6">
                             <div className="grid gap-2">
                                 <Label htmlFor="name">Name</Label>
@@ -117,7 +123,7 @@ export default function Register({ passwordRules }: Props) {
 }
 
 Register.layout = {
-    title: 'Create an account',
+    title: 'Create an employee account',
     description:
-        'Enter your name, username, and password to create your account',
+        'Register for basic employee access. Approving roles are assigned separately by an administrator.',
 };

@@ -2,6 +2,7 @@ import { Head, router } from '@inertiajs/react';
 import { Eye, History } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
+import { TableEmptyState } from '@/components/table-empty-state';
 import { TravelOrderStatusBadge } from '@/components/travel-orders/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -131,18 +132,12 @@ export default function ApprovalHistory({ historyItems, portal }: Props) {
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={9}
-                                        className="h-24 text-center text-muted-foreground"
-                                    >
-                                        <div className="flex flex-col items-center gap-2">
-                                            <History className="size-6 text-muted-foreground/50" />
-                                            No documents have passed through
-                                            your inbox yet.
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
+                                <TableEmptyState
+                                    colSpan={9}
+                                    icon={History}
+                                    title="No processing history yet"
+                                    description="Orders you approve, return, or forward will be recorded here."
+                                />
                             )}
                         </TableBody>
                     </Table>

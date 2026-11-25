@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Heading from '@/components/heading';
 
 import Pagination from '@/components/pagination';
+import { TableEmptyState } from '@/components/table-empty-state';
 import { TravelOrderStatusBadge } from '@/components/travel-orders/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -31,11 +32,13 @@ import type { KeyboardEvent } from 'react';
 type Props = {
     travelOrders: PaginatedDataResponse<TravelOrder>;
     filters: { search?: string; status?: string };
+    statuses: { value: string; label: string }[];
 };
 
 export default function AdminTravelOrdersIndex({
     travelOrders,
     filters,
+    statuses,
 }: Props) {
     const [reassignOrder, setReassignOrder] = useState<TravelOrder | null>(
         null,
@@ -43,16 +46,28 @@ export default function AdminTravelOrdersIndex({
     const [targetId, setTargetId] = useState('');
     const [remarks, setRemarks] = useState('');
     const [processing, setProcessing] = useState(false);
+    const [search, setSearch] = useState(filters.search ?? '');
+
+    const applyFilters = (next: { search: string; status: string }) => {
+        router.get(
+            admin.travelOrders.index().url,
+            {
+                ...(next.search !== '' ? { search: next.search } : {}),
+                ...(next.status !== '' ? { status: next.status } : {}),
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+            },
+        );
+    };
 
     const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key !== 'Enter') return;
         event.preventDefault();
-        const params: Record<string, string> = {};
-        if (filters.search) params.search = filters.search;
-        if (filters.status) params.status = filters.status;
-        router.get(admin.travelOrders.index().url, params, {
-            preserveState: true,
-            preserveScroll: true,
+        applyFilters({
+            search: event.currentTarget.value,
+            status: filters.status ?? '',
         });
     };
 
@@ -92,18 +107,44 @@ export default function AdminTravelOrdersIndex({
                     title="Travel Order Register"
                     description="All travel orders across the organization."
                 />
-                <div className="relative w-full sm:w-[250px]">
-                    <Label htmlFor="search" className="sr-only">
-                        Search
-                    </Label>
-                    <Input
-                        id="search"
-                        placeholder="Search..."
-                        className="w-full pl-8"
-                        defaultValue={filters.search ?? ''}
-                        onKeyDown={handleSearchKeyDown}
-                    />
-                    <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                    <div className="w-full sm:w-[160px]">
+                        <Label htmlFor="status" className="sr-only">
+                            Filter by status
+                        </Label>
+                        <select
+                            id="status"
+                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                            value={filters.status ?? ''}
+                            onChange={(event) =>
+                                applyFilters({
+                                    search,
+                                    status: event.target.value,
+                                })
+                            }
+                        >
+                            <option value="">All statuses</option>
+                            {statuses.map((status) => (
+                                <option key={status.value} value={status.value}>
+                                    {status.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="relative w-full sm:w-[250px]">
+                        <Label htmlFor="search" className="sr-only">
+                            Search
+                        </Label>
+                        <Input
+                            id="search"
+                            placeholder="Search..."
+                            className="w-full pl-8"
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                            onKeyDown={handleSearchKeyDown}
+                        />
+                        <Search className="pointer-events-none absolute top-1/2 left-2 size-4 -translate-y-1/2 opacity-50 select-none" />
+                    </div>
                 </div>
                 <div className="w-full overflow-hidden rounded-sm border shadow-sm">
                     <Table>
@@ -161,14 +202,12 @@ export default function AdminTravelOrdersIndex({
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={6}
-                                        className="h-24 text-center text-muted-foreground"
-                                    >
-                                        No travel orders found.
-                                    </TableCell>
-                                </TableRow>
+                                <TableEmptyState
+                                    colSpan={6}
+                                    icon={Search}
+                                    title="No travel orders found"
+                                    description="Try another search or status filter."
+                                />
                             )}
                         </TableBody>
                     </Table>

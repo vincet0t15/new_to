@@ -64,6 +64,18 @@ function liters(value: number) {
     })} L`;
 }
 
+function registerHref(order: {
+    id: number;
+    control_no?: string | null;
+    to_number?: string | null;
+}) {
+    return admin.travelOrders.index({
+        query: {
+            search: order.control_no ?? order.to_number ?? String(order.id),
+        },
+    }).url;
+}
+
 export default function AdminDashboard({
     stats,
     fuelAlerts,
@@ -265,11 +277,16 @@ export default function AdminDashboard({
                                         {stalledOrders.map((order) => (
                                             <TableRow key={order.id}>
                                                 <TableCell className="pl-5">
-                                                    <span className="block text-sm font-medium">
+                                                    <Link
+                                                        href={registerHref(
+                                                            order,
+                                                        )}
+                                                        className="block text-sm font-medium underline-offset-4 hover:underline"
+                                                    >
                                                         {order.control_no ??
                                                             order.to_number ??
                                                             `#${order.id}`}
-                                                    </span>
+                                                    </Link>
                                                     <span className="block max-w-[18rem] truncate text-xs text-muted-foreground">
                                                         {order.purpose ?? '—'}
                                                     </span>
@@ -453,11 +470,16 @@ export default function AdminDashboard({
                                                 className="hover:bg-muted/40"
                                             >
                                                 <TableCell className="pl-5">
-                                                    <p className="font-medium">
+                                                    <Link
+                                                        href={registerHref(
+                                                            order,
+                                                        )}
+                                                        className="font-medium underline-offset-4 hover:underline"
+                                                    >
                                                         {order.control_no ??
                                                             order.to_number ??
                                                             `#${order.id}`}
-                                                    </p>
+                                                    </Link>
                                                     <p className="mt-0.5 truncate text-xs text-muted-foreground">
                                                         {order.employee ??
                                                             'Unknown employee'}

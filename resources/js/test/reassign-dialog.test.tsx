@@ -69,6 +69,7 @@ function page(orders: TravelOrder[]): PaginatedDataResponse<TravelOrder> {
 
 describe('admin reassign dialog', () => {
     beforeEach(() => {
+        inertia.router.get.mockClear();
         inertia.router.post.mockClear();
     });
 
@@ -80,6 +81,7 @@ describe('admin reassign dialog', () => {
             <AdminTravelOrdersIndex
                 travelOrders={page([order])}
                 filters={{}}
+                statuses={[]}
             />,
         );
 
@@ -105,6 +107,26 @@ describe('admin reassign dialog', () => {
         );
     });
 
+    it('uses the typed search term and keeps the active status filter', async () => {
+        const user = userEvent.setup();
+
+        render(
+            <AdminTravelOrdersIndex
+                travelOrders={page([])}
+                filters={{ status: 'submitted' }}
+                statuses={[{ value: 'submitted', label: 'Submitted' }]}
+            />,
+        );
+
+        await user.type(screen.getByLabelText('Search'), 'Davao{enter}');
+
+        expect(inertia.router.get).toHaveBeenCalledWith(
+            '/admin/travel-orders',
+            { search: 'Davao', status: 'submitted' },
+            expect.objectContaining({ preserveState: true }),
+        );
+    });
+
     it('does not offer reassign when there is no candidate or the order is not submitted', () => {
         const order = makeTravelOrder({
             status: 'approved',
@@ -115,6 +137,7 @@ describe('admin reassign dialog', () => {
             <AdminTravelOrdersIndex
                 travelOrders={page([order])}
                 filters={{}}
+                statuses={[]}
             />,
         );
 

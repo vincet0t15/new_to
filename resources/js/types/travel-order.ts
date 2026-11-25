@@ -299,6 +299,7 @@ export type ApprovalInboxItem = {
     date_from: string | null;
     date_to: string | null;
     submitted_at: string | null;
+    waiting_days: number | null;
     employee: string | null;
     office: string | null;
     step_label: string | null;

@@ -90,3 +90,27 @@ test('an order that is still pending appears in the history as waiting', functio
             ->where('historyItems.data.0.step_label', 'Department Head')
         );
 });
+
+test('the approval inbox reports waiting days using the stalled threshold', function () {
+    config()->set('travel-orders.approval.stalled_after_days', 3);
+
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    $order->deliveries()
+        ->where('user_id', $chain['headUser']->id)
+        ->firstOrFail()
+        ->forceFill(['created_at' => now()->subDays(5)])
+        ->save();
+
+    $this->actingAs($chain['headUser'])
+        ->get(route('department-head.inbox'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('approvals/inbox')
+            ->where('stalledAfterDays', 3)
+            ->has('deliveries.data', 1)
+            ->where('deliveries.data.0.id', $order->id)
+            ->where('deliveries.data.0.waiting_days', 5)
+        );
+});

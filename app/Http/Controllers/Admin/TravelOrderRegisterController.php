@@ -30,7 +30,8 @@ class TravelOrderRegisterController extends Controller
                     $query->where('purpose', 'like', '%'.$search.'%')
                         ->orWhere('destination', 'like', '%'.$search.'%')
                         ->orWhere('to_number', 'like', '%'.$search.'%')
-                        ->orWhere('control_no', 'like', '%'.$search.'%');
+                        ->orWhere('control_no', 'like', '%'.$search.'%')
+                        ->orWhere('id', 'like', '%'.$search.'%');
                 });
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -61,6 +62,13 @@ class TravelOrderRegisterController extends Controller
                 'search' => $search,
                 'status' => $status,
             ],
+            'statuses' => array_map(
+                fn (TravelOrderStatus $status): array => [
+                    'value' => $status->value,
+                    'label' => $status->label(),
+                ],
+                TravelOrderStatus::selectable(),
+            ),
         ]);
     }
 }

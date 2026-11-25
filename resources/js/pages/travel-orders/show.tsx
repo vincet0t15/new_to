@@ -1,6 +1,8 @@
 import { Head, router } from '@inertiajs/react';
 import { ArrowLeft, Pencil, Printer, Send, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { Can } from '@/components/can';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
 import { TravelOrderItineraryPanel } from '@/components/travel-orders/itinerary-panel';
@@ -46,6 +48,8 @@ export default function ShowTravelOrder({
     can,
     urls,
 }: Props) {
+    const [deleteOpen, setDeleteOpen] = useState(false);
+
     const submit = () => {
         router.post(urls.submit, {}, { preserveScroll: true });
     };
@@ -54,11 +58,8 @@ export default function ShowTravelOrder({
         router.visit(urls.edit);
     };
 
-    const destroy = () => {
-        if (!confirm('Delete this travel order?')) {
-            return;
-        }
-
+    const confirmDestroy = () => {
+        setDeleteOpen(false);
         router.delete(urls.destroy);
     };
 
@@ -152,7 +153,10 @@ export default function ShowTravelOrder({
                         )}
                         {can.delete && (
                             <Can permission="travel-orders.delete">
-                                <Button variant="destructive" onClick={destroy}>
+                                <Button
+                                    variant="destructive"
+                                    onClick={() => setDeleteOpen(true)}
+                                >
                                     <Trash2 className="size-4" />
                                     Delete
                                 </Button>
@@ -191,6 +195,16 @@ export default function ShowTravelOrder({
                     </section>
                 </div>
             </div>
+
+            <ConfirmDialog
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                title="Delete this travel order?"
+                description="The draft and its itinerary will be permanently removed. This cannot be undone."
+                confirmLabel="Delete order"
+                destructive
+                onConfirm={confirmDestroy}
+            />
         </>
     );
 }

@@ -448,6 +448,9 @@ export default function ShowApproval({
                                     )}
 
                                     <div className="flex flex-wrap gap-2">
+                                        <p className="w-full text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                                            Receipt & decision
+                                        </p>
                                         {can.receive && (
                                             <Button
                                                 variant="outline"
@@ -465,50 +468,6 @@ export default function ShowApproval({
                                                 <Check className="size-4" />
                                                 Receive
                                             </Button>
-                                        )}
-                                        {can.earmark && (
-                                            <div className="w-full space-y-2 rounded-md border p-3">
-                                                <p className="text-sm font-medium">
-                                                    Budget earmark
-                                                </p>
-                                                <Label htmlFor="earmark_number">
-                                                    Earmark number
-                                                </Label>
-                                                <input
-                                                    id="earmark_number"
-                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                    value={data.earmark_number}
-                                                    onChange={(event) =>
-                                                        setData(
-                                                            'earmark_number',
-                                                            event.target.value,
-                                                        )
-                                                    }
-                                                    placeholder="Enter earmark number"
-                                                />
-                                                <InputError
-                                                    message={
-                                                        errors.earmark_number
-                                                    }
-                                                />
-                                                <Button
-                                                    variant="secondary"
-                                                    disabled={processing}
-                                                    onClick={() =>
-                                                        setPendingAction(
-                                                            'earmark',
-                                                        )
-                                                    }
-                                                >
-                                                    {actionIcon(
-                                                        'earmark',
-                                                        Check,
-                                                    )}
-                                                    {actionBusy('earmark')
-                                                        ? 'Recording…'
-                                                        : 'Record Earmark'}
-                                                </Button>
-                                            </div>
                                         )}
                                         {can.approve && (
                                             <Button
@@ -560,183 +519,281 @@ export default function ShowApproval({
                                         )}
                                     </div>
 
-                                    {can.assignFundSource && (
-                                        <div className="space-y-2 border-t pt-3">
+                                    {(can.earmark || can.assignFundSource) && (
+                                        <div className="mt-3 space-y-3 rounded-lg border p-3">
                                             <p className="text-sm font-medium">
-                                                Fund source
+                                                Budget certification
                                             </p>
-                                            <Label htmlFor="fund_source_id">
-                                                Assign fund source
-                                            </Label>
-                                            <select
-                                                id="fund_source_id"
-                                                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                value={data.fund_source_id}
-                                                onChange={(event) =>
-                                                    setData(
-                                                        'fund_source_id',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            >
-                                                <option value="">
-                                                    Select fund source
-                                                </option>
-                                                {fundSources.map(
-                                                    (fundSource) => (
-                                                        <option
-                                                            key={fundSource.id}
+                                            {can.earmark && (
+                                                <div className="space-y-2">
+                                                    <p className="text-sm font-medium">
+                                                        Budget earmark
+                                                    </p>
+                                                    <Label htmlFor="earmark_number">
+                                                        Earmark number
+                                                    </Label>
+                                                    <input
+                                                        id="earmark_number"
+                                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                        value={
+                                                            data.earmark_number
+                                                        }
+                                                        onChange={(event) =>
+                                                            setData(
+                                                                'earmark_number',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                        placeholder="Enter earmark number"
+                                                    />
+                                                    <InputError
+                                                        message={
+                                                            errors.earmark_number
+                                                        }
+                                                    />
+                                                    <Button
+                                                        variant="secondary"
+                                                        disabled={processing}
+                                                        onClick={() =>
+                                                            setPendingAction(
+                                                                'earmark',
+                                                            )
+                                                        }
+                                                    >
+                                                        {actionIcon(
+                                                            'earmark',
+                                                            Check,
+                                                        )}
+                                                        {actionBusy('earmark')
+                                                            ? 'Recording…'
+                                                            : 'Record Earmark'}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {can.assignFundSource && (
+                                                <div className="space-y-2 border-t pt-3">
+                                                    <p className="text-sm font-medium">
+                                                        Fund source
+                                                    </p>
+                                                    <Label htmlFor="fund_source_id">
+                                                        Assign fund source
+                                                    </Label>
+                                                    <select
+                                                        id="fund_source_id"
+                                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                        value={
+                                                            data.fund_source_id
+                                                        }
+                                                        onChange={(event) =>
+                                                            setData(
+                                                                'fund_source_id',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <option value="">
+                                                            Select fund source
+                                                        </option>
+                                                        {fundSources.map(
+                                                            (fundSource) => (
+                                                                <option
+                                                                    key={
+                                                                        fundSource.id
+                                                                    }
+                                                                    value={
+                                                                        fundSource.id
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        fundSource.name
+                                                                    }
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <InputError
+                                                        message={
+                                                            errors.fund_source_id
+                                                        }
+                                                    />
+                                                    <Button
+                                                        variant="secondary"
+                                                        disabled={processing}
+                                                        onClick={() =>
+                                                            setPendingAction(
+                                                                'assignFundSource',
+                                                            )
+                                                        }
+                                                    >
+                                                        {actionIcon(
+                                                            'assignFundSource',
+                                                            Check,
+                                                        )}
+                                                        {actionBusy(
+                                                            'assignFundSource',
+                                                        )
+                                                            ? 'Assigning…'
+                                                            : 'Assign Fund Source'}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {(can.record || can.forward) && (
+                                        <div className="mt-3 space-y-3 rounded-lg border p-3">
+                                            <p className="text-sm font-medium">
+                                                Records & routing
+                                            </p>
+                                            {can.record && (
+                                                <div className="space-y-2">
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="to_number">
+                                                            Series/TO No.
+                                                        </Label>
+                                                        <input
+                                                            id="to_number"
+                                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
                                                             value={
-                                                                fundSource.id
+                                                                data.to_number
                                                             }
-                                                        >
-                                                            {fundSource.name}
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'to_number',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                        <InputError
+                                                            message={
+                                                                errors.to_number
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label htmlFor="control_no">
+                                                            Control No.
+                                                        </Label>
+                                                        <input
+                                                            id="control_no"
+                                                            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                            value={
+                                                                data.control_no
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'control_no',
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                        />
+                                                        <InputError
+                                                            message={
+                                                                errors.control_no
+                                                            }
+                                                        />
+                                                    </div>
+                                                    <label className="flex items-center gap-2 text-sm">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={
+                                                                data.distributed
+                                                            }
+                                                            onChange={(e) =>
+                                                                setData(
+                                                                    'distributed',
+                                                                    e.target
+                                                                        .checked,
+                                                                )
+                                                            }
+                                                        />
+                                                        Mark as
+                                                        distributed/released
+                                                    </label>
+                                                    <Button
+                                                        variant="secondary"
+                                                        disabled={processing}
+                                                        onClick={() =>
+                                                            setPendingAction(
+                                                                'record',
+                                                            )
+                                                        }
+                                                    >
+                                                        {actionIcon(
+                                                            'record',
+                                                            Check,
+                                                        )}{' '}
+                                                        {actionBusy('record')
+                                                            ? 'Recording…'
+                                                            : 'Record & Release'}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {can.forward && (
+                                                <div className="space-y-2 border-t pt-3">
+                                                    <Label htmlFor="to_user_id">
+                                                        Forward to
+                                                    </Label>
+                                                    <select
+                                                        id="to_user_id"
+                                                        className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+                                                        value={data.to_user_id}
+                                                        onChange={(event) =>
+                                                            setData(
+                                                                'to_user_id',
+                                                                event.target
+                                                                    .value,
+                                                            )
+                                                        }
+                                                    >
+                                                        <option value="">
+                                                            Choose a person
                                                         </option>
-                                                    ),
-                                                )}
-                                            </select>
-                                            <InputError
-                                                message={errors.fund_source_id}
-                                            />
-                                            <Button
-                                                variant="secondary"
-                                                disabled={processing}
-                                                onClick={() =>
-                                                    setPendingAction(
-                                                        'assignFundSource',
-                                                    )
-                                                }
-                                            >
-                                                {actionIcon(
-                                                    'assignFundSource',
-                                                    Check,
-                                                )}
-                                                {actionBusy('assignFundSource')
-                                                    ? 'Assigning…'
-                                                    : 'Assign Fund Source'}
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {can.record && (
-                                        <div className="space-y-2 border-t pt-3">
-                                            <p className="text-sm font-medium">
-                                                HRMO recording
-                                            </p>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="to_number">
-                                                    Series/TO No.
-                                                </Label>
-                                                <input
-                                                    id="to_number"
-                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                    value={data.to_number}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'to_number',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                                <InputError
-                                                    message={errors.to_number}
-                                                />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="control_no">
-                                                    Control No.
-                                                </Label>
-                                                <input
-                                                    id="control_no"
-                                                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                    value={data.control_no}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'control_no',
-                                                            e.target.value,
-                                                        )
-                                                    }
-                                                />
-                                                <InputError
-                                                    message={errors.control_no}
-                                                />
-                                            </div>
-                                            <label className="flex items-center gap-2 text-sm">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={data.distributed}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            'distributed',
-                                                            e.target.checked,
-                                                        )
-                                                    }
-                                                />
-                                                Mark as distributed/released
-                                            </label>
-                                            <Button
-                                                variant="secondary"
-                                                disabled={processing}
-                                                onClick={() =>
-                                                    setPendingAction('record')
-                                                }
-                                            >
-                                                {actionIcon('record', Check)}{' '}
-                                                {actionBusy('record')
-                                                    ? 'Recording…'
-                                                    : 'Record & Release'}
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {can.forward && (
-                                        <div className="space-y-2 border-t pt-3">
-                                            <Label htmlFor="to_user_id">
-                                                Forward to
-                                            </Label>
-                                            <select
-                                                id="to_user_id"
-                                                className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                                                value={data.to_user_id}
-                                                onChange={(event) =>
-                                                    setData(
-                                                        'to_user_id',
-                                                        event.target.value,
-                                                    )
-                                                }
-                                            >
-                                                <option value="">
-                                                    Choose a person
-                                                </option>
-                                                {forwardCandidates.map(
-                                                    (candidate) => (
-                                                        <option
-                                                            key={candidate.id}
-                                                            value={candidate.id}
-                                                        >
-                                                            {candidate.name}
-                                                        </option>
-                                                    ),
-                                                )}
-                                            </select>
-                                            <InputError
-                                                message={errors.to_user_id}
-                                            />
-                                            <Button
-                                                variant="secondary"
-                                                disabled={processing}
-                                                onClick={() =>
-                                                    setPendingAction('forward')
-                                                }
-                                            >
-                                                {actionIcon(
-                                                    'forward',
-                                                    CornerUpRight,
-                                                )}
-                                                {actionBusy('forward')
-                                                    ? 'Forwarding…'
-                                                    : 'Forward'}
-                                            </Button>
+                                                        {forwardCandidates.map(
+                                                            (candidate) => (
+                                                                <option
+                                                                    key={
+                                                                        candidate.id
+                                                                    }
+                                                                    value={
+                                                                        candidate.id
+                                                                    }
+                                                                >
+                                                                    {
+                                                                        candidate.name
+                                                                    }
+                                                                </option>
+                                                            ),
+                                                        )}
+                                                    </select>
+                                                    <InputError
+                                                        message={
+                                                            errors.to_user_id
+                                                        }
+                                                    />
+                                                    <Button
+                                                        variant="secondary"
+                                                        disabled={processing}
+                                                        onClick={() =>
+                                                            setPendingAction(
+                                                                'forward',
+                                                            )
+                                                        }
+                                                    >
+                                                        {actionIcon(
+                                                            'forward',
+                                                            CornerUpRight,
+                                                        )}
+                                                        {actionBusy('forward')
+                                                            ? 'Forwarding…'
+                                                            : 'Forward'}
+                                                    </Button>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

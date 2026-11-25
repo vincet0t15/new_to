@@ -68,6 +68,28 @@ test('the admin dashboard lists submitted orders past the stalled threshold with
         );
 });
 
+test('the admin register can be filtered by order number or id', function () {
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    $admin = adminOperationsUser(['travel-orders.view-all']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.travel-orders.index', [
+            'search' => (string) $order->id,
+            'status' => 'submitted',
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('admin/travel-orders/index')
+            ->has('travelOrders.data', 1)
+            ->where('travelOrders.data.0.id', $order->id)
+            ->where('filters.search', (string) $order->id)
+            ->where('filters.status', 'submitted')
+            ->has('statuses', 7)
+        );
+});
+
 test('the impact preview lists current deliveries held by a designation', function () {
     $chain = routingChain();
     $order = routingSubmit($chain);

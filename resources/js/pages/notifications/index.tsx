@@ -1,8 +1,9 @@
-import { Head, Link } from '@inertiajs/react';
-import { Bell } from 'lucide-react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Bell, CheckCheck } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import inbox from '@/routes/inbox';
 import type { NotificationInboxItem } from '@/types/notification';
@@ -50,14 +51,32 @@ function kindVariant(
 }
 
 export default function NotificationsIndex({ notificationItems }: Props) {
+    const { unreadNotificationsCount } = usePage().props;
+
+    const markAllRead = () => {
+        router.post(inbox.readAll().url, {}, { preserveScroll: true });
+    };
+
     return (
         <>
             <Head title="Notifications" />
             <div className="flex h-full min-w-0 flex-1 flex-col gap-4 rounded-xl p-4">
-                <Heading
-                    title="Notifications"
-                    description="Travel order updates addressed to your account."
-                />
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <Heading
+                        title="Notifications"
+                        description="Travel order updates addressed to your account."
+                    />
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={unreadNotificationsCount === 0}
+                        onClick={markAllRead}
+                        className="shrink-0"
+                    >
+                        <CheckCheck aria-hidden="true" />
+                        Mark all read
+                    </Button>
+                </div>
 
                 <div className="overflow-hidden rounded-sm border shadow-sm">
                     {notificationItems.data.length > 0 ? (

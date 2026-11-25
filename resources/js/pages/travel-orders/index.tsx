@@ -1,6 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { Eye, Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { Can } from '@/components/can';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { TravelOrderStatusBadge } from '@/components/travel-orders/status-badge';
@@ -19,7 +20,7 @@ import travelOrdersRoutes from '@/routes/travel-orders';
 import { formatDate } from '@/lib/date-format';
 import type { PaginatedDataResponse } from '@/types/pagination';
 import type { TravelOrder } from '@/types/travel-order';
-import type { KeyboardEvent } from 'react';
+import { type KeyboardEvent, useState } from 'react';
 
 type Props = {
     travelOrders: PaginatedDataResponse<TravelOrder>;
@@ -53,6 +54,9 @@ export default function TravelOrdersIndex({
     filters,
     statuses,
 }: Props) {
+    const [pendingDelete, setPendingDelete] = useState<TravelOrder | null>(
+        null,
+    );
     const { data, setData } = useForm<RegisterFilters>({
         search: filters.search ?? '',
         status: filters.status ?? '',
@@ -69,6 +73,16 @@ export default function TravelOrdersIndex({
         if (event.key !== 'Enter') return;
         event.preventDefault();
         applyFilters(data);
+    };
+
+    const confirmDelete = () => {
+        if (!pendingDelete) {
+            return;
+        }
+
+        const order = pendingDelete;
+        setPendingDelete(null);
+        router.delete(travelOrdersRoutes.destroy(order).url);
     };
 
     return (
@@ -219,19 +233,11 @@ export default function TravelOrdersIndex({
                                                         variant="ghost"
                                                         size="icon"
                                                         className="h-8 w-8 text-red-600"
-                                                        onClick={() => {
-                                                            if (
-                                                                confirm(
-                                                                    'Delete this travel order?',
-                                                                )
-                                                            ) {
-                                                                router.delete(
-                                                                    travelOrdersRoutes.destroy(
-                                                                        order,
-                                                                    ).url,
-                                                                );
-                                                            }
-                                                        }}
+                                                        onClick={() =>
+                                                            setPendingDelete(
+                                                                order,
+                                                            )
+                                                        }
                                                         title="Delete"
                                                     >
                                                         <Trash2 />
@@ -260,6 +266,20 @@ export default function TravelOrdersIndex({
 
                 <Pagination data={travelOrders} />
             </div>
+
+            <ConfirmDialog
+                open={pendingDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingDelete(null);
+                    }
+                }}
+                title="Delete this travel order?"
+                description="The draft and its itinerary will be permanently removed. This cannot be undone."
+                confirmLabel="Delete order"
+                destructive
+                onConfirm={confirmDelete}
+            />
         </>
     );
 }

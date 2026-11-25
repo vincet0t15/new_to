@@ -56,6 +56,9 @@ class ApprovalInboxController extends Controller
         $deliveries = $inbox->through(function (TravelOrder $order) use ($prefix, $currentSteps): array {
             $step = $this->currentStepFromMap($order, $currentSteps);
             $delivery = $order->deliveries->first();
+            $waitingSince = $delivery instanceof TravelOrderDelivery
+                ? ($delivery->created_at ?? $order->submitted_at)
+                : $order->submitted_at;
 
             return [
                 'id' => $order->id,
@@ -66,6 +69,9 @@ class ApprovalInboxController extends Controller
                 'date_from' => $order->date_from?->toDateString(),
                 'date_to' => $order->date_to?->toDateString(),
                 'submitted_at' => $order->submitted_at?->toIso8601String(),
+                'waiting_days' => $waitingSince === null
+                    ? null
+                    : (int) $waitingSince->diffInDays(now()),
                 'employee' => $order->employee?->full_name,
                 'office' => $order->office?->office_name,
                 'step_label' => $step?->displayLabel(),
@@ -81,6 +87,10 @@ class ApprovalInboxController extends Controller
             'deliveries' => $deliveries,
             'stats' => $this->travelOrders->processingCounts($user),
             'portal' => $prefix,
+            'stalledAfterDays' => max(
+                1,
+                (int) config('travel-orders.approval.stalled_after_days', 3),
+            ),
         ]);
     }
 

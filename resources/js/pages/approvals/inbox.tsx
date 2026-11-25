@@ -1,8 +1,9 @@
 import { Head, router } from '@inertiajs/react';
-import { Eye } from 'lucide-react';
+import { Eye, Inbox } from 'lucide-react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { StatCard } from '@/components/stat-card';
+import { TableEmptyState } from '@/components/table-empty-state';
 import { DeliveryStatusBadge } from '@/components/travel-orders/status-badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,9 +24,26 @@ type Props = {
     deliveries: PaginatedDataResponse<ApprovalInboxItem>;
     stats: ProcessingDashboardStats;
     portal: string;
+    stalledAfterDays: number;
 };
 
-export default function ApprovalInbox({ deliveries, stats }: Props) {
+function waitingLabel(days: number | null): string {
+    if (days === null) {
+        return '—';
+    }
+
+    if (days <= 0) {
+        return 'Today';
+    }
+
+    return days === 1 ? '1 day' : `${days} days`;
+}
+
+export default function ApprovalInbox({
+    deliveries,
+    stats,
+    stalledAfterDays,
+}: Props) {
     return (
         <>
             <Head title={APPROVAL_INBOX_LABEL} />
@@ -107,8 +125,28 @@ export default function ApprovalInbox({ deliveries, stats }: Props) {
                                             {formatDate(item.date_from)} –{' '}
                                             {formatDate(item.date_to)}
                                         </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                            {formatDate(item.submitted_at)}
+                                        <TableCell
+                                            className={`text-sm ${
+                                                item.waiting_days !== null &&
+                                                item.waiting_days >=
+                                                    stalledAfterDays
+                                                    ? 'font-medium text-amber-700 dark:text-amber-300'
+                                                    : 'text-muted-foreground'
+                                            }`}
+                                            title={
+                                                item.submitted_at
+                                                    ? `Submitted ${formatDate(item.submitted_at)}`
+                                                    : undefined
+                                            }
+                                        >
+                                            {waitingLabel(item.waiting_days)}
+                                            {item.waiting_days !== null &&
+                                                item.waiting_days >=
+                                                    stalledAfterDays && (
+                                                    <span className="ml-1.5 rounded bg-amber-100 px-1 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-200">
+                                                        Stalled
+                                                    </span>
+                                                )}
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <Button
@@ -126,14 +164,12 @@ export default function ApprovalInbox({ deliveries, stats }: Props) {
                                     </TableRow>
                                 ))
                             ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={8}
-                                        className="h-24 text-center text-muted-foreground"
-                                    >
-                                        Nothing is waiting for you right now.
-                                    </TableCell>
-                                </TableRow>
+                                <TableEmptyState
+                                    colSpan={8}
+                                    icon={Inbox}
+                                    title="Nothing is waiting for you"
+                                    description="Travel orders assigned to your step will appear here as soon as they are filed."
+                                />
                             )}
                         </TableBody>
                     </Table>

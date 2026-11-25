@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Can } from '@/components/can';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,14 @@ import type {
 import type { FormEvent } from 'react';
 import { StepAssigneesDialog } from './step-assignees-dialog';
 import { StepDialog } from './step-dialog';
+
+type PendingConfirmation = {
+    title: string;
+    description: string;
+    confirmLabel: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+};
 
 type Props = {
     workflow: Workflow;
@@ -52,6 +61,8 @@ export default function WorkflowEdit({
     const [assigningStep, setAssigningStep] = useState<WorkflowStep | null>(
         null,
     );
+    const [pendingConfirmation, setPendingConfirmation] =
+        useState<PendingConfirmation | null>(null);
 
     const { data, setData, put, errors, processing } =
         useForm<WorkflowUpdateRequest>({
@@ -74,29 +85,7 @@ export default function WorkflowEdit({
 
     const selectedOfficeIds = new Set(data.assigned_office_ids);
 
-    const handleSave = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        const officesToReassign = data.is_default
-            ? []
-            : offices.filter(
-                  (office) =>
-                      selectedOfficeIds.has(office.id) &&
-                      office.workflow_id !== null &&
-                      office.workflow_id !== workflow.id,
-              );
-
-        if (
-            officesToReassign.length > 0 &&
-            !window.confirm(
-                `These offices will be moved from their current workflow to "${data.name}": ${officesToReassign
-                    .map((office) => office.office_name)
-                    .join(', ')}. Continue?`,
-            )
-        ) {
-            return;
-        }
-
+    const saveWorkflow = () => {
         put(workflowsRoutes.update(workflow).url, {
             onSuccess: () => {
                 const isActive = data.is_default || data.is_active;
@@ -118,6 +107,34 @@ export default function WorkflowEdit({
         });
     };
 
+    const handleSave = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+
+        const officesToReassign = data.is_default
+            ? []
+            : offices.filter(
+                  (office) =>
+                      selectedOfficeIds.has(office.id) &&
+                      office.workflow_id !== null &&
+                      office.workflow_id !== workflow.id,
+              );
+
+        if (officesToReassign.length > 0) {
+            setPendingConfirmation({
+                title: 'Move offices to this workflow?',
+                description: `These offices will be moved from their current workflow to "${data.name}": ${officesToReassign
+                    .map((office) => office.office_name)
+                    .join(', ')}.`,
+                confirmLabel: 'Move offices',
+                onConfirm: saveWorkflow,
+            });
+
+            return;
+        }
+
+        saveWorkflow();
+    };
+
     const handleMove = (step: WorkflowStep, direction: 'up' | 'down') => {
         router.post(
             workflowsRoutes.steps.move({ workflow, step }).url,
@@ -127,11 +144,27 @@ export default function WorkflowEdit({
     };
 
     const handleDeleteStep = (step: WorkflowStep) => {
-        if (!confirm(`Remove step "${step.label ?? step.step_type.name}"?`))
-            return;
-        router.delete(workflowsRoutes.steps.destroy({ workflow, step }).url, {
-            preserveScroll: true,
+        setPendingConfirmation({
+            title: 'Remove this step?',
+            description: `The step "${step.label ?? step.step_type.name}" will be removed from ${workflow.name}. This cannot be undone.`,
+            confirmLabel: 'Remove step',
+            destructive: true,
+            onConfirm: () =>
+                router.delete(
+                    workflowsRoutes.steps.destroy({ workflow, step }).url,
+                    { preserveScroll: true },
+                ),
         });
+    };
+
+    const confirmPending = () => {
+        if (!pendingConfirmation) {
+            return;
+        }
+
+        const action = pendingConfirmation.onConfirm;
+        setPendingConfirmation(null);
+        action();
     };
 
     const openAdd = () => {
@@ -489,6 +522,20 @@ export default function WorkflowEdit({
                     />
                 )}
             </div>
+
+            <ConfirmDialog
+                open={pendingConfirmation !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPendingConfirmation(null);
+                    }
+                }}
+                title={pendingConfirmation?.title ?? 'Confirm action'}
+                description={pendingConfirmation?.description ?? ''}
+                confirmLabel={pendingConfirmation?.confirmLabel}
+                destructive={pendingConfirmation?.destructive}
+                onConfirm={confirmPending}
+            />
         </>
     );
 }

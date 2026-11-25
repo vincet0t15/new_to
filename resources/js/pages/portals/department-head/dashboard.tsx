@@ -24,6 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { APPROVAL_INBOX_LABEL } from '@/lib/approval-inbox-label';
 import { formatDateTime } from '@/lib/date-format';
 import departmentHead from '@/routes/department-head';
 import type {
@@ -64,7 +65,7 @@ export default function DepartmentHeadDashboard({
                             <Button asChild>
                                 <Link href={departmentHead.inbox().url}>
                                     <Inbox aria-hidden="true" />
-                                    Open approval inbox
+                                    Open {APPROVAL_INBOX_LABEL}
                                 </Link>
                             </Button>
                         </Can>
@@ -73,7 +74,7 @@ export default function DepartmentHeadDashboard({
                     <section aria-labelledby="department-stats-heading">
                         <SectionHeading
                             id="department-stats-heading"
-                            title="Approval queue"
+                            title={APPROVAL_INBOX_LABEL}
                             description="Your desk at a glance."
                             action={
                                 <DashboardLink
@@ -122,7 +123,7 @@ export default function DepartmentHeadDashboard({
                                     <DashboardLink
                                         href={departmentHead.inbox().url}
                                     >
-                                        Open inbox
+                                        Open {APPROVAL_INBOX_LABEL}
                                     </DashboardLink>
                                 }
                                 contentClassName="p-0"
@@ -258,7 +259,7 @@ export default function DepartmentHeadDashboard({
                                 <QuickLinks
                                     links={[
                                         {
-                                            title: 'Approval inbox',
+                                            title: APPROVAL_INBOX_LABEL,
                                             description:
                                                 'Open the full queue of orders assigned to your office.',
                                             href: departmentHead.inbox().url,

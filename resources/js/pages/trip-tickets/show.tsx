@@ -2,6 +2,7 @@ import { Head, Link, router, useForm } from '@inertiajs/react';
 import { ArrowLeft, Ban, Check, Pencil, Printer, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { TripTicketStatusBadge } from '@/components/travel-orders/status-badge';
@@ -55,6 +56,7 @@ function dateRange(from: string | null, to: string | null): string {
 export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
     const [completeOpen, setCompleteOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
 
     const editable = tripTicket.status === 'issued';
     const cancelled = tripTicket.status === 'cancelled';
@@ -99,11 +101,8 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
         );
     };
 
-    const destroy = () => {
-        if (!window.confirm('Delete this cancelled trip ticket?')) {
-            return;
-        }
-
+    const confirmDestroy = () => {
+        setDeleteOpen(false);
         router.delete(tripTickets.destroy([travelOrder.id, tripTicket.id]).url);
     };
 
@@ -180,7 +179,10 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                             </a>
                         </Button>
                         {cancelled && (
-                            <Button variant="destructive" onClick={destroy}>
+                            <Button
+                                variant="destructive"
+                                onClick={() => setDeleteOpen(true)}
+                            >
                                 <Trash2 className="size-4" />
                                 Delete
                             </Button>
@@ -659,6 +661,16 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
+                title="Delete this cancelled trip ticket?"
+                description="The ticket and its fuel details will be permanently removed. This cannot be undone."
+                confirmLabel="Delete ticket"
+                destructive
+                onConfirm={confirmDestroy}
+            />
         </>
     );
 }
