@@ -65,7 +65,7 @@ export function CreateDesignationDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-2xl">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>Add Designation</DialogTitle>

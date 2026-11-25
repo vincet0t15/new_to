@@ -1,5 +1,5 @@
 import { CheckIcon, ChevronDownIcon, Search } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -37,13 +37,76 @@ export function Combobox({
     id,
 }: ComboboxProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const buttonRef = useRef<HTMLButtonElement | null>(null);
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
+    const [dropUp, setDropUp] = useState(false);
+    const [listMaxHeight, setListMaxHeight] = useState(288);
+    const [positioned, setPositioned] = useState(false);
+
+    const positionDropdown = useCallback(() => {
+        const button = buttonRef.current;
+
+        if (!button) {
+            return;
+        }
+
+        const buttonRect = button.getBoundingClientRect();
+        let topBoundary = 0;
+        let bottomBoundary = window.innerHeight;
+
+        // A dialog scrolls its own content, so its edges — not just the
+        // viewport — decide where the dropdown can be drawn without clipping.
+        for (
+            let node: HTMLElement | null = button.parentElement;
+            node;
+            node = node.parentElement
+        ) {
+            const overflowY = getComputedStyle(node).overflowY;
+
+            if (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'hidden') {
+                const rect = node.getBoundingClientRect();
+                topBoundary = Math.max(topBoundary, rect.top);
+                bottomBoundary = Math.min(bottomBoundary, rect.bottom);
+            }
+        }
+
+        const gap = 4;
+        const chrome = 56; // Search row and borders above the option list.
+        const minListHeight = 96;
+        const spaceBelow = bottomBoundary - buttonRect.bottom - gap;
+        const spaceAbove = buttonRect.top - topBoundary - gap;
+        const up = spaceBelow < chrome + minListHeight && spaceAbove > spaceBelow;
+        const available = up ? spaceAbove : spaceBelow;
+
+        setDropUp(up);
+        setListMaxHeight(
+            Math.max(minListHeight, Math.min(288, available - chrome)),
+        );
+        setPositioned(true);
+    }, []);
 
     useEffect(() => {
         if (!open) {
             setSearch('');
+            setPositioned(false);
             return;
+        }
+
+        positionDropdown();
+
+        // The dialog is still animating when the dropdown first mounts, so
+        // remeasure once its final size is known.
+        const frame = requestAnimationFrame(positionDropdown);
+        const dialog = buttonRef.current?.closest('[role="dialog"]') ?? null;
+        const observer =
+            dialog && typeof ResizeObserver !== 'undefined'
+                ? new ResizeObserver(positionDropdown)
+                : null;
+
+        dialog?.addEventListener('animationend', positionDropdown);
+        if (dialog && observer) {
+            observer.observe(dialog);
         }
 
         const handlePointerDown = (event: MouseEvent) => {
@@ -61,14 +124,21 @@ export function Combobox({
             }
         };
 
+        window.addEventListener('resize', positionDropdown);
+        document.addEventListener('scroll', positionDropdown, true);
         document.addEventListener('mousedown', handlePointerDown);
         document.addEventListener('keydown', handleKeyDown);
 
         return () => {
+            cancelAnimationFrame(frame);
+            dialog?.removeEventListener('animationend', positionDropdown);
+            observer?.disconnect();
+            window.removeEventListener('resize', positionDropdown);
+            document.removeEventListener('scroll', positionDropdown, true);
             document.removeEventListener('mousedown', handlePointerDown);
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [open]);
+    }, [open, positionDropdown]);
 
     const selectedOption = useMemo(
         () => options.find((option) => option.value === value),
@@ -96,6 +166,7 @@ export function Combobox({
     return (
         <div ref={containerRef} className={cn('relative w-full', className)}>
             <button
+                ref={buttonRef}
                 id={id}
                 type="button"
                 disabled={disabled}
@@ -118,10 +189,11 @@ export function Combobox({
                 <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
             </button>
 
-            {open && (
+            {open && positioned && (
                 <div
                     className={cn(
-                        'bg-popover text-popover-foreground absolute top-full z-50 mt-1 w-full overflow-hidden rounded-md border shadow-md',
+                        'bg-popover text-popover-foreground absolute z-50 w-full overflow-hidden rounded-md border shadow-md',
+                        dropUp ? 'bottom-full mb-1' : 'top-full mt-1',
                         contentClassName,
                     )}
                 >
@@ -141,7 +213,10 @@ export function Combobox({
                     </div>
 
                     {filteredOptions.length > 0 ? (
-                        <div className="max-h-72 overflow-y-auto p-1">
+                        <div
+                            className="overflow-y-auto p-1"
+                            style={{ maxHeight: listMaxHeight }}
+                        >
                             {filteredOptions.map((option) => {
                                 const isSelected = option.value === value;
 
