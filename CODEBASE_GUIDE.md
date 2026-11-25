@@ -1,6 +1,6 @@
 # newTO — Codebase Guide
 
-A source-derived map of this application: what it is, how a request flows through it, the domain logic, and where to look when changing something. Built from a read-only deep analysis of the code as of 2026-11-20; operational additions through 2026-11-24 are in §16. Citations are `path:line`.
+A source-derived map of this application: what it is, how a request flows through it, the domain logic, and where to look when changing something. Built from a read-only deep analysis of the code as of 2026-11-20; operational and UI-audit additions through 2026-11-25 are in §13–§16. Citations are `path:line`.
 
 > This document is descriptive, not prescriptive. It records how the code **currently** behaves, including known gaps (see §14).
 
@@ -391,7 +391,7 @@ No generated data-type bridge. `resources/js/types/**` is hand-maintained, mirro
 ## 13. Testing, tooling, CI
 
 - **Tests:** Pest 5 + Laravel plugin; suites Unit/Feature (`phpunit.xml:7-14`); in-memory SQLite (`:26-27`); `RefreshDatabase` bound to all Feature tests (`tests/Pest.php:20-22`); `withoutVite()` in `TestCase` (`:14-16`). Global helpers in `tests/Feature/TravelOrders/routing_helpers.php` (`routingEmployee()`, `routingUser()`, `routingChain()`) and `grantAdminPortal()` in `Pest.php:59-73`. Inertia assertions via `AssertableInertia`.
-- **Frontend tests:** `vp test` (`npm test`) with jsdom + Testing Library; configured in `vite.config.ts:42-46`, setup in `resources/js/test/setup.ts`. Specs cover the portal switcher, admin reassign dialog, and approval actions. Keep specs under `resources/js/test/`, not `pages/`: Inertia's resolver globs every `.tsx` under `pages/` and would ship tests as page chunks. Assurance is `vp check` + `tsc --noEmit` + `vp test` + PHP-side Inertia assertions.
+- **Frontend tests:** `vp test` (`npm test`) with jsdom + Testing Library; configured in `vite.config.ts:42-46`, setup in `resources/js/test/setup.ts`. Specs cover the portal switcher, admin reassign dialog, approval actions, confirm dialog, audit filters, shared pagination, notification "mark all read", and register filter behavior. Keep specs under `resources/js/test/`, not `pages/`: Inertia's resolver globs every `.tsx` under `pages/` and would ship tests as page chunks. Assurance is `vp check` + `tsc --noEmit` + `vp test` + PHP-side Inertia assertions.
 - **Quality:** Pint `laravel` preset (`pint.json`); Larastan level 7 over `app/`, `bootstrap/app.php`, `config/`, `database/`, `routes/` (`phpstan.neon:6-13`); no Rector.
 - **Scripts:** `composer setup` (install, `.env`, key, migrate, npm install + build), `composer dev` (`artisan dev`), `composer ci:check` (`npm run check` + `types:check` + `@test`), `composer test` (config clear → Pint check → PHPStan → `artisan test`).
 - **CI:** `.github/workflows/tests.yml` — push to `main` / PRs, PHP 8.5 + Composer 2, Node 22, `composer setup`, `composer ci:check`. Dependabot updates Actions weekly.
@@ -417,7 +417,7 @@ These are observations from the source analysis, not changes:
 12. **Per-diem config cache is instance-local** (fresh service per request, so fine today).
 13. **Nested transaction** in `TravelOrderController::resubmit()` wrapping the service transaction (savepoints; correct but note for rollback debugging).
 14. **Workflow deletion guards use `travel_orders.workflow_id`**, set only at submission; drafts are unaffected.
-15. **Admin has no travel-order detail route** — the admin register is index-only, so the admin dashboard's recent-orders rows are informational and deliberately not linked; employees/department heads reach detail pages through their own portals.
+15. **Admin has no travel-order detail route** — the admin register remains index-only. Dashboard rows link to the filtered register (`admin.travel-orders.index?search=…`), never to `/travel-orders/{id}`, which is employee-owned (`portal:employee` + owner check) and would 403 for an admin. The register search matches purpose, destination, `to_number`, `control_no`, and now numeric `id`.
 
 ---
 
@@ -436,7 +436,7 @@ These are observations from the source analysis, not changes:
 | Change what a portal can see  | `Portal`, `PortalResolver`, `EnsurePortalAccess`, `components/app-sidebar.tsx`                                                                                                                                            |
 | Change shared client props    | `HandleInertiaRequests::share()`, `types/global.d.ts`                                                                                                                                                                     |
 | Debug a stuck approval        | Admin runbook §16; `php artisan travel-orders:check-integrity`, delivery rows + `TravelOrderAudit` actions + `TravelOrderRoutePresenter::route()/timeline()`                                                              |
-| Run all checks                | `vendor/bin/pint --dirty`, `php artisan test`, `composer types:check`, `npm run check`, `npm run types:check`, `npm test`, `npm run build`                                                                                |
+| Run all checks                | `vendor/bin/pint --test --dirty`, `php artisan test`, `vendor/bin/phpstan analyse --no-progress`, `npm run types:check`, `npm run test`, `npm run check`, `npm run build`                                                 |
 
 ---
 
@@ -498,15 +498,15 @@ Seed credentials are centralized in `config/seed-credentials.php` and applied by
 Before committing or deploying a workflow/dashboard change:
 
 ```bash
-vendor/bin/pint --dirty
+vendor/bin/pint --test --dirty
 php artisan test
-composer types:check
-npm run check
+vendor/bin/phpstan analyse --no-progress
 npm run types:check
-npm test
+npm run test
+npm run check
 npm run build
 ```
 
-`npm test` runs the jsdom/Testing Library suite. Browser QA covers the admin stalled panel, the designation impact dialog, a reassign toast and audit row, both document-preview tabs, and the security banner for a flagged account; these paths were verified on 2026-11-24.
+Use `--dirty` for Pint because whole-repo `--test` still reports pre-existing findings in `app/Providers/AppServiceProvider.php` and `bootstrap/app.php`. `npm test` runs the jsdom/Testing Library suite. Browser QA covers the admin stalled panel, the designation impact dialog, a reassign toast and audit row, all document-preview tabs, the security banner for a flagged account, accessible combobox/dialog behavior, and single-page no-overflow checks; these paths were verified through 2026-11-25.
 
 Detailed, citation-heavy source reports live in `%TEMP%\opencode\newto-analysis\` (`01-workflow-approval.md`, `02-travel-order-domain.md`, `03-auth-portals-crud.md`, `04-frontend-tooling.md`) if you need line-level depth beyond this guide.
