@@ -21,6 +21,7 @@ use App\Models\Vehicle;
 use App\Repositories\Contracts\TravelOrderRepository;
 use App\Services\ItinerarySignatoryResolver;
 use App\Services\SignatoryResolver;
+use App\Services\TravelOrderApprovalService;
 use App\Services\TravelOrderResubmissionService;
 use App\Services\TravelOrderRoutePresenter;
 use App\Services\TravelOrderSubmissionService;
@@ -40,6 +41,7 @@ class TravelOrderController extends Controller
         private readonly TravelOrderRoutePresenter $presenter,
         private readonly TravelOrderResubmissionService $resubmissions,
         private readonly ItinerarySignatoryResolver $itinerarySignatories,
+        private readonly TravelOrderApprovalService $approvals,
     ) {
         //
     }
@@ -362,11 +364,19 @@ class TravelOrderController extends Controller
         $editable = $travelOrder->status === TravelOrderStatus::Draft
             || $travelOrder->status === TravelOrderStatus::Returned;
 
+        $step = $this->approvals->currentStep($travelOrder);
+
         return Inertia::render('travel-orders/show', [
             'travelOrder' => $travelOrder,
             'route' => $this->presenter->route($travelOrder),
-            'timeline' => $this->presenter->timeline($travelOrder),
+            'timeline' => $this->presenter->timeline($travelOrder, includeInternal: false),
             'revisions' => $this->presenter->revisions($travelOrder),
+            'currentStep' => $step === null ? null : [
+                'label' => $step->displayLabel(),
+                'office' => $step->office->office_name
+                    ?? $travelOrder->office?->office_name,
+                'is_signatory' => $step->stepType->is_signatory,
+            ],
             'options' => [
                 'locations' => Location::query()
                     ->orderBy('name')

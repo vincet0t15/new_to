@@ -5,6 +5,7 @@ import {
     Building2,
     Car,
     ChartColumn,
+    CheckCircle2,
     ClipboardList,
     Droplets,
     FileText,
@@ -125,6 +126,14 @@ function employeeGroups(dashboardUrl: string, unreadCount: number): NavGroup[] {
                     title: 'Returned for Revision',
                     href: travelOrders.returned().url,
                     icon: RotateCcw,
+                    permission: 'travel-orders.view',
+                },
+                {
+                    title: 'Completed Travel Orders',
+                    href: travelOrders.index({
+                        query: { status: 'completed' },
+                    }).url,
+                    icon: CheckCircle2,
                     permission: 'travel-orders.view',
                 },
             ],

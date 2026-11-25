@@ -44,7 +44,7 @@ class TravelOrderActionController extends Controller
         $remarks = $this->remarks($request);
 
         return $this->run(
-            fn () => $this->approvals->approve($travelOrder, $actor, $remarks),
+            fn () => $this->approvals->approve($travelOrder, $actor, $remarks, $this->internal($request)),
             __('Travel order approved.'),
         );
     }
@@ -55,7 +55,7 @@ class TravelOrderActionController extends Controller
         $remarks = $this->remarks($request);
 
         return $this->run(
-            fn () => $this->approvals->acknowledge($travelOrder, $actor, $remarks),
+            fn () => $this->approvals->acknowledge($travelOrder, $actor, $remarks, $this->internal($request)),
             __('Receipt acknowledged.'),
         );
     }
@@ -144,6 +144,7 @@ class TravelOrderActionController extends Controller
                 $actor,
                 $target,
                 $validated['remarks'] ?? null,
+                $this->internal($request),
             ),
             __('Travel order forwarded.'),
         );
@@ -181,5 +182,16 @@ class TravelOrderActionController extends Controller
         ]);
 
         return $validated['remarks'] ?? null;
+    }
+
+    /**
+     * Whether the remarks should stay hidden from the filer.
+     *
+     * Only actions that resolve a step accept this flag. Return remarks are
+     * always visible because they tell the filer what to revise.
+     */
+    private function internal(Request $request): bool
+    {
+        return $request->boolean('is_internal');
     }
 }

@@ -30,6 +30,7 @@ final class TravelOrderAudit
         ?string $remarks = null,
         ?array $meta = null,
         ?int $revisionId = null,
+        bool $isInternal = false,
     ): TravelOrderAction {
         return $order->actions()->create([
             'step_index' => $stepIndex,
@@ -38,6 +39,7 @@ final class TravelOrderAudit
             'revision_id' => $revisionId,
             'actor_user_id' => $actor?->id,
             'remarks' => $remarks,
+            'is_internal' => $isInternal,
             'meta' => $meta,
         ]);
     }

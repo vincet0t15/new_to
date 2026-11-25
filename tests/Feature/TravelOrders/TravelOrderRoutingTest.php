@@ -9,6 +9,7 @@ use App\Models\OfficeDesignation;
 use App\Models\WorkflowStep;
 use App\Models\WorkflowStepType;
 use App\Services\TravelOrderApprovalService;
+use App\Services\TravelOrderRoutePresenter;
 use App\Services\TravelOrderSubmissionService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -299,6 +300,70 @@ test('forwarding to somebody outside the step is refused', function () {
     expect(fn () => app(TravelOrderApprovalService::class)
         ->forward($order, $chain['headUser'], $chain['budgetUser']))
         ->toThrow(TravelOrderRoutingException::class, 'does not answer this step');
+});
+
+test('the employee show page names the current step in the frozen route', function () {
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    app(TravelOrderApprovalService::class)->approve($order, $chain['headUser']);
+
+    $this->actingAs($chain['filer'])
+        ->get(route('travel-orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('travel-orders/show')
+            ->where('currentStep.label', 'Budget')
+            ->where('currentStep.is_signatory', true)
+            ->where('route.0.status', 'cleared')
+            ->where('route.1.status', 'current')
+        );
+});
+
+test('internal approval remarks stay on the audit trail but are hidden from the filer', function () {
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    $this->actingAs($chain['headUser'])
+        ->post(route('department-head.travel-orders.approve', $order), [
+            'remarks' => 'Check the attachment before release.',
+            'is_internal' => true,
+        ])
+        ->assertRedirect();
+
+    $approved = $order->actions()
+        ->where('event', WorkflowEvent::Approved->value)
+        ->sole();
+
+    expect($approved->is_internal)->toBeTrue()
+        ->and($approved->remarks)->toBe('Check the attachment before release.');
+
+    $presenter = app(TravelOrderRoutePresenter::class);
+    $filerTimeline = collect($presenter->timeline($order->refresh(), includeInternal: false));
+    $approverTimeline = collect($presenter->timeline($order));
+
+    expect($filerTimeline->firstWhere('event', 'approved')['remarks'])->toBeNull()
+        ->and($approverTimeline->firstWhere('event', 'approved')['remarks'])
+        ->toBe('Check the attachment before release.');
+});
+
+test('return remarks are always visible even when the internal flag is posted', function () {
+    $chain = routingChain();
+    $order = routingSubmit($chain);
+
+    $this->actingAs($chain['headUser'])
+        ->post(route('department-head.travel-orders.return', $order), [
+            'remarks' => 'Please attach the invitation.',
+            'is_internal' => true,
+        ])
+        ->assertRedirect();
+
+    $returned = $order->actions()
+        ->where('event', WorkflowEvent::Returned->value)
+        ->sole();
+
+    expect($returned->is_internal)->toBeFalse()
+        ->and($order->refresh()->return_remarks)->toBe('Please attach the invitation.');
 });
 
 test('the inbox shows only the orders the account currently holds', function () {

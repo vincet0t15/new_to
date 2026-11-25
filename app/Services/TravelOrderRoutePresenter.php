@@ -103,7 +103,7 @@ final class TravelOrderRoutePresenter
      *     created_at: string|null
      * }>
      */
-    public function timeline(TravelOrder $order): array
+    public function timeline(TravelOrder $order, bool $includeInternal = true): array
     {
         $actions = $order->relationLoaded('actions')
             ? $order->actions->sortBy('id')->values()
@@ -118,7 +118,9 @@ final class TravelOrderRoutePresenter
                 'step_index' => $action->step_index,
                 'revision_id' => $action->revision_id,
                 'actor' => $action->actor?->name,
-                'remarks' => $action->remarks,
+                'remarks' => $action->is_internal && ! $includeInternal
+                    ? null
+                    : $action->remarks,
                 'created_at' => $action->created_at?->toIso8601String(),
             ])
             ->values()

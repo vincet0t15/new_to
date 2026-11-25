@@ -1,10 +1,11 @@
 import { Head, router } from '@inertiajs/react';
-import { ArrowLeft, Pencil, Printer, Send, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Printer, Route, Send, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Can } from '@/components/can';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import Heading from '@/components/heading';
 import { ActionTimeline } from '@/components/travel-orders/action-timeline';
+import { DocumentStatusDialog } from '@/components/travel-orders/document-status-dialog';
 import { TravelOrderItineraryPanel } from '@/components/travel-orders/itinerary-panel';
 import { RevisionTimeline } from '@/components/travel-orders/revision-timeline';
 import { TravelOrderDetails } from '@/components/travel-orders/travel-order-details';
@@ -26,6 +27,11 @@ type Props = {
     route: TravelOrderRouteStep[];
     timeline: TravelOrderTimelineEntry[];
     revisions: TravelOrderRevision[];
+    currentStep: {
+        label: string;
+        office: string | null;
+        is_signatory: boolean;
+    } | null;
     options: TravelOrderShowOptions;
     can: TravelOrderAbilities;
     urls: {
@@ -42,13 +48,16 @@ type Props = {
 
 export default function ShowTravelOrder({
     travelOrder,
+    route,
     timeline,
     revisions,
+    currentStep,
     options,
     can,
     urls,
 }: Props) {
     const [deleteOpen, setDeleteOpen] = useState(false);
+    const [statusOpen, setStatusOpen] = useState(false);
 
     const submit = () => {
         router.post(urls.submit, {}, { preserveScroll: true });
@@ -81,6 +90,13 @@ export default function ShowTravelOrder({
                         description="Details and audit trail."
                     />
                     <div className="ml-auto flex flex-wrap gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setStatusOpen(true)}
+                        >
+                            <Route className="size-4" />
+                            Status &amp; route
+                        </Button>
                         {travelOrder.status === 'returned' && (
                             <div className="mr-auto w-full rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-300">
                                 <p className="font-medium">
@@ -196,6 +212,14 @@ export default function ShowTravelOrder({
                     </section>
                 </div>
             </div>
+
+            <DocumentStatusDialog
+                open={statusOpen}
+                onOpenChange={setStatusOpen}
+                travelOrder={travelOrder}
+                route={route}
+                currentStep={currentStep}
+            />
 
             <ConfirmDialog
                 open={deleteOpen}

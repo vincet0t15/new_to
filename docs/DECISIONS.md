@@ -255,6 +255,22 @@ There is no "approve and choose the next recipient" action.
 
 ---
 
+## 20. Employee progress tracker and internal notes
+
+**Decision:**
+
+- The employee show page has a "Status & route" action that opens a dialog rendering the already-frozen approval route and naming the step that currently holds the order. This is presentation only: the route comes from `TravelOrderRoutePresenter`, and no routing, delivery, or authorization rule changes.
+- "Completed Travel Orders" in the employee sidebar is a shortcut to the existing index with `status=completed`. It is a filtered link, not a second register.
+- An approver may mark remarks on `approve`, `acknowledge`, or `forward` as internal. The audit row keeps the text and `is_internal = true`, but the filer's timeline receives `remarks: null`. Return remarks are always visible because they tell the filer what to revise.
+
+**Why:** The filer needs to see where the document is without learning internal processing notes, and a completed shortcut is faster than opening the index and choosing a status filter.
+
+**Evidence:** `app/Services/TravelOrderRoutePresenter.php::route,timeline`; `app/Http/Controllers/TravelOrders/TravelOrderController.php::show`; `resources/js/components/travel-orders/document-status-dialog.tsx`; `resources/js/components/travel-orders/route-progress.tsx`; `database/migrations/2026_11_25_000004_add_is_internal_to_travel_order_actions_table.php`; `app/Http/Controllers/Approvals/TravelOrderActionController.php::internal`.
+
+**Change control:** **Approval required** for changing who may see internal notes or for hiding any audit event from the filer. The tracker must keep reading the frozen route; it must not re-evaluate the workflow.
+
+---
+
 ## Change checklist
 
 Before changing a decision above:

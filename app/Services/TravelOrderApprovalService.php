@@ -231,9 +231,9 @@ final class TravelOrderApprovalService
     /**
      * Clear a signature step and send the order onward.
      */
-    public function approve(TravelOrder $order, User $actor, ?string $remarks = null): TravelOrder
+    public function approve(TravelOrder $order, User $actor, ?string $remarks = null, bool $isInternal = false): TravelOrder
     {
-        return DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
+        return DB::transaction(function () use ($order, $actor, $remarks, $isInternal): TravelOrder {
             $order = $this->lock($order);
 
             $this->ensureSubmitted($order);
@@ -260,6 +260,9 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
+                null,
+                null,
+                $isInternal,
             );
 
             $this->advance($order, $index + 1, $actor);
@@ -271,9 +274,9 @@ final class TravelOrderApprovalService
     /**
      * Clear a receipt step and send the order onward.
      */
-    public function acknowledge(TravelOrder $order, User $actor, ?string $remarks = null): TravelOrder
+    public function acknowledge(TravelOrder $order, User $actor, ?string $remarks = null, bool $isInternal = false): TravelOrder
     {
-        return DB::transaction(function () use ($order, $actor, $remarks): TravelOrder {
+        return DB::transaction(function () use ($order, $actor, $remarks, $isInternal): TravelOrder {
             $order = $this->lock($order);
 
             $this->ensureSubmitted($order);
@@ -300,6 +303,9 @@ final class TravelOrderApprovalService
                 $step,
                 $index,
                 $remarks,
+                null,
+                null,
+                $isInternal,
             );
 
             $this->advance($order, $index + 1, $actor);
@@ -315,9 +321,9 @@ final class TravelOrderApprovalService
      * Forwarding is not a way to skip a signature or choose a friendlier
      * approver; it is cover for a holder who cannot act.
      */
-    public function forward(TravelOrder $order, User $actor, User $target, ?string $remarks = null): TravelOrder
+    public function forward(TravelOrder $order, User $actor, User $target, ?string $remarks = null, bool $isInternal = false): TravelOrder
     {
-        return DB::transaction(function () use ($order, $actor, $target, $remarks): TravelOrder {
+        return DB::transaction(function () use ($order, $actor, $target, $remarks, $isInternal): TravelOrder {
             $order = $this->lock($order);
 
             $this->ensureSubmitted($order);
@@ -360,6 +366,8 @@ final class TravelOrderApprovalService
                     'from_user_id' => $actor->id,
                     'to_user_id' => $target->id,
                 ],
+                null,
+                $isInternal,
             );
 
             $this->notifier->routed($order, $target, $step);

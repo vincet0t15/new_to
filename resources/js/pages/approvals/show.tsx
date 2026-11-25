@@ -192,6 +192,7 @@ export default function ShowApproval({
         distributed: travelOrder.distributed_at !== null,
         fund_source_id: travelOrder.fund_source_id?.toString() ?? '',
         earmark_number: travelOrder.earmark_number ?? '',
+        is_internal: false,
     });
 
     const actionError = (errors as Record<string, string | undefined>).action;
@@ -414,6 +415,33 @@ export default function ShowApproval({
                                             placeholder="Add remarks (optional)"
                                         />
                                         <InputError message={errors.remarks} />
+                                    </div>
+                                    <div className="flex items-start gap-2 rounded-md border border-dashed p-3">
+                                        <Checkbox
+                                            id="is_internal"
+                                            checked={data.is_internal}
+                                            onCheckedChange={(checked) =>
+                                                setData(
+                                                    'is_internal',
+                                                    checked === true,
+                                                )
+                                            }
+                                        />
+                                        <div className="space-y-1">
+                                            <Label
+                                                htmlFor="is_internal"
+                                                className="text-sm font-medium"
+                                            >
+                                                Internal note
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                Keep this remark out of the
+                                                filer&apos;s view. Applies to
+                                                approve, acknowledge, and
+                                                forward. Return remarks are
+                                                always visible.
+                                            </p>
+                                        </div>
                                     </div>
                                     {(travelOrder.earmarked_at ||
                                         travelOrder.recorded_at ||
