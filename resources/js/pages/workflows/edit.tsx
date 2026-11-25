@@ -242,29 +242,33 @@ export default function WorkflowEdit({
                         <InputError message={errors.description} />
                     </div>
                     <div className="flex flex-wrap items-center gap-4">
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="is_default"
                                 checked={data.is_default}
-                                onChange={(e) => {
-                                    setData('is_default', e.target.checked);
-                                    if (e.target.checked) {
+                                onCheckedChange={(checked) => {
+                                    setData('is_default', checked === true);
+                                    if (checked === true) {
                                         setData('assigned_office_ids', []);
                                     }
                                 }}
                             />
-                            <span className="text-sm">Default workflow</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                            <input
-                                type="checkbox"
+                            <Label htmlFor="is_default" className="text-sm">
+                                Default workflow
+                            </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="is_active"
                                 checked={data.is_active}
-                                onChange={(e) =>
-                                    setData('is_active', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
                                 }
                             />
-                            <span className="text-sm">Active</span>
-                        </label>
+                            <Label htmlFor="is_active" className="text-sm">
+                                Active
+                            </Label>
+                        </div>
                     </div>
 
                     {data.is_default ? (

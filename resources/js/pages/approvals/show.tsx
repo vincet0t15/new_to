@@ -18,6 +18,7 @@ import { ItineraryDocument } from '@/components/travel-orders/print/itinerary-do
 import { TravelOrderDocument } from '@/components/travel-orders/print/travel-order-document';
 import { TripTicketDocument } from '@/components/travel-orders/print/trip-ticket-document';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -697,23 +698,27 @@ export default function ShowApproval({
                                                             }
                                                         />
                                                     </div>
-                                                    <label className="flex items-center gap-2 text-sm">
-                                                        <input
-                                                            type="checkbox"
+                                                    <div className="flex items-center gap-2 text-sm">
+                                                        <Checkbox
+                                                            id="distributed"
                                                             checked={
                                                                 data.distributed
                                                             }
-                                                            onChange={(e) =>
+                                                            onCheckedChange={(
+                                                                checked,
+                                                            ) =>
                                                                 setData(
                                                                     'distributed',
-                                                                    e.target
-                                                                        .checked,
+                                                                    checked ===
+                                                                        true,
                                                                 )
                                                             }
                                                         />
-                                                        Mark as
-                                                        distributed/released
-                                                    </label>
+                                                        <Label htmlFor="distributed">
+                                                            Mark as
+                                                            distributed/released
+                                                        </Label>
+                                                    </div>
                                                     <Button
                                                         variant="secondary"
                                                         disabled={processing}

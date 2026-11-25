@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -197,19 +198,19 @@ export function StepDialog({
                             <div className="grid gap-3 sm:grid-cols-2">
                                 {Object.entries(reviewableFields).map(
                                     ([field, label]) => (
-                                        <label
+                                        <div
                                             key={field}
                                             className="flex items-start gap-2 text-sm"
                                         >
-                                            <input
-                                                type="checkbox"
+                                            <Checkbox
+                                                id={`reviewed-field-${field}`}
                                                 checked={data.reviewed_fields.includes(
                                                     field,
                                                 )}
-                                                onChange={(event) =>
+                                                onCheckedChange={(checked) =>
                                                     setData(
                                                         'reviewed_fields',
-                                                        event.target.checked
+                                                        checked === true
                                                             ? [
                                                                   ...data.reviewed_fields,
                                                                   field,
@@ -224,22 +225,25 @@ export function StepDialog({
                                                     )
                                                 }
                                             />
-                                            <span>{label}</span>
-                                        </label>
+                                            <Label
+                                                htmlFor={`reviewed-field-${field}`}
+                                            >
+                                                {label}
+                                            </Label>
+                                        </div>
                                     ),
                                 )}
                             </div>
                             <InputError message={errors.reviewed_fields} />
                         </fieldset>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="auto_skip_creator"
-                                type="checkbox"
                                 checked={data.auto_skip_creator}
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                     setData(
                                         'auto_skip_creator',
-                                        e.target.checked,
+                                        checked === true,
                                     )
                                 }
                             />
@@ -248,12 +252,11 @@ export function StepDialog({
                             </Label>
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_active"
-                                type="checkbox"
                                 checked={data.is_active}
-                                onChange={(e) =>
-                                    setData('is_active', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
                                 }
                             />
                             <Label htmlFor="is_active">Active</Label>

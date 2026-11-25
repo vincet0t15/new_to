@@ -7,6 +7,7 @@ import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { TripTicketStatusBadge } from '@/components/travel-orders/status-badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -559,22 +560,24 @@ export default function ShowTripTicket({ travelOrder, tripTicket }: Props) {
                                 />
                                 {tripTicket.fuel_receipt_url &&
                                     !completeForm.data.remove_fuel_receipt && (
-                                        <label className="flex items-center gap-2 text-xs">
-                                            <input
-                                                type="checkbox"
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <Checkbox
+                                                id="remove_fuel_receipt"
                                                 checked={
                                                     completeForm.data
                                                         .remove_fuel_receipt
                                                 }
-                                                onChange={(e) =>
+                                                onCheckedChange={(checked) =>
                                                     completeForm.setData(
                                                         'remove_fuel_receipt',
-                                                        e.target.checked,
+                                                        checked === true,
                                                     )
                                                 }
                                             />
-                                            Remove current receipt
-                                        </label>
+                                            <Label htmlFor="remove_fuel_receipt">
+                                                Remove current receipt
+                                            </Label>
+                                        </div>
                                     )}
                             </div>
                         </div>

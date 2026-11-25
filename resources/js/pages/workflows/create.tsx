@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -100,12 +101,11 @@ export function CreateWorkflowDialog({ isOpen, onClose }: Props) {
                             <InputError message={errors.description} />
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_active"
-                                type="checkbox"
                                 checked={data.is_active}
-                                onChange={(e) =>
-                                    setData('is_active', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
                                 }
                             />
                             <Label htmlFor="is_active">Active</Label>

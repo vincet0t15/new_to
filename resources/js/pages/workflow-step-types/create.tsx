@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -108,12 +109,11 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                             <InputError message={errors.sort_order} />
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_signatory"
-                                type="checkbox"
                                 checked={data.is_signatory}
-                                onChange={(e) =>
-                                    setData('is_signatory', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_signatory', checked === true)
                                 }
                             />
                             <Label htmlFor="is_signatory">
@@ -121,12 +121,11 @@ export function CreateStepTypeDialog({ isOpen, onClose }: Props) {
                             </Label>
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_active"
-                                type="checkbox"
                                 checked={data.is_active}
-                                onChange={(e) =>
-                                    setData('is_active', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
                                 }
                             />
                             <Label htmlFor="is_active">Active</Label>

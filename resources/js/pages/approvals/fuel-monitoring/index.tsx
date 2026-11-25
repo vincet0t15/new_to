@@ -4,6 +4,7 @@ import { type FormEvent, useState } from 'react';
 import Heading from '@/components/heading';
 import Pagination from '@/components/pagination';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Card,
     CardContent,
@@ -377,16 +378,18 @@ export default function FuelMonitoringIndex({
                                 />
                             </div>
                             <div className="flex items-end gap-2 xl:col-span-6">
-                                <label className="mr-auto flex items-center gap-2 text-sm">
-                                    <input
-                                        type="checkbox"
+                                <div className="mr-auto flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        id="borrowed_only"
                                         checked={borrowedOnly}
-                                        onChange={(e) =>
-                                            setBorrowedOnly(e.target.checked)
+                                        onCheckedChange={(checked) =>
+                                            setBorrowedOnly(checked === true)
                                         }
                                     />
-                                    Borrowed fuel only
-                                </label>
+                                    <Label htmlFor="borrowed_only">
+                                        Borrowed fuel only
+                                    </Label>
+                                </div>
                                 <Button type="submit">Apply filters</Button>
                                 <Button
                                     type="button"

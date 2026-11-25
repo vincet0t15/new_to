@@ -1,6 +1,7 @@
 import { useForm } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogClose,
@@ -160,12 +161,11 @@ export function CreateDesignationDialog({
                             <InputError message={errors.employee_id} />
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_deputy"
-                                type="checkbox"
                                 checked={data.is_deputy}
-                                onChange={(e) =>
-                                    setData('is_deputy', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_deputy', checked === true)
                                 }
                             />
                             <Label htmlFor="is_deputy">Deputy</Label>
@@ -199,12 +199,11 @@ export function CreateDesignationDialog({
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <input
+                            <Checkbox
                                 id="is_active"
-                                type="checkbox"
                                 checked={data.is_active}
-                                onChange={(e) =>
-                                    setData('is_active', e.target.checked)
+                                onCheckedChange={(checked) =>
+                                    setData('is_active', checked === true)
                                 }
                             />
                             <Label htmlFor="is_active">Active</Label>
