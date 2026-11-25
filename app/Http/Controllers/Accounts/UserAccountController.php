@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounts;
 use App\Enums\SystemRole;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Accounts\StoreUserAccountRequest;
+use App\Http\Requests\Accounts\UpdateUserEmployeeRequest;
 use App\Http\Requests\Accounts\UpdateUserRolesRequest;
 use App\Models\Employee;
 use App\Models\Role;
@@ -157,6 +158,32 @@ class UserAccountController extends Controller
         $user->syncRoles($roles);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Account roles updated.')]);
+
+        return back();
+    }
+
+    /**
+     * Link, replace, or remove the employee attached to an account.
+     */
+    public function updateEmployee(UpdateUserEmployeeRequest $request, User $user): RedirectResponse
+    {
+        $employeeId = $request->validated()['employee_id'] ?? null;
+
+        if ($employeeId === null) {
+            $user->employee()->dissociate();
+        } else {
+            $employee = Employee::query()->findOrFail((int) $employeeId);
+            $user->employee()->associate($employee);
+        }
+
+        $user->save();
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => $employeeId === null
+                ? __('Employee link removed.')
+                : __('Employee linked to account.'),
+        ]);
 
         return back();
     }

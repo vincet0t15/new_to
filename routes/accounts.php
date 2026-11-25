@@ -16,4 +16,7 @@ Route::middleware(['auth', 'verified', 'portal:admin'])
         Route::put('/{user}/roles', [UserAccountController::class, 'updateRoles'])
             ->middleware('permission:accounts.edit')
             ->name('roles.update');
+        Route::put('/{user}/employee', [UserAccountController::class, 'updateEmployee'])
+            ->middleware('permission:accounts.edit')
+            ->name('employee.update');
     });

@@ -60,3 +60,7 @@ export type AccountFormData = {
 export type AccountRolesFormData = {
     roles: number[];
 };
+
+export type AccountEmployeeFormData = {
+    employee_id: string;
+};

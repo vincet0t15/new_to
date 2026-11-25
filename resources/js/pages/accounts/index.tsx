@@ -1,5 +1,5 @@
 import { Head, router, useForm } from '@inertiajs/react';
-import { Plus, Search, ShieldCheck } from 'lucide-react';
+import { Link2, Plus, Search, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { Can } from '@/components/can';
 import Heading from '@/components/heading';
@@ -26,6 +26,7 @@ import type { PaginatedDataResponse } from '@/types/pagination';
 import type { KeyboardEvent } from 'react';
 import { CreateAccountDialog } from './create';
 import { EditAccountRolesDialog } from './edit-roles';
+import { LinkEmployeeDialog } from './link-employee';
 
 type AccountsIndexProps = {
     accounts: PaginatedDataResponse<AccountRecord>;
@@ -50,6 +51,8 @@ export default function AccountsIndex({
     const [selectedAccount, setSelectedAccount] =
         useState<AccountRecord | null>(null);
     const [rolesOpen, setRolesOpen] = useState(false);
+    const [linkAccount, setLinkAccount] = useState<AccountRecord | null>(null);
+    const [linkOpen, setLinkOpen] = useState(false);
 
     const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key !== 'Enter') {
@@ -189,28 +192,51 @@ export default function AccountsIndex({
                                             {account.created_at ?? '—'}
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Can permission="accounts.edit">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-green-600 hover:bg-green-50 hover:text-green-700 disabled:opacity-40"
-                                                    onClick={() => {
-                                                        setSelectedAccount(
-                                                            account,
-                                                        );
-                                                        setRolesOpen(true);
-                                                    }}
-                                                    disabled={account.is_self}
-                                                    title={
-                                                        account.is_self
-                                                            ? 'You cannot change your own roles'
-                                                            : 'Edit roles'
-                                                    }
-                                                >
-                                                    <ShieldCheck />
-                                                    Roles
-                                                </Button>
-                                            </Can>
+                                            <div className="flex flex-wrap justify-end gap-1">
+                                                <Can permission="accounts.edit">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-green-600 hover:bg-green-50 hover:text-green-700 disabled:opacity-40"
+                                                        onClick={() => {
+                                                            setSelectedAccount(
+                                                                account,
+                                                            );
+                                                            setRolesOpen(true);
+                                                        }}
+                                                        disabled={
+                                                            account.is_self
+                                                        }
+                                                        title={
+                                                            account.is_self
+                                                                ? 'You cannot change your own roles'
+                                                                : 'Edit roles'
+                                                        }
+                                                    >
+                                                        <ShieldCheck />
+                                                        Roles
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-blue-600 hover:bg-blue-50 hover:text-blue-700"
+                                                        onClick={() => {
+                                                            setLinkAccount(
+                                                                account,
+                                                            );
+                                                            setLinkOpen(true);
+                                                        }}
+                                                        title={
+                                                            account.employee
+                                                                ? 'Change or remove employee link'
+                                                                : 'Link employee'
+                                                        }
+                                                    >
+                                                        <Link2 />
+                                                        Employee
+                                                    </Button>
+                                                </Can>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -245,6 +271,16 @@ export default function AccountsIndex({
                         onClose={() => setRolesOpen(false)}
                         account={selectedAccount}
                         roles={roles}
+                    />
+                )}
+
+                {linkOpen && linkAccount && (
+                    <LinkEmployeeDialog
+                        key={linkAccount.id}
+                        isOpen={linkOpen}
+                        onClose={() => setLinkOpen(false)}
+                        account={linkAccount}
+                        employees={employees}
                     />
                 )}
             </div>

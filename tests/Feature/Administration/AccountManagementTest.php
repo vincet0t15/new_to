@@ -209,3 +209,85 @@ test('an administrator cannot strip another administrator', function () {
 
     expect($target->refresh()->hasRoleSlug(SystemRole::Admin->value))->toBeTrue();
 });
+
+test('an administrator can link an unlinked account to an employee', function () {
+    $account = User::factory()->create();
+    $employee = Employee::factory()->create();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.employee.update', $account), [
+            'employee_id' => $employee->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($account->refresh()->employee_id)->toBe($employee->id);
+});
+
+test('an administrator can replace and unlink an account employee', function () {
+    $account = User::factory()->create();
+    $first = Employee::factory()->create();
+    $second = Employee::factory()->create();
+    $account->employee()->associate($first);
+    $account->save();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.employee.update', $account), [
+            'employee_id' => $second->id,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($account->refresh()->employee_id)->toBe($second->id);
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.employee.update', $account), [
+            'employee_id' => null,
+        ])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($account->refresh()->employee_id)->toBeNull();
+});
+
+test('an employee already linked to another account cannot be linked again', function () {
+    $account = User::factory()->create();
+    $other = User::factory()->create();
+    $employee = Employee::factory()->create();
+    $other->employee()->associate($employee);
+    $other->save();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.employee.update', $account), [
+            'employee_id' => $employee->id,
+        ])
+        ->assertSessionHasErrors('employee_id');
+
+    expect($account->refresh()->employee_id)->toBeNull();
+});
+
+test('the employee field must be present when linking an account', function () {
+    $account = User::factory()->create();
+    $employee = Employee::factory()->create();
+    $account->employee()->associate($employee);
+    $account->save();
+
+    $this->actingAs(accountScreenAdmin())
+        ->put(route('accounts.employee.update', $account), [])
+        ->assertSessionHasErrors('employee_id');
+
+    expect($account->refresh()->employee_id)->toBe($employee->id);
+});
+
+test('an account without administrator access cannot link an employee', function () {
+    $account = User::factory()->create();
+    $employee = Employee::factory()->create();
+
+    $this->actingAs(User::factory()->create())
+        ->put(route('accounts.employee.update', $account), [
+            'employee_id' => $employee->id,
+        ])
+        ->assertForbidden();
+
+    expect($account->refresh()->employee_id)->toBeNull();
+});
